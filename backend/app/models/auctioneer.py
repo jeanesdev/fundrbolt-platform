@@ -151,6 +151,12 @@ class AuctioneerEventSettings(Base):
         default=dict,
         server_default=text("'{}'::jsonb"),
     )
+    paddle_raise_level_notes: Mapped[dict[str, str]] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=dict,
+        server_default=text("'{}'::jsonb"),
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

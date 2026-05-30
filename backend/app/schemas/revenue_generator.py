@@ -13,11 +13,17 @@ from pydantic import BaseModel, Field
 class RevenueGeneratorItemCreate(BaseModel):
     name: str = Field(max_length=255)
     description: str | None = None
+    post_purchase_instructions: str | None = Field(default=None, max_length=500)
     price_per_entry: Decimal = Field(gt=0, decimal_places=2)
     max_entries: int | None = Field(
         default=None,
         gt=0,
         description="Maximum number of entries/tickets available. NULL means unlimited.",
+    )
+    max_entries_per_person: int | None = Field(
+        default=None,
+        gt=0,
+        description="Maximum number of entries a single donor can buy. NULL means unlimited.",
     )
     display_order: int = Field(default=0, ge=0)
 
@@ -25,11 +31,17 @@ class RevenueGeneratorItemCreate(BaseModel):
 class RevenueGeneratorItemUpdate(BaseModel):
     name: str | None = Field(default=None, max_length=255)
     description: str | None = None
+    post_purchase_instructions: str | None = Field(default=None, max_length=500)
     price_per_entry: Decimal | None = Field(default=None, gt=0, decimal_places=2)
     max_entries: int | None = Field(
         default=None,
         gt=0,
         description="Maximum number of entries/tickets available. NULL means unlimited.",
+    )
+    max_entries_per_person: int | None = Field(
+        default=None,
+        gt=0,
+        description="Maximum number of entries a single donor can buy. NULL means unlimited.",
     )
     is_visible: bool | None = None
     is_open_for_entries: bool | None = None
@@ -41,8 +53,10 @@ class RevenueGeneratorItemAdminResponse(BaseModel):
     event_id: UUID
     name: str
     description: str | None
+    post_purchase_instructions: str | None
     price_per_entry: Decimal
     max_entries: int | None
+    max_entries_per_person: int | None
     image_url: str | None = None
     is_visible: bool
     is_open_for_entries: bool
@@ -61,8 +75,10 @@ class RevenueGeneratorItemDonorResponse(BaseModel):
     id: UUID
     name: str
     description: str | None
+    post_purchase_instructions: str | None
     price_per_entry: Decimal
     max_entries: int | None
+    max_entries_per_person: int | None
     image_url: str | None = None
     is_open_for_entries: bool
     my_entry_count: int = 0
@@ -79,11 +95,22 @@ class RevenueGeneratorAdminListResponse(BaseModel):
     items: list[RevenueGeneratorItemAdminResponse]
 
 
+class EntryPurchaseRequest(BaseModel):
+    quantity: int = Field(
+        default=1,
+        ge=1,
+        le=100,
+        description="Number of entries to purchase in a single request.",
+    )
+
+
 class EntryPurchaseResponse(BaseModel):
     entry_id: UUID
     item_id: UUID
+    purchased_count: int = 1
     my_entry_count: int
     amount_paid: Decimal
+    post_purchase_instructions: str | None = None
 
 
 class EntryRow(BaseModel):
@@ -135,6 +162,9 @@ class QuickEntryRevenueGeneratorItem(BaseModel):
     id: UUID
     name: str
     price_per_entry: Decimal
+    max_entries: int | None = None
+    max_entries_per_person: int | None = None
+    post_purchase_instructions: str | None = None
 
     model_config = {"from_attributes": True}
 

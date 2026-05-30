@@ -4,33 +4,34 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
 import { RGAuctioneerTab } from '@/features/revenue-generators'
 import { useViewPreference } from '@/hooks/use-view-preference'
@@ -40,24 +41,24 @@ import { getAuctioneerRunOfShow } from '@/services/runOfShowService'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import {
-  ArrowUpDown,
-  CalendarClock,
-  CircleDollarSign,
-  Clock,
-  Coins,
-  Download,
-  Eye,
-  EyeOff,
-  FileText,
-  Filter,
-  Gavel,
-  HandCoins,
-  Image as ImageIcon,
-  Loader2,
-  Pin,
-  PinOff,
-  Target,
-  Timer,
+    ArrowUpDown,
+    CalendarClock,
+    CircleDollarSign,
+    Clock,
+    Coins,
+    Download,
+    Eye,
+    EyeOff,
+    FileText,
+    Filter,
+    Gavel,
+    HandCoins,
+    Image as ImageIcon,
+    Loader2,
+    Pin,
+    PinOff,
+    Target,
+    Timer,
 } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -65,13 +66,13 @@ import { EventMapCard } from '../components/EventMapCard'
 import { RosCountdownBadge } from '../components/RosCountdownBadge'
 import { RunOfShowCard } from '../components/RunOfShowCard'
 import {
-  useAuctioneerDashboard,
-  useAuctioneerSettings,
-  useLiveAuctionGallery,
-  usePaddleRaiseDashboard,
-  useRevenueGeneratorItems,
-  useSilentAuctionGallery,
-  useUpsertSettings,
+    useAuctioneerDashboard,
+    useAuctioneerSettings,
+    useLiveAuctionGallery,
+    usePaddleRaiseDashboard,
+    useRevenueGeneratorItems,
+    useSilentAuctionGallery,
+    useUpsertSettings,
 } from '../hooks/useAuctioneerData'
 
 const fmtCurrency = (value: number | null | undefined) =>
@@ -157,6 +158,9 @@ export function AuctioneerDashboardPage({
   const [paddleLevelGoalInputs, setPaddleLevelGoalInputs] = useState<
     Record<string, string>
   >({})
+  const [paddleLevelNoteInputs, setPaddleLevelNoteInputs] = useState<
+    Record<string, string>
+  >({})
   const [paddleDonationsFilter, setPaddleDonationsFilter] = useState('')
   const [paddleDonationsSort, setPaddleDonationsSort] = useState<
     'newest' | 'oldest' | 'amount_desc' | 'amount_asc' | 'bidder_asc'
@@ -239,8 +243,17 @@ export function AuctioneerDashboardPage({
           ])
         )
       )
+      setPaddleLevelNoteInputs(
+        Object.fromEntries(
+          settings.paddle_raise_levels.map((level) => [
+            String(level),
+            settings.paddle_raise_level_notes[String(level)] ?? '',
+          ])
+        )
+      )
     }
   }, [
+    settings?.paddle_raise_level_notes,
     settings?.paddle_raise_level_goals,
     settings?.paddle_raise_levels,
     settings?.paddle_raise_total_goal,
@@ -281,6 +294,15 @@ export function AuctioneerDashboardPage({
         .filter((entry): entry is [string, number] => entry[1] !== null)
     )
 
+    const parsedLevelNotes = Object.fromEntries(
+      parsed
+        .map((level) => [
+          String(level),
+          (paddleLevelNoteInputs[String(level)] ?? '').trim(),
+        ])
+        .filter((entry): entry is [string, string] => entry[1].length > 0)
+    )
+
     upsertSettings.mutate({
       live_auction_percent: settings.live_auction_percent,
       paddle_raise_percent: settings.paddle_raise_percent,
@@ -288,6 +310,7 @@ export function AuctioneerDashboardPage({
       paddle_raise_levels: parsed,
       paddle_raise_total_goal: parsePositiveInteger(paddleTotalGoalInput),
       paddle_raise_level_goals: parsedLevelGoals,
+      paddle_raise_level_notes: parsedLevelNotes,
     })
   }
 
@@ -716,7 +739,7 @@ export function AuctioneerDashboardPage({
                     onClick={savePaddleSettings}
                     disabled={upsertSettings.isPending || !settings}
                   >
-                    Save Goals
+                    Save Levels
                   </Button>
                 </div>
                 <div className='grid gap-3 md:grid-cols-2 xl:grid-cols-4'>
@@ -747,19 +770,35 @@ export function AuctioneerDashboardPage({
                           </p>
                         ) : null}
                         {!level.is_monthly ? (
-                          <Input
-                            value={
-                              paddleLevelGoalInputs[String(level.amount)] ?? ''
-                            }
-                            onChange={(event) =>
-                              setPaddleLevelGoalInputs((current) => ({
-                                ...current,
-                                [String(level.amount)]: event.target.value,
-                              }))
-                            }
-                            inputMode='numeric'
-                            placeholder='Level goal'
-                          />
+                          <>
+                            <Input
+                              value={
+                                paddleLevelGoalInputs[String(level.amount)] ?? ''
+                              }
+                              onChange={(event) =>
+                                setPaddleLevelGoalInputs((current) => ({
+                                  ...current,
+                                  [String(level.amount)]: event.target.value,
+                                }))
+                              }
+                              inputMode='numeric'
+                              placeholder='Level goal'
+                            />
+                            <Textarea
+                              value={
+                                paddleLevelNoteInputs[String(level.amount)] ?? ''
+                              }
+                              onChange={(event) =>
+                                setPaddleLevelNoteInputs((current) => ({
+                                  ...current,
+                                  [String(level.amount)]: event.target.value,
+                                }))
+                              }
+                              placeholder='Impact statement (for example: funds one semester of tutoring)'
+                              rows={3}
+                              maxLength={500}
+                            />
+                          </>
                         ) : null}
                       </CardContent>
                     </Card>

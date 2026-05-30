@@ -5,8 +5,10 @@ export interface RGItem {
   event_id: string
   name: string
   description: string | null
+  post_purchase_instructions: string | null
   price_per_entry: number
   max_entries: number | null
+  max_entries_per_person: number | null
   image_url: string | null
   is_visible: boolean
   is_open_for_entries: boolean
@@ -22,16 +24,20 @@ export interface RGItem {
 export interface RGItemCreate {
   name: string
   description?: string | null
+  post_purchase_instructions?: string | null
   price_per_entry: number
   max_entries?: number | null
+  max_entries_per_person?: number | null
   display_order?: number
 }
 
 export interface RGItemUpdate {
   name?: string
   description?: string | null
+  post_purchase_instructions?: string | null
   price_per_entry?: number
   max_entries?: number | null
+  max_entries_per_person?: number | null
   is_visible?: boolean
   is_open_for_entries?: boolean
   display_order?: number

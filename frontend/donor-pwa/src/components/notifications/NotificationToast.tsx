@@ -6,9 +6,13 @@
  * Includes slide-in entrance, icon bounce, accent glow, and auto-dismiss timer bar.
  * T064: Supports animation_type in data payload (confetti, flash, pulse).
  */
-import { useEffect, useState } from 'react'
+import {
+  getNotificationBodyText,
+  getNotificationLink,
+} from '@/components/notifications/notification-link'
 import type { NotificationData } from '@/services/notification-service'
 import { Bell, Gavel, Trophy, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { ConfettiAnimation } from './ConfettiAnimation'
 
 const TOAST_DURATION = 5000
@@ -86,6 +90,8 @@ export function NotificationToast({
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   const deepLink = notification.data?.deep_link as string | undefined
+  const link = getNotificationLink(notification)
+  const imageUrl = notification.data?.image_url as string | undefined
 
   const [visible, setVisible] = useState(false)
 
@@ -105,9 +111,10 @@ export function NotificationToast({
 
   const handleClick = () => {
     onDismiss()
-    if (deepLink) {
+    const target = link?.href ?? deepLink
+    if (target) {
       // Navigate using the main app's history (works outside RouterProvider)
-      window.location.href = deepLink
+      window.location.href = target
     }
   }
 
@@ -145,18 +152,31 @@ export function NotificationToast({
           className='flex w-full items-start gap-3 p-4 text-left transition-colors active:opacity-80'
         >
           {/* Icon with bounce */}
-          <div
-            className={[
-              'mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full',
-              theme.iconBg,
-              theme.iconColor,
-              !prefersReducedMotion && 'animate-toast-icon-bounce',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-          >
-            {theme.icon}
-          </div>
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={(notification.data?.item_title as string) || 'Item'}
+              className={[
+                'mt-0.5 h-10 w-10 flex-shrink-0 rounded-lg object-cover',
+                !prefersReducedMotion && 'animate-toast-icon-bounce',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+            />
+          ) : (
+            <div
+              className={[
+                'mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full',
+                theme.iconBg,
+                theme.iconColor,
+                !prefersReducedMotion && 'animate-toast-icon-bounce',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+            >
+              {theme.icon}
+            </div>
+          )}
 
           {/* Content */}
           <div className='min-w-0 flex-1'>
@@ -164,8 +184,13 @@ export function NotificationToast({
               {notification.title}
             </p>
             <p className='text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed'>
-              {notification.body}
+              {getNotificationBodyText(notification)}
             </p>
+            {link && (
+              <p className='mt-1 text-xs font-medium text-blue-600'>
+                {link.label}
+              </p>
+            )}
           </div>
 
           {/* Dismiss */}

@@ -7,6 +7,11 @@
  * for dynamically-created elements outside of the React tree, so we use
  * inline styles + the keyframe animations defined in the global stylesheet).
  */
+import {
+  getNotificationBodyText,
+  getNotificationLink,
+} from '@/components/notifications/notification-link'
+import { triggerCelebrationConfetti } from '@/lib/celebration-confetti'
 import type { NotificationData } from '@/services/notification-service'
 import { useEffect } from 'react'
 
@@ -86,6 +91,7 @@ function addToast(notification: NotificationData) {
   ensureContainer()
 
   const theme = getThemeColors(notification.notification_type)
+  const link = getNotificationLink(notification)
   const prefersReduced =
     typeof window !== 'undefined' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -130,8 +136,7 @@ function addToast(notification: NotificationData) {
   })
   btn.addEventListener('click', () => {
     dismissToast(notification.id)
-    const deepLink = notification.data?.deep_link as string | undefined
-    if (deepLink) window.location.href = deepLink
+    if (link) window.location.href = link.href
   })
 
   // Leading visual: thumbnail image if available, otherwise icon circle
@@ -178,10 +183,18 @@ function addToast(notification: NotificationData) {
   const body = document.createElement('p')
   body.style.cssText =
     'margin:4px 0 0;font-size:12px;line-height:1.5;color:#6b7280;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;'
-  body.textContent = notification.body
+  body.textContent = getNotificationBodyText(notification)
+
+  const linkLabel = document.createElement('p')
+  linkLabel.style.cssText =
+    'margin:4px 0 0;font-size:12px;line-height:1.3;color:#2563eb;font-weight:600;'
+  linkLabel.textContent = link?.label ?? ''
 
   textWrap.appendChild(title)
   textWrap.appendChild(body)
+  if (link) {
+    textWrap.appendChild(linkLabel)
+  }
 
   // Dismiss X
   const dismiss = document.createElement('div')
@@ -233,6 +246,14 @@ function addToast(notification: NotificationData) {
       notification.notification_type === 'item_won')
   ) {
     navigator.vibrate?.(200)
+  }
+
+  const animationType = notification.data?.animation_type
+  if (
+    notification.notification_type === 'item_won' ||
+    animationType === 'confetti'
+  ) {
+    triggerCelebrationConfetti()
   }
 
   // Auto-dismiss

@@ -1,7 +1,3 @@
-import { useState } from 'react'
-import { AxiosError } from 'axios'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useAuthStore } from '@/stores/auth-store'
 import {
   donateNowApi,
   type DonationCreateRequest,
@@ -10,6 +6,11 @@ import {
   type SupportWallEntry,
   type SupportWallPage,
 } from '@/lib/api/donateNow'
+import { triggerCelebrationConfetti } from '@/lib/celebration-confetti'
+import { useAuthStore } from '@/stores/auth-store'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { AxiosError } from 'axios'
+import { useState } from 'react'
 
 interface PendingDonationDraft {
   npo_slug: string
@@ -122,6 +123,7 @@ export function useDonateNow(npoSlug: string) {
       setLastDonation(res.data)
       setDonationSuccess(true)
       setShowConfirm(false)
+      triggerCelebrationConfetti()
     },
   })
 

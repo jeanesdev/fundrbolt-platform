@@ -1,3 +1,4 @@
+import apiClient from '@/lib/axios'
 import type {
   AuctionItem,
   AuctionItemCreate,
@@ -8,7 +9,6 @@ import type {
   BidResponse,
   ItemStatus,
 } from '@/types/auction-item'
-import apiClient from '@/lib/axios'
 
 /**
  * Auction Item Service
@@ -130,13 +130,21 @@ class AuctionItemService {
   async buyNow(
     eventId: string,
     itemId: string,
+    amount: number,
     quantity: number = 1
   ): Promise<{ success: boolean; message: string }> {
-    const response = await apiClient.post(
-      `/events/${eventId}/auction-items/${itemId}/buy-now`,
-      { quantity }
-    )
-    return response.data
+    if (quantity !== 1) {
+      throw new Error('Buy now currently supports quantity of 1 only')
+    }
+
+    await apiClient.post('/auction/bids', {
+      event_id: eventId,
+      auction_item_id: itemId,
+      bid_amount: amount,
+      bid_type: 'buy_now',
+    })
+
+    return { success: true, message: 'Buy now completed successfully' }
   }
 
   /**

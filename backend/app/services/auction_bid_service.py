@@ -81,6 +81,8 @@ class AuctionBidService:
 
     async def _send_bid_confirmation(self, bid: AuctionBid, item: AuctionItem) -> None:
         """T075: Send bid confirmation notification to the bidder."""
+        bid_id = str(bid.id)
+        bid_user_id = str(bid.user_id)
         try:
             event_slug = await self._get_event_slug(bid.event_id)
             async with self.db.begin_nested():
@@ -99,13 +101,13 @@ class AuctionBidService:
                         "animation_type": "pulse",
                     },
                     sio=sio,
+                    dispatch_tasks=False,
                 )
             await self.db.commit()
         except Exception:
-            await self.db.rollback()
             logger.warning(
                 "Failed to send bid confirmation notification",
-                extra={"bid_id": str(bid.id), "user_id": str(bid.user_id)},
+                extra={"bid_id": bid_id, "user_id": bid_user_id},
             )
 
     async def _get_bidder_number(self, event_id: UUID, user_id: UUID) -> int:
@@ -116,10 +118,12 @@ class AuctionBidService:
                 EventRegistration.event_id == event_id,
                 RegistrationGuest.user_id == user_id,
                 RegistrationGuest.is_primary.is_(True),
+                RegistrationGuest.bidder_number.is_not(None),
             )
+            .order_by(RegistrationGuest.created_at.desc())
         )
         result = await self.db.execute(stmt)
-        bidder_number = result.scalar_one_or_none()
+        bidder_number = result.scalars().first()
 
         if bidder_number is None:
             fallback_stmt = (
@@ -128,11 +132,13 @@ class AuctionBidService:
                 .where(
                     EventRegistration.event_id == event_id,
                     RegistrationGuest.user_id == user_id,
+                    RegistrationGuest.bidder_number.is_not(None),
                 )
+                .order_by(RegistrationGuest.created_at.desc())
                 .limit(1)
             )
             fallback_result = await self.db.execute(fallback_stmt)
-            bidder_number = fallback_result.scalar_one_or_none()
+            bidder_number = fallback_result.scalars().first()
 
         if bidder_number is None:
             raise ValueError("Bidder number not found for user in this event")
@@ -291,27 +297,39 @@ class AuctionBidService:
             else:
                 image_url = raw_image_url
 
-        async with self.db.begin_nested():
-            await NotificationService.create_notification(
-                db=self.db,
-                event_id=previous_bid.event_id,
-                user_id=previous_bid.user_id,
-                notification_type=NotificationTypeEnum.OUTBID,
-                priority=NotificationPriorityEnum.HIGH,
-                title="You've been outbid!",
-                body=(
-                    f"Someone bid {amount_str} on {item.title}. "
-                    f"Your bid of {old_amount_str} is no longer the highest."
-                ),
-                data={
+        try:
+            async with self.db.begin_nested():
+                await NotificationService.create_notification(
+                    db=self.db,
+                    event_id=previous_bid.event_id,
+                    user_id=previous_bid.user_id,
+                    notification_type=NotificationTypeEnum.OUTBID,
+                    priority=NotificationPriorityEnum.HIGH,
+                    title="You've been outbid!",
+                    body=(
+                        f"Someone bid {amount_str} on {item.title}. "
+                        f"Your bid of {old_amount_str} is no longer the highest."
+                    ),
+                    data={
+                        "item_id": str(item.id),
+                        "item_title": item.title,
+                        "deep_link": f"/events/{event_slug}?item={item.id}",
+                        "animation_type": "flash",
+                        "bid_amount": str(new_bid_amount) if new_bid_amount else None,
+                        **({"image_url": image_url} if image_url else {}),
+                    },
+                    sio=sio,
+                    dispatch_tasks=False,
+                )
+        except Exception:
+            logger.warning(
+                "Failed to send outbid notification",
+                extra={
+                    "previous_bid_id": str(previous_bid.id),
+                    "previous_bid_user_id": str(previous_bid.user_id),
                     "item_id": str(item.id),
-                    "item_title": item.title,
-                    "deep_link": f"/events/{event_slug}?item={item.id}",
-                    "animation_type": "flash",
-                    "bid_amount": str(new_bid_amount) if new_bid_amount else None,
-                    **({"image_url": image_url} if image_url else {}),
                 },
-                sio=sio,
+                exc_info=True,
             )
 
     async def place_bid(
@@ -380,8 +398,6 @@ class AuctionBidService:
 
             await self.db.commit()
             await self._publish_bid_update(new_bid)
-
-            # T075: Send bid confirmation for buy-now
             await self._send_bid_confirmation(new_bid, item)
 
             return new_bid
@@ -506,6 +522,7 @@ class AuctionBidService:
                             "deep_link": f"/events/{event_slug}?item={item.id}",
                         },
                         sio=sio,
+                        dispatch_tasks=False,
                     )
             except Exception:
                 logger.warning(

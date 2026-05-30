@@ -1,7 +1,10 @@
 /**
  * NotificationItem — single notification row with swipe-to-reveal delete
  */
-import { useCallback, useRef, useState } from 'react'
+import {
+  getNotificationBodyText,
+  getNotificationLink,
+} from '@/components/notifications/notification-link'
 import type { NotificationData } from '@/services/notification-service'
 import {
   Bell,
@@ -15,6 +18,7 @@ import {
   Trash2,
   Trophy,
 } from 'lucide-react'
+import { useCallback, useRef, useState } from 'react'
 
 /**
  * Render the appropriate icon for a notification type
@@ -80,15 +84,16 @@ export function NotificationItem({
   onDelete,
   onNavigate,
 }: NotificationItemProps) {
+  const link = getNotificationLink(notification)
+
   const handleClick = useCallback(() => {
     if (!notification.is_read) {
       onRead(notification.id)
     }
-    const deepLink = notification.data?.deep_link as string | undefined
-    if (deepLink && onNavigate) {
-      onNavigate(deepLink)
+    if (link && onNavigate) {
+      onNavigate(link.href)
     }
-  }, [notification, onRead, onNavigate])
+  }, [notification, onRead, onNavigate, link])
 
   // Swipe state
   const [offsetX, setOffsetX] = useState(0)
@@ -178,7 +183,7 @@ export function NotificationItem({
         style={{
           transform: `translateX(${offsetX}px)`,
           transitionDuration: animating ? '150ms' : '0ms',
-          touchAction: swiping.current ? 'none' : 'pan-y',
+          touchAction: 'pan-y',
         }}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
@@ -187,9 +192,8 @@ export function NotificationItem({
         <button
           type='button'
           onClick={handleClick}
-          className={`hover:bg-muted/50 flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${
-            !notification.is_read ? 'bg-primary/5' : ''
-          }`}
+          className={`hover:bg-muted/50 flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${!notification.is_read ? 'bg-primary/5' : ''
+            }`}
         >
           {/* Leading visual: thumbnail or icon */}
           {notification.data?.image_url ? (
@@ -218,8 +222,13 @@ export function NotificationItem({
               )}
             </div>
             <p className='text-muted-foreground line-clamp-2 text-xs'>
-              {notification.body}
+              {getNotificationBodyText(notification)}
             </p>
+            {link && (
+              <p className='mt-1 text-xs font-medium text-blue-600'>
+                {link.label}
+              </p>
+            )}
             <p className='text-muted-foreground/70 mt-1 text-xs'>
               {relativeTime(notification.created_at)}
             </p>

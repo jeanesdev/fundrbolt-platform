@@ -1,5 +1,5 @@
-import type { AuctionItem } from '@/types/auction-item'
 import apiClient from '@/lib/axios'
+import type { AuctionItem } from '@/types/auction-item'
 
 export async function getQuickEntryStatus(
   eventId: string
@@ -386,6 +386,8 @@ export interface QuickEntryRGItem {
   id: string
   name: string
   price_per_entry: number
+  max_entries: number | null
+  max_entries_per_person: number | null
 }
 
 export interface QuickEntryRGEntryResponse {

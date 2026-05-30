@@ -7,6 +7,7 @@ from typing import Any
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.models.notification import (
     DeliveryChannelEnum,
@@ -19,6 +20,7 @@ from app.models.notification_delivery_status import NotificationDeliveryStatus
 from app.models.notification_preference import NotificationPreference
 
 logger = get_logger(__name__)
+settings = get_settings()
 
 # Default expiration offset from event date
 NOTIFICATION_EXPIRY_DAYS = 30
@@ -199,11 +201,20 @@ class NotificationService:
         committed so that the Celery workers (or eager-mode inline execution)
         can see the rows.
         """
+
+        def _dispatch(task: object) -> None:
+            # Always queue via delay() – running channel tasks inline (apply)
+            # inside an already-running asyncio loop causes nested asyncio.run()
+            # calls that corrupt the asyncpg connection pool, breaking subsequent
+            # requests.  In-app delivery is handled synchronously by
+            # create_notification itself; push/email/SMS need a Celery worker.
+            task.delay(notification_id)  # type: ignore[attr-defined]
+
         if DeliveryChannelEnum.PUSH in channels:
             try:
                 from app.tasks.notification_tasks import send_push_notification_task
 
-                send_push_notification_task.delay(notification_id)
+                _dispatch(send_push_notification_task)
             except Exception:
                 logger.warning(
                     "Failed to dispatch push notification task",
@@ -214,7 +225,7 @@ class NotificationService:
             try:
                 from app.tasks.notification_tasks import send_email_notification_task
 
-                send_email_notification_task.delay(notification_id)
+                _dispatch(send_email_notification_task)
             except Exception:
                 logger.warning(
                     "Failed to dispatch email notification task",
@@ -225,7 +236,7 @@ class NotificationService:
             try:
                 from app.tasks.notification_tasks import send_sms_notification_task
 
-                send_sms_notification_task.delay(notification_id)
+                _dispatch(send_sms_notification_task)
             except Exception:
                 logger.warning(
                     "Failed to dispatch SMS notification task",

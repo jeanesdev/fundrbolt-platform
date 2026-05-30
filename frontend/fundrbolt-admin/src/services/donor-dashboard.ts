@@ -177,6 +177,9 @@ export interface LeaderboardParams {
   sort_by?: string
   sort_order?: 'asc' | 'desc'
   search?: string
+  filter_col?: string
+  filter_min?: number
+  filter_max?: number
   page?: number
   per_page?: number
 }

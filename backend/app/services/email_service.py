@@ -16,6 +16,8 @@ from app.core.metrics import EMAIL_FAILURES_TOTAL
 logger = get_logger(__name__)
 settings = get_settings()
 
+DEFAULT_ADMIN_NOTIFICATION_EMAIL = "npo_approvals@fundrbolt.com"
+
 
 def _build_communications_email_verification_url(email: str) -> str:
     """Build a donor-PWA deep link back into the communications email OTP step."""
@@ -1153,7 +1155,7 @@ This is an automated message. Please do not reply to this email.
         """
         Send notification to admins when a new NPO application is submitted.
 
-        Sent to: settings.admin_notification_email (or fallback npo_applications@fundrbolt.com)
+        Sent to: settings.admin_notification_email (or fallback npo_approvals@fundrbolt.com)
         Content: Alert that new application needs review
 
         Args:
@@ -1164,7 +1166,7 @@ This is an automated message. Please do not reply to this email.
         Returns:
             True if email sent successfully, False otherwise
         """
-        admin_email = settings.admin_notification_email or "npo_applications@fundrbolt.com"
+        admin_email = settings.admin_notification_email or DEFAULT_ADMIN_NOTIFICATION_EMAIL
         subject = f"New NPO Application: {npo_name}"
         applicant_info = f" by {applicant_name}" if applicant_name else ""
 
@@ -1205,7 +1207,7 @@ This is an automated notification from the FundrBolt.
         Send notification to the configured admin email when a new NPO application
         is submitted via the onboarding wizard.
 
-        Sent to: settings.admin_notification_email (or fallback npo_applications@fundrbolt.com)
+        Sent to: settings.admin_notification_email (or fallback npo_approvals@fundrbolt.com)
         Content: Applicant details, NPO name, direct review link.
 
         Args:
@@ -1217,7 +1219,7 @@ This is an automated notification from the FundrBolt.
         Returns:
             True if email sent successfully, False otherwise.
         """
-        admin_email = settings.admin_notification_email or "npo_applications@fundrbolt.com"
+        admin_email = settings.admin_notification_email or DEFAULT_ADMIN_NOTIFICATION_EMAIL
         subject = f"New NPO Application (Onboarding): {npo_name}"
         review_url = f"{settings.frontend_admin_url}/admin/npo-applications"
 

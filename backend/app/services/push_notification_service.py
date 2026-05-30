@@ -5,9 +5,11 @@ Manages push subscriptions and sends push notifications via the Web Push protoco
 
 import base64
 import json
+import re
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
+from azure.storage.blob import BlobSasPermissions, generate_blob_sas
 from pywebpush import WebPushException, webpush
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,6 +23,60 @@ from app.models.push_subscription import PushSubscription
 
 logger = get_logger(__name__)
 settings = get_settings()
+
+_URL_PATTERN = re.compile(r"https?://[^\s)]+", re.IGNORECASE)
+
+
+def _sanitize_push_body(body: str) -> str:
+    stripped = _URL_PATTERN.sub("", body).strip()
+    stripped = re.sub(r"\s+", " ", stripped)
+    stripped = stripped.rstrip("-: ")
+    return stripped or "Tap to view details"
+
+
+def _ensure_blob_sas_url(url: str | None) -> str | None:
+    """Return a read-SAS URL for Azure blob URLs when needed."""
+    if not url:
+        return None
+
+    if (
+        not settings.azure_storage_connection_string
+        or not settings.azure_storage_account_name
+        or not settings.azure_storage_container_name
+    ):
+        return url
+
+    account_host = f"{settings.azure_storage_account_name}.blob.core.windows.net"
+    if account_host not in url:
+        return url
+
+    if "?" in url and "sig=" in url:
+        return url
+
+    container_prefix = f"{settings.azure_storage_container_name}/"
+    if container_prefix not in url:
+        return url
+
+    blob_name = url.split(container_prefix, 1)[1].split("?", 1)[0]
+
+    try:
+        conn_str = settings.azure_storage_connection_string
+        account_key = conn_str.split("AccountKey=")[1].split(";")[0]
+        sas_token = generate_blob_sas(
+            account_name=settings.azure_storage_account_name,
+            container_name=settings.azure_storage_container_name,
+            blob_name=blob_name,
+            account_key=account_key,
+            permission=BlobSasPermissions(read=True),
+            expiry=datetime.utcnow() + timedelta(hours=24),
+        )
+        return (
+            f"https://{account_host}/{settings.azure_storage_container_name}"
+            f"/{blob_name}?{sas_token}"
+        )
+    except Exception:
+        logger.debug("Failed to generate push icon SAS URL", exc_info=True)
+        return url
 
 
 def _get_vapid_private_key_raw() -> str | None:
@@ -247,27 +303,36 @@ class PushNotificationService:
 
         # Build push payload
         deep_link = None
+        image_url: str | None = None
         if notification.data and isinstance(notification.data, dict):
             deep_link = notification.data.get("deep_link")
+            image_url = notification.data.get("image_url")
 
-        # Use the event logo as the notification icon if available
-        event_icon_url = "/images/pwa-192x192.png"
+        image_url = _ensure_blob_sas_url(image_url)
+
+        # Use event logo when no item image is available.
+        event_icon_url: str | None = None
         if notification.event_id:
             event_logo_result = await db.execute(
                 select(Event.logo_url).where(Event.id == notification.event_id)
             )
             event_logo = event_logo_result.scalar_one_or_none()
             if event_logo:
-                event_icon_url = event_logo
+                event_icon_url = _ensure_blob_sas_url(event_logo)
+
+        # Visual priority: item thumbnail -> event icon -> app logo fallback
+        visual_url = image_url or event_icon_url or "/images/pwa-192x192.png"
 
         payload = json.dumps(
             {
                 "title": notification.title,
-                "body": notification.body,
-                "icon": event_icon_url,
+                "body": _sanitize_push_body(notification.body),
+                "icon": visual_url,
                 "badge": "/images/pwa-192x192.png",
+                "image": visual_url,
                 "data": {
                     "deep_link": deep_link,
+                    "image_url": image_url,
                     "notification_id": str(notification.id),
                     "notification_type": notification.notification_type.value
                     if hasattr(notification.notification_type, "value")

@@ -12,11 +12,11 @@
 import { StaleDataIndicator } from '@/components/pwa/stale-data-indicator'
 import { Input } from '@/components/ui/input'
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select'
 import { PlayTab } from '@/features/play/PlayTab'
 import apiClient from '@/lib/axios'
@@ -25,20 +25,21 @@ import watchListService from '@/services/watchlistService'
 import { useAuthStore } from '@/stores/auth-store'
 import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import type {
-    AuctionFilterType,
-    AuctionItemGalleryItem,
-    AuctionSortType,
+  AuctionFilterType,
+  AuctionItemGalleryItem,
+  AuctionSortType,
 } from '@/types/auction-gallery'
 import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
 import {
-    useInfiniteQuery,
-    useMutation,
-    useQueries,
-    useQuery,
-    useQueryClient,
+  useInfiniteQuery,
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
 } from '@tanstack/react-query'
 import { Eye, Gavel, Loader2, RefreshCw, Sparkles } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { AuctionItemCard } from './AuctionItemCard'
 
 function normalizeIdentifier(value: unknown): string | null {
@@ -133,6 +134,7 @@ async function fetchAuctionItems(
         starting_bid: number | string
         current_bid_amount?: number | string | null
         bid_count?: number
+        buy_now_purchased_count?: number
         bidding_open?: boolean
         watcher_count?: number
         promotion_badge?: string | null
@@ -150,6 +152,7 @@ async function fetchAuctionItems(
         starting_bid: toNumber(item.starting_bid) ?? 0,
         current_bid: toNumber(item.current_bid_amount),
         bid_count: item.bid_count ?? 0,
+        buy_now_purchased_count: item.buy_now_purchased_count ?? 0,
         bidding_open: item.bidding_open,
         watcher_count: item.watcher_count,
         promotion_badge: item.promotion_badge ?? null,
@@ -219,11 +222,11 @@ const baseFilterOptions: {
   label: string
   icon?: React.ReactNode
 }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'silent', label: 'Silent' },
-  { value: 'live', label: 'Live' },
-  { value: 'my', label: 'My Items' },
-]
+    { value: 'all', label: 'All' },
+    { value: 'silent', label: 'Silent' },
+    { value: 'live', label: 'Live' },
+    { value: 'my', label: 'My Items' },
+  ]
 
 const sortOptions: { value: AuctionSortType; label: string }[] = [
   { value: 'highest_bid', label: 'Highest Bid' },
@@ -254,15 +257,15 @@ export function AuctionGallery({
 }: AuctionGalleryProps) {
   const filterOptions = hasRgItems
     ? [
-        ...baseFilterOptions,
-        {
-          value: 'play' as AuctionFilterType,
-          label: 'Play',
-          icon: (
-            <Sparkles className='mr-1 inline-block h-3.5 w-3.5 align-[-0.1em]' />
-          ),
-        },
-      ]
+      ...baseFilterOptions,
+      {
+        value: 'play' as AuctionFilterType,
+        label: 'Play',
+        icon: (
+          <Sparkles className='mr-1 inline-block h-3.5 w-3.5 align-[-0.1em]' />
+        ),
+      },
+    ]
     : baseFilterOptions
   const authUserId = useAuthStore((state) => state.user?.id)
   const spoofedUserId = useDebugSpoofStore((state) => state.spoofedUser?.id)
@@ -273,12 +276,20 @@ export function AuctionGallery({
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
+  const [refreshStatus, setRefreshStatus] = useState<
+    'idle' | 'refreshing' | 'done'
+  >('idle')
   const queryClient = useQueryClient()
 
   // Ref for infinite scroll trigger
   const loadMoreRef = useRef<HTMLDivElement>(null)
   const preloadedImageUrlsRef = useRef<Set<string>>(preloadedAuctionImageUrls)
   const preconnectedHostsRef = useRef<Set<string>>(preconnectedAuctionHosts)
+  const refreshStatusTimeoutRef = useRef<number | null>(null)
+  const refreshSweepTimeoutRef = useRef<number | null>(null)
+  const refreshSweepFrameRef = useRef<number | null>(null)
+  const [showRefreshSweep, setShowRefreshSweep] = useState(false)
+  const [isRefreshSweepActive, setIsRefreshSweepActive] = useState(false)
 
   // Fetch watch list
   const { data: watchListData } = useQuery({
@@ -304,14 +315,14 @@ export function AuctionGallery({
         (
           previous:
             | {
-                watch_list?: Array<{
-                  id: string
-                  user_id: string
-                  auction_item_id: string
-                  added_at: string
-                }>
-                total?: number
-              }
+              watch_list?: Array<{
+                id: string
+                user_id: string
+                auction_item_id: string
+                added_at: string
+              }>
+              total?: number
+            }
             | undefined
         ) => {
           const existing = previous?.watch_list ?? []
@@ -345,14 +356,14 @@ export function AuctionGallery({
         (
           previous:
             | {
-                watch_list?: Array<{
-                  id: string
-                  user_id: string
-                  auction_item_id: string
-                  added_at: string
-                }>
-                total?: number
-              }
+              watch_list?: Array<{
+                id: string
+                user_id: string
+                auction_item_id: string
+                added_at: string
+              }>
+              total?: number
+            }
             | undefined
         ) => {
           const existing = previous?.watch_list ?? []
@@ -379,6 +390,22 @@ export function AuctionGallery({
   }, [searchQuery])
 
   const isOnline = useOnlineStatus()
+
+  useEffect(() => {
+    return () => {
+      if (refreshStatusTimeoutRef.current !== null) {
+        window.clearTimeout(refreshStatusTimeoutRef.current)
+      }
+
+      if (refreshSweepTimeoutRef.current !== null) {
+        window.clearTimeout(refreshSweepTimeoutRef.current)
+      }
+
+      if (refreshSweepFrameRef.current !== null) {
+        window.cancelAnimationFrame(refreshSweepFrameRef.current)
+      }
+    }
+  }, [])
 
   // Infinite query for auction items
   const {
@@ -438,6 +465,54 @@ export function AuctionGallery({
   const handleFilterChange = useCallback((newFilter: AuctionFilterType) => {
     setFilter(newFilter)
   }, [])
+
+  const handleManualRefresh = useCallback(async () => {
+    if (refreshStatus === 'refreshing') {
+      return
+    }
+
+    setRefreshStatus('refreshing')
+    try {
+      await refetch()
+      setRefreshStatus('done')
+
+      setShowRefreshSweep(true)
+      setIsRefreshSweepActive(false)
+
+      if (refreshSweepFrameRef.current !== null) {
+        window.cancelAnimationFrame(refreshSweepFrameRef.current)
+      }
+
+      refreshSweepFrameRef.current = window.requestAnimationFrame(() => {
+        setIsRefreshSweepActive(true)
+        refreshSweepFrameRef.current = null
+      })
+
+      if (refreshSweepTimeoutRef.current !== null) {
+        window.clearTimeout(refreshSweepTimeoutRef.current)
+      }
+
+      refreshSweepTimeoutRef.current = window.setTimeout(() => {
+        setShowRefreshSweep(false)
+        setIsRefreshSweepActive(false)
+        refreshSweepTimeoutRef.current = null
+      }, 800)
+
+      if (refreshStatusTimeoutRef.current !== null) {
+        window.clearTimeout(refreshStatusTimeoutRef.current)
+      }
+
+      refreshStatusTimeoutRef.current = window.setTimeout(() => {
+        setRefreshStatus('idle')
+        refreshStatusTimeoutRef.current = null
+      }, 1200)
+    } catch {
+      setShowRefreshSweep(false)
+      setIsRefreshSweepActive(false)
+      setRefreshStatus('idle')
+      toast.error('Failed to refresh items. Please try again.')
+    }
+  }, [refetch, refreshStatus])
 
   // Flatten items from all pages and de-duplicate by item ID
   const allLoadedItemsRaw = data?.pages.flatMap((page) => page.items) ?? []
@@ -709,15 +784,17 @@ export function AuctionGallery({
   // My Items: watched + bid on (max bid set)
   const myItemIds = isMyItemsMode
     ? new Set([
-        ...Array.from(watchedItemIds),
-        ...Object.keys(winningItemMap),
-        ...Object.keys(maxBidItemMap),
-      ])
+      ...Array.from(watchedItemIds),
+      ...Object.keys(winningItemMap),
+      ...Object.keys(maxBidItemMap),
+    ])
     : null
   const myItems = myItemIds
     ? items.filter((item) => myItemIds.has(item.id))
     : []
   const displayedCount = isMyItemsMode ? myItems.length : totalCount
+  const isManualRefreshing = refreshStatus === 'refreshing'
+  const isRefreshDone = refreshStatus === 'done'
 
   const hotItemIds = new Set(
     items
@@ -799,52 +876,78 @@ export function AuctionGallery({
         isStale={!isOnline}
         lastFetchedAt={dataUpdatedAt ? new Date(dataUpdatedAt) : null}
       />
-      {/* Filter controls */}
-      <div className='space-y-2'>
-        <div className='flex items-center justify-between'>
-          <div
-            className='bg-muted/30 inline-flex rounded-lg border p-1'
-            role='group'
-            aria-label='Filter auction items'
-          >
-            {filterOptions.map((option) => (
-              <button
-                key={option.value}
-                type='button'
-                onClick={() => handleFilterChange(option.value)}
-                className={cn(
-                  'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                  filter === option.value ? 'shadow-sm' : 'hover:opacity-80'
-                )}
-                style={
-                  filter === option.value
-                    ? {
-                        backgroundColor:
-                          'rgb(var(--event-primary, 59, 130, 246))',
-                        color: 'var(--event-text-on-primary, #FFFFFF)',
-                      }
-                    : {
-                        color: 'var(--event-text-muted-on-background, #6B7280)',
-                      }
-                }
-              >
-                {option.icon}
-                {option.label}
-              </button>
-            ))}
-          </div>
-
-          <button
-            type='button'
-            onClick={() => void refetch()}
-            aria-label='Refresh auction items'
-            className='ml-1 inline-flex items-center justify-center rounded-full p-1.5 transition-colors hover:opacity-80'
-            style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
-          >
-            <RefreshCw className='h-4 w-4' />
-          </button>
+      {/* Sticky tabs and refresh row */}
+      <div
+        className='sticky top-16 z-20 -mx-1 flex items-center justify-between rounded-lg px-1 py-1 backdrop-blur'
+        style={{
+          backgroundColor: 'rgb(var(--event-background, 255, 255, 255) / 0.9)',
+        }}
+      >
+        <div
+          className='bg-muted/30 inline-flex rounded-lg border p-1'
+          role='group'
+          aria-label='Filter auction items'
+        >
+          {filterOptions.map((option) => (
+            <button
+              key={option.value}
+              type='button'
+              onClick={() => handleFilterChange(option.value)}
+              className={cn(
+                'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                filter === option.value ? 'shadow-sm' : 'hover:opacity-80'
+              )}
+              style={
+                filter === option.value
+                  ? {
+                    backgroundColor:
+                      'rgb(var(--event-primary, 59, 130, 246))',
+                    color: 'var(--event-text-on-primary, #FFFFFF)',
+                  }
+                  : {
+                    color: 'var(--event-text-muted-on-background, #6B7280)',
+                  }
+              }
+            >
+              {option.icon}
+              {option.label}
+            </button>
+          ))}
         </div>
 
+        <div className='ml-auto flex items-center justify-end'>
+          <button
+            type='button'
+            onClick={() => void handleManualRefresh()}
+            aria-label={
+              isManualRefreshing
+                ? 'Refreshing auction items'
+                : 'Refresh auction items'
+            }
+            disabled={isManualRefreshing}
+            className={cn(
+              'inline-flex items-center justify-center rounded-full p-1.5 transition-colors hover:opacity-80',
+              isManualRefreshing && 'cursor-wait opacity-80'
+            )}
+            style={{
+              color: isRefreshDone
+                ? 'rgb(var(--event-primary, 59, 130, 246))'
+                : 'var(--event-text-muted-on-background, #6B7280)',
+            }}
+          >
+            <RefreshCw
+              className={cn(
+                'h-4 w-4 transition-transform duration-200',
+                isManualRefreshing && 'animate-spin',
+                isRefreshDone && 'scale-110'
+              )}
+            />
+          </button>
+        </div>
+      </div>
+
+      {/* Filter controls */}
+      <div className='space-y-2'>
         <span
           className='block text-sm'
           style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
@@ -990,7 +1093,18 @@ export function AuctionGallery({
 
       {/* Everything below is hidden when Play tab is active */}
       {filter !== 'play' && (
-        <>
+        <div className='relative'>
+          {showRefreshSweep && (
+            <div className='pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-xl'>
+              <div
+                className={cn(
+                  'h-full w-24 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-700 ease-out',
+                  isRefreshSweepActive && 'translate-x-[220%]'
+                )}
+              />
+            </div>
+          )}
+
           {/* Empty state */}
           {items.length === 0 && !isMyItemsMode && (
             <div className='flex flex-col items-center justify-center rounded-lg border border-dashed py-12'>
@@ -1164,7 +1278,7 @@ export function AuctionGallery({
               )}
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   )

@@ -49,6 +49,7 @@ import { useTabSwipe } from '@/hooks/use-tab-swipe'
 import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
 import { getMyInventory } from '@/lib/api/ticket-purchases'
 import apiClient from '@/lib/axios'
+import { triggerCelebrationConfetti } from '@/lib/celebration-confetti'
 import auctionItemService from '@/services/auctionItemService'
 import {
   getEventGuests,
@@ -955,9 +956,10 @@ export function EventHomePage() {
   )
 
   const { mutate: mutateBuyNow, isPending: isBuyingNow } = useMutation({
-    mutationFn: ({ itemId }: { itemId: string }) =>
-      auctionItemService.buyNow(currentEvent!.id, itemId, 1),
+    mutationFn: ({ itemId, amount }: { itemId: string; amount: number }) =>
+      auctionItemService.buyNow(currentEvent!.id, itemId, amount, 1),
     onSuccess: (_response, variables) => {
+      triggerCelebrationConfetti()
       toast.success('Successfully completed Buy Now')
       queryClient.invalidateQueries({
         queryKey: ['auction-items', currentEvent?.id],
@@ -1002,13 +1004,13 @@ export function EventHomePage() {
     [mutatePlaceMaxBid, isPreviewMode]
   )
   const handleBuyNow = useCallback(
-    (itemId: string) => {
+    (itemId: string, amount: number) => {
       if (isPreviewMode) {
         toast.info('Bidding is disabled in preview mode')
         return
       }
 
-      mutateBuyNow({ itemId })
+      mutateBuyNow({ itemId, amount })
     },
     [mutateBuyNow, isPreviewMode]
   )

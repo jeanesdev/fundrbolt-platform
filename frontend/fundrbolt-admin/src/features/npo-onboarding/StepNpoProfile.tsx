@@ -39,6 +39,16 @@ function formatPhoneNumber(value: string): string {
   return `+${digits.slice(0, digits.length - 10)} (${digits.slice(-10, -7)}) ${digits.slice(-7, -4)}-${digits.slice(-4)}`
 }
 
+function formatEin(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 9)
+
+  if (digits.length <= 2) {
+    return digits
+  }
+
+  return `${digits.slice(0, 2)}-${digits.slice(2)}`
+}
+
 // ---------------------------------------------------------------------------
 // Schema
 // ---------------------------------------------------------------------------
@@ -258,10 +268,7 @@ export function StepNpoProfile({
                     autoComplete='off'
                     {...field}
                     onChange={(e) => {
-                      // Auto-insert hyphen after 2 digits
-                      let v = e.target.value.replace(/[^\d-]/g, '')
-                      if (v.length === 2 && !v.includes('-')) v = v + '-'
-                      field.onChange(v)
+                      field.onChange(formatEin(e.target.value))
                     }}
                   />
                 </FormControl>

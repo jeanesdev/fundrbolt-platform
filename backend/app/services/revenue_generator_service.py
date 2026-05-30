@@ -88,8 +88,10 @@ class RevenueGeneratorService:
                 event_id=item.event_id,
                 name=item.name,
                 description=item.description,
+                post_purchase_instructions=item.post_purchase_instructions,
                 price_per_entry=item.price_per_entry,
                 max_entries=item.max_entries,
+                max_entries_per_person=item.max_entries_per_person,
                 image_url=_resolve_image_url(item.image_url, item.image_blob_name),
                 is_visible=item.is_visible,
                 is_open_for_entries=item.is_open_for_entries,
@@ -117,8 +119,10 @@ class RevenueGeneratorService:
             created_by=created_by,
             name=data.name,
             description=data.description,
+            post_purchase_instructions=data.post_purchase_instructions,
             price_per_entry=data.price_per_entry,
             max_entries=data.max_entries,
+            max_entries_per_person=data.max_entries_per_person,
             display_order=data.display_order,
         )
         db.add(item)
@@ -129,8 +133,10 @@ class RevenueGeneratorService:
             event_id=item.event_id,
             name=item.name,
             description=item.description,
+            post_purchase_instructions=item.post_purchase_instructions,
             price_per_entry=item.price_per_entry,
             max_entries=item.max_entries,
+            max_entries_per_person=item.max_entries_per_person,
             image_url=None,
             is_visible=item.is_visible,
             is_open_for_entries=item.is_open_for_entries,
@@ -156,12 +162,16 @@ class RevenueGeneratorService:
     ) -> RevenueGeneratorItemAdminResponse:
         if data.name is not None:
             item.name = data.name
-        if data.description is not None:
+        if "description" in data.model_fields_set:
             item.description = data.description
+        if "post_purchase_instructions" in data.model_fields_set:
+            item.post_purchase_instructions = data.post_purchase_instructions
         if data.price_per_entry is not None:
             item.price_per_entry = data.price_per_entry
-        if data.max_entries is not None:
+        if "max_entries" in data.model_fields_set:
             item.max_entries = data.max_entries
+        if "max_entries_per_person" in data.model_fields_set:
+            item.max_entries_per_person = data.max_entries_per_person
         if data.is_visible is not None:
             item.is_visible = data.is_visible
         if data.is_open_for_entries is not None:
@@ -177,8 +187,10 @@ class RevenueGeneratorService:
             event_id=item.event_id,
             name=item.name,
             description=item.description,
+            post_purchase_instructions=item.post_purchase_instructions,
             price_per_entry=item.price_per_entry,
             max_entries=item.max_entries,
+            max_entries_per_person=item.max_entries_per_person,
             image_url=_resolve_image_url(item.image_url, item.image_blob_name),
             is_visible=item.is_visible,
             is_open_for_entries=item.is_open_for_entries,
@@ -445,8 +457,10 @@ class RevenueGeneratorService:
                     id=item.id,
                     name=item.name,
                     description=item.description,
+                    post_purchase_instructions=item.post_purchase_instructions,
                     price_per_entry=item.price_per_entry,
                     max_entries=item.max_entries,
+                    max_entries_per_person=item.max_entries_per_person,
                     image_url=_resolve_image_url(item.image_url, item.image_blob_name),
                     is_open_for_entries=item.is_open_for_entries,
                     my_entry_count=my_count,
@@ -461,9 +475,13 @@ class RevenueGeneratorService:
         event_id: uuid.UUID,
         item_id: uuid.UUID,
         donor_user_id: uuid.UUID,
+        quantity: int = 1,
     ) -> EntryPurchaseResponse:
         """Purchase one entry for a donor (self-service via donor PWA)."""
         from app.models.event_registration import EventRegistration
+
+        if quantity < 1:
+            raise ValueError("Quantity must be at least 1")
 
         # Verify item exists and is open
         item_result = await db.execute(
@@ -487,8 +505,28 @@ class RevenueGeneratorService:
             )
             total_result = await db.execute(total_stmt)
             total = total_result.scalar_one() or 0
-            if total >= item.max_entries:
+            remaining_total_entries = item.max_entries - total
+            if remaining_total_entries <= 0:
                 raise ValueError("This item has reached its maximum number of entries")
+            if quantity > remaining_total_entries:
+                raise ValueError(
+                    f"Only {remaining_total_entries} entr{'y' if remaining_total_entries == 1 else 'ies'} remain for this item"
+                )
+
+        my_count_before = 0
+        if item.max_entries_per_person is not None:
+            my_count_before = await RevenueGeneratorService._get_my_entry_count(
+                db, item_id, donor_user_id
+            )
+            remaining_personal_entries = item.max_entries_per_person - my_count_before
+            if remaining_personal_entries <= 0:
+                raise ValueError(
+                    "You have reached the maximum number of entries allowed for this item"
+                )
+            if quantity > remaining_personal_entries:
+                raise ValueError(
+                    f"You can purchase up to {remaining_personal_entries} more entr{'y' if remaining_personal_entries == 1 else 'ies'} for this item"
+                )
 
         # Find donor's primary guest for this event
         guest_stmt = (
@@ -506,26 +544,39 @@ class RevenueGeneratorService:
         )
         guest_result = await db.execute(guest_stmt)
         guest = guest_result.scalar_one_or_none()
+        if not guest:
+            raise ValueError("You must complete registration before purchasing entries")
+        if guest.bidder_number is None:
+            raise ValueError("Your bidder profile is incomplete. Please contact event staff")
 
-        entry = RevenueGeneratorEntry(
-            revenue_generator_item_id=item_id,
-            event_id=event_id,
-            registration_guest_id=guest.id if guest else None,
-            bidder_number=guest.bidder_number if (guest and guest.bidder_number) else 0,
-            amount_paid=item.price_per_entry,
-            recorded_by_user_id=donor_user_id,
-        )
-        db.add(entry)
+        last_entry: RevenueGeneratorEntry | None = None
+        for _ in range(quantity):
+            entry = RevenueGeneratorEntry(
+                revenue_generator_item_id=item_id,
+                event_id=event_id,
+                registration_guest_id=guest.id,
+                bidder_number=guest.bidder_number,
+                amount_paid=item.price_per_entry,
+                recorded_by_user_id=donor_user_id,
+            )
+            db.add(entry)
+            last_entry = entry
+
         await db.flush()
 
         # Count total entries for this donor on this item
         my_count = await RevenueGeneratorService._get_my_entry_count(db, item_id, donor_user_id)
 
+        if not last_entry:
+            raise ValueError("Unable to create entry")
+
         return EntryPurchaseResponse(
-            entry_id=entry.id,
+            entry_id=last_entry.id,
             item_id=item_id,
+            purchased_count=quantity,
             my_entry_count=my_count,
-            amount_paid=item.price_per_entry,
+            amount_paid=item.price_per_entry * quantity,
+            post_purchase_instructions=item.post_purchase_instructions,
         )
 
     # ── Quick Entry ─────────────────────────────────────────────────────────
@@ -550,6 +601,9 @@ class RevenueGeneratorService:
                     id=i.id,
                     name=i.name,
                     price_per_entry=i.price_per_entry,
+                    max_entries=i.max_entries,
+                    max_entries_per_person=i.max_entries_per_person,
+                    post_purchase_instructions=i.post_purchase_instructions,
                 )
                 for i in items
             ]
@@ -574,6 +628,27 @@ class RevenueGeneratorService:
             raise ValueError("Item not found for this event")
         if not item.is_open_for_entries:
             raise ValueError("Item is not open for entries")
+
+        if item.max_entries is not None:
+            total_stmt = select(func.count()).where(
+                RevenueGeneratorEntry.revenue_generator_item_id == item_id,
+            )
+            total_result = await db.execute(total_stmt)
+            total = total_result.scalar_one() or 0
+            if total >= item.max_entries:
+                raise ValueError("This item has reached its maximum number of entries")
+
+        if item.max_entries_per_person is not None:
+            bidder_count_stmt = select(func.count()).where(
+                RevenueGeneratorEntry.revenue_generator_item_id == item_id,
+                RevenueGeneratorEntry.bidder_number == bidder_number,
+            )
+            bidder_count_result = await db.execute(bidder_count_stmt)
+            bidder_count = bidder_count_result.scalar_one() or 0
+            if bidder_count >= item.max_entries_per_person:
+                raise ValueError(
+                    f"Bidder #{bidder_number} has reached the maximum number of entries allowed for this item"
+                )
 
         # Look up guest by bidder number (via EventRegistration join)
         from app.models.event_registration import EventRegistration

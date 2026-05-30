@@ -39,6 +39,15 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', (event) => {
     if (event.data?.type === 'SW_UPDATED') {
       window.location.reload()
+      return
+    }
+
+    if (
+      event.data?.type === 'NOTIFICATION_CLICK' &&
+      typeof event.data?.deep_link === 'string' &&
+      event.data.deep_link.length > 0
+    ) {
+      window.location.href = event.data.deep_link
     }
   })
 }

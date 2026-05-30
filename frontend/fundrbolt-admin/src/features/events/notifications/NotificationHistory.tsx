@@ -1,8 +1,3 @@
-import { useCallback, useEffect, useState } from 'react'
-import {
-  eventNotificationService,
-  type Campaign,
-} from '@/services/eventNotificationService'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -20,6 +15,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  eventNotificationService,
+  type Campaign,
+} from '@/services/eventNotificationService'
+import { useCallback, useEffect, useState } from 'react'
 
 interface NotificationHistoryProps {
   eventId: string
@@ -37,8 +37,22 @@ function recipientLabel(criteria: Record<string, unknown>): string {
       return `Table ${criteria.table_number}`
     case 'individual':
       return `${(criteria.user_ids as string[] | undefined)?.length ?? 0} Recipients`
+    case 'item':
+      if (Array.isArray(criteria.item_audiences)) {
+        const audiences = criteria.item_audiences as string[]
+        const hasBidders = audiences.includes('bidders')
+        const hasWatchers = audiences.includes('watchers')
+        if (hasBidders && hasWatchers) return 'Item Bidders + Watchers'
+        if (hasWatchers) return 'Item Watchers'
+        return 'Item Bidders'
+      }
+      return (criteria.item_audience as string | undefined) === 'watchers'
+        ? 'Item Watchers'
+        : 'Item Bidders'
     case 'item_watchers':
       return 'Item Watchers'
+    case 'item_bidders':
+      return 'Item Bidders'
     default:
       return type ?? 'Unknown'
   }

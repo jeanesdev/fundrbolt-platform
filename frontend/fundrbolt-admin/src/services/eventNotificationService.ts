@@ -2,14 +2,18 @@ import apiClient from '@/lib/axios'
 
 export interface RecipientCriteria {
   type:
-    | 'all_attendees'
-    | 'all_bidders'
-    | 'specific_table'
-    | 'individual'
-    | 'item_watchers'
+  | 'all_attendees'
+  | 'all_bidders'
+  | 'specific_table'
+  | 'individual'
+  | 'item'
+  | 'item_watchers'
+  | 'item_bidders'
   table_number?: number
   user_ids?: string[]
   item_id?: string
+  item_audience?: 'watchers' | 'bidders'
+  item_audiences?: Array<'watchers' | 'bidders'>
 }
 
 export interface SendNotificationRequest {

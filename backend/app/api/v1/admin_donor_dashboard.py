@@ -87,6 +87,9 @@ async def get_donor_leaderboard(
     sort_by: str = Query(default="total_given"),
     sort_order: str = Query(default="desc"),
     search: str | None = Query(default=None),
+    filter_col: str | None = Query(default=None),
+    filter_min: float | None = Query(default=None),
+    filter_max: float | None = Query(default=None),
     page: int = Query(default=1, ge=1),
     per_page: int = Query(default=25, ge=1, le=100),
 ) -> DonorLeaderboardResponse:
@@ -100,6 +103,9 @@ async def get_donor_leaderboard(
         sort_by=sort_by,
         sort_order=sort_order,
         search=search,
+        filter_col=filter_col,
+        filter_min=filter_min,
+        filter_max=filter_max,
         page=page,
         per_page=per_page,
     )

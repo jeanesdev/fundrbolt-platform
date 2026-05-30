@@ -16,6 +16,7 @@ export interface AuctionItemGalleryItem {
   starting_bid: number
   current_bid: number | null
   bid_count: number
+  buy_now_purchased_count?: number
   bidding_open?: boolean
   watcher_count?: number
   promotion_badge?: string | null

@@ -1,6 +1,7 @@
 """Unit tests for AuctionBidService."""
 
 from decimal import Decimal
+from unittest.mock import AsyncMock
 
 import pytest
 from sqlalchemy import select
@@ -11,6 +12,7 @@ from app.models.auction_item import AuctionItem, AuctionType, ItemStatus
 from app.models.event_registration import EventRegistration, RegistrationStatus
 from app.models.registration_guest import RegistrationGuest
 from app.services.auction_bid_service import AuctionBidService
+from app.services.notification_service import NotificationService
 
 
 async def _create_auction_item(
@@ -185,6 +187,54 @@ class TestAuctionBidService:
         assert bid.bid_status == BidStatus.WINNING.value
         assert bid.bid_type == BidType.BUY_NOW.value
 
+    async def test_buy_now_ignores_confirmation_notification_failures(
+        self,
+        db_session: AsyncSession,
+        test_event,
+        test_donor_user,
+        test_registration,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        service = AuctionBidService(db_session)
+        item = await _create_auction_item(
+            db_session,
+            event_id=test_event.id,
+            created_by=test_donor_user.id,
+            buy_now_enabled=True,
+            buy_now_price=Decimal("200.00"),
+        )
+        await _create_bidder_number(
+            db_session,
+            registration_id=test_registration.id,
+            user_id=test_donor_user.id,
+            bidder_number=456,
+        )
+
+        monkeypatch.setattr(
+            NotificationService,
+            "create_notification",
+            AsyncMock(side_effect=RuntimeError("notification write failed")),
+        )
+
+        original_rollback = db_session.rollback
+
+        async def flaky_rollback() -> None:
+            await original_rollback()
+            raise RuntimeError("rollback failed")
+
+        monkeypatch.setattr(db_session, "rollback", flaky_rollback)
+
+        bid = await service.place_bid(
+            user_id=test_donor_user.id,
+            event_id=test_event.id,
+            auction_item_id=item.id,
+            bid_amount=Decimal("200.00"),
+            bid_type=BidType.BUY_NOW,
+        )
+
+        assert bid.bid_status == BidStatus.WINNING.value
+        assert bid.bid_type == BidType.BUY_NOW.value
+
     async def test_proxy_auto_bidding_outbids_previous(
         self, db_session: AsyncSession, test_event, test_donor_user, test_user_2
     ) -> None:
@@ -244,3 +294,41 @@ class TestAuctionBidService:
         assert current_high is not None
         assert current_high.user_id == test_user_2.id
         assert current_high.bid_amount == Decimal("110.00")
+
+    async def test_get_bidder_number_with_duplicate_primary_rows(
+        self,
+        db_session: AsyncSession,
+        test_event,
+        test_donor_user,
+    ) -> None:
+        service = AuctionBidService(db_session)
+        registration = await _create_registration_for_user(
+            db_session,
+            event_id=test_event.id,
+            user_id=test_donor_user.id,
+        )
+
+        # Simulate inconsistent legacy data with duplicate primary guest rows.
+        db_session.add_all(
+            [
+                RegistrationGuest(
+                    registration_id=registration.id,
+                    user_id=test_donor_user.id,
+                    name="Primary A",
+                    bidder_number=123,
+                    is_primary=True,
+                ),
+                RegistrationGuest(
+                    registration_id=registration.id,
+                    user_id=test_donor_user.id,
+                    name="Primary B",
+                    bidder_number=456,
+                    is_primary=True,
+                ),
+            ]
+        )
+        await db_session.commit()
+
+        bidder_number = await service._get_bidder_number(test_event.id, test_donor_user.id)
+
+        assert bidder_number in {123, 456}

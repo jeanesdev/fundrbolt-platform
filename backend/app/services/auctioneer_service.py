@@ -349,6 +349,7 @@ class AuctioneerService:
             paddle_raise_levels=DEFAULT_PADDLE_RAISE_LEVELS.copy(),
             paddle_raise_total_goal=None,
             paddle_raise_level_goals={},
+            paddle_raise_level_notes={},
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),
         )
@@ -363,6 +364,7 @@ class AuctioneerService:
         paddle_raise_levels: list[int],
         paddle_raise_total_goal: int | None,
         paddle_raise_level_goals: dict[str, int],
+        paddle_raise_level_notes: dict[str, str],
     ) -> EventSettingsResponse:
         normalized_total_goal = (
             Decimal(paddle_raise_total_goal) if paddle_raise_total_goal is not None else None
@@ -380,6 +382,7 @@ class AuctioneerService:
             existing.paddle_raise_levels = paddle_raise_levels
             existing.paddle_raise_total_goal = normalized_total_goal
             existing.paddle_raise_level_goals = paddle_raise_level_goals
+            existing.paddle_raise_level_notes = paddle_raise_level_notes
             existing.updated_at = datetime.now(UTC)
             await self.db.flush()
             logger.info(
@@ -398,6 +401,7 @@ class AuctioneerService:
             paddle_raise_levels=paddle_raise_levels,
             paddle_raise_total_goal=normalized_total_goal,
             paddle_raise_level_goals=paddle_raise_level_goals,
+            paddle_raise_level_notes=paddle_raise_level_notes,
         )
         self.db.add(new_settings)
         await self.db.flush()

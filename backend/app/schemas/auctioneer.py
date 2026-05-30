@@ -71,6 +71,7 @@ class EventSettingsUpsertRequest(BaseModel):
     )
     paddle_raise_total_goal: int | None = Field(default=None, ge=1)
     paddle_raise_level_goals: dict[str, int] = Field(default_factory=dict)
+    paddle_raise_level_notes: dict[str, str] = Field(default_factory=dict)
 
     @field_validator("paddle_raise_levels")
     @classmethod
@@ -91,6 +92,18 @@ class EventSettingsUpsertRequest(BaseModel):
             normalized[str(amount)] = goal
         return normalized
 
+    @field_validator("paddle_raise_level_notes")
+    @classmethod
+    def validate_paddle_raise_level_notes(cls, value: dict[str, str]) -> dict[str, str]:
+        normalized: dict[str, str] = {}
+        for key, note in value.items():
+            amount = int(key)
+            cleaned_note = note.strip()
+            if amount <= 0 or not cleaned_note:
+                continue
+            normalized[str(amount)] = cleaned_note[:500]
+        return normalized
+
 
 class EventSettingsResponse(BaseModel):
     auctioneer_user_id: UUID
@@ -101,6 +114,7 @@ class EventSettingsResponse(BaseModel):
     paddle_raise_levels: list[int]
     paddle_raise_total_goal: Decimal | None = None
     paddle_raise_level_goals: dict[str, int] = Field(default_factory=dict)
+    paddle_raise_level_notes: dict[str, str] = Field(default_factory=dict)
     created_at: datetime
     updated_at: datetime
 
