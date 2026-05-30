@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.event_registration import EventRegistration, RegistrationStatus
 from app.models.registration_guest import RegistrationGuest
+from app.models.revenue_generator_item import RevenueGeneratorItem
 from app.models.user import User
 
 pytestmark = pytest.mark.asyncio
@@ -56,6 +57,32 @@ async def _create_registration_with_bidder(
     await db_session.commit()
 
 
+async def _create_revenue_generator_item(
+    db_session: AsyncSession,
+    event_id: Any,
+    *,
+    name: str,
+    price_per_entry: int,
+    max_entries: int,
+    max_entries_per_person: int,
+) -> RevenueGeneratorItem:
+    item = RevenueGeneratorItem(
+        event_id=event_id,
+        name=name,
+        description="Test item",
+        price_per_entry=price_per_entry,
+        max_entries=max_entries,
+        max_entries_per_person=max_entries_per_person,
+        is_visible=True,
+        is_open_for_entries=True,
+        display_order=1,
+    )
+    db_session.add(item)
+    await db_session.commit()
+    await db_session.refresh(item)
+    return item
+
+
 class TestRevenueGeneratorLimits:
     async def test_donor_purchase_respects_per_person_limit(
         self,
@@ -67,24 +94,15 @@ class TestRevenueGeneratorLimits:
     ) -> None:
         await _set_primary_bidder_number(db_session, test_registration.id, bidder_number=410)
 
-        create_response = await super_admin_client.post(
-            f"/api/v1/admin/events/{test_event.id}/revenue-generators",
-            json={
-                "name": "50/50",
-                "description": "Test item",
-                "price_per_entry": 25,
-                "max_entries": 50,
-                "max_entries_per_person": 2,
-            },
+        item = await _create_revenue_generator_item(
+            db_session,
+            test_event.id,
+            name="50/50",
+            price_per_entry=25,
+            max_entries=50,
+            max_entries_per_person=2,
         )
-        assert create_response.status_code == 201
-        item_id = create_response.json()["id"]
-
-        visible_response = await super_admin_client.patch(
-            f"/api/v1/admin/events/{test_event.id}/revenue-generators/{item_id}",
-            json={"is_visible": True},
-        )
-        assert visible_response.status_code == 200
+        item_id = item.id
 
         first_purchase = await donor_client.post(
             f"/api/v1/donor/events/{test_event.id}/revenue-generators/{item_id}/entries"

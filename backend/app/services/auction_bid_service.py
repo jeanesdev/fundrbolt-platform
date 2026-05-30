@@ -105,13 +105,6 @@ class AuctionBidService:
                 )
             await self.db.commit()
         except Exception:
-            try:
-                await self.db.rollback()
-            except Exception:
-                logger.warning(
-                    "Rollback failed while handling bid confirmation notification error",
-                    extra={"bid_id": bid_id, "user_id": bid_user_id},
-                )
             logger.warning(
                 "Failed to send bid confirmation notification",
                 extra={"bid_id": bid_id, "user_id": bid_user_id},
