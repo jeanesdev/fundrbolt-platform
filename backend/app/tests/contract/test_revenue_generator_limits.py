@@ -120,7 +120,11 @@ class TestRevenueGeneratorLimits:
             f"/api/v1/donor/events/{test_event.id}/revenue-generators/{item_id}/entries"
         )
         assert third_purchase.status_code == 400
-        assert "maximum number of entries allowed" in third_purchase.json()["detail"]
+        third_detail = third_purchase.json().get("detail")
+        third_message = (
+            third_detail.get("message", "") if isinstance(third_detail, dict) else str(third_detail)
+        )
+        assert "maximum number of entries allowed" in third_message
 
     async def test_quick_entry_respects_per_person_and_total_limits(
         self,
