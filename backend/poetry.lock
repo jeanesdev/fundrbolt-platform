@@ -1579,21 +1579,6 @@ unicode = ["unicodedata2 (>=17.0.0) ; python_version <= \"3.14\""]
 woff = ["brotli (>=1.0.1) ; platform_python_implementation == \"CPython\"", "brotlicffi (>=0.8.0) ; platform_python_implementation != \"CPython\"", "zopfli (>=0.1.4)"]
 
 [[package]]
-name = "freezegun"
-version = "1.5.5"
-description = "Let your Python tests travel through time"
-optional = false
-python-versions = ">=3.8"
-groups = ["dev"]
-files = [
-    {file = "freezegun-1.5.5-py3-none-any.whl", hash = "sha256:cd557f4a75cf074e84bc374249b9dd491eaeacd61376b9eb3c423282211619d2"},
-    {file = "freezegun-1.5.5.tar.gz", hash = "sha256:ac7742a6cc6c25a2c35e9292dfd554b897b517d2dec26891a2e8debf205cb94a"},
-]
-
-[package.dependencies]
-python-dateutil = ">=2.7"
-
-[[package]]
 name = "frozenlist"
 version = "1.8.0"
 description = "A list-like structure which implements collections.abc.MutableSequence"
@@ -3730,22 +3715,6 @@ pytest = ">=4.6"
 testing = ["fields", "hunter", "process-tests", "pytest-xdist", "six", "virtualenv"]
 
 [[package]]
-name = "pytest-freezegun"
-version = "0.4.2"
-description = "Wrap tests with fixtures in freeze_time"
-optional = false
-python-versions = "*"
-groups = ["dev"]
-files = [
-    {file = "pytest-freezegun-0.4.2.zip", hash = "sha256:19c82d5633751bf3ec92caa481fb5cffaac1787bd485f0df6436fd6242176949"},
-    {file = "pytest_freezegun-0.4.2-py2.py3-none-any.whl", hash = "sha256:5318a6bfb8ba4b709c8471c94d0033113877b3ee02da5bfcd917c1889cde99a7"},
-]
-
-[package.dependencies]
-freezegun = ">0.3"
-pytest = ">=3.0.0"
-
-[[package]]
 name = "pytest-timeout"
 version = "2.4.0"
 description = "pytest plugin to abort hanging tests"
@@ -5188,4 +5157,4 @@ test = ["pytest"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "31bad2c21cbb807645ec6ef1f77ded9d8b0429234ac9295486e4af64620d1e66"
+content-hash = "5ec3bbaf3ebd79cb7fce2a6bdaf8b08ce393f2e1e1763c99d8761b771ec9288a"
