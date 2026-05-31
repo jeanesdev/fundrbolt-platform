@@ -1,0 +1,18 @@
+{
+  "name": "fundrbolt-e2e",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test:critical-path": "playwright test critical-path/",
+    "test:full-suite": "playwright test full-suite/",
+    "test:mobile": "playwright test --config playwright.mobile.config.ts"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^24.7.0",
+    "dotenv": "^17.2.3",
+    "typescript": "~5.9.3"
+  }
+}

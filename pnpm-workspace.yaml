@@ -1,4 +1,5 @@
 packages:
+  - 'e2e'
   - 'frontend/fundrbolt-admin'
   - 'frontend/donor-pwa'
   - 'frontend/landing-site'

@@ -1,0 +1,344 @@
+name: nightly-regression
+
+on:
+  schedule:
+    - cron: '0 3 * * *' # 3 AM UTC every day
+  workflow_dispatch:
+
+env:
+  DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/fundrbolt_test
+  REDIS_URL: redis://localhost:6379/1
+  JWT_SECRET_KEY: nightly-ci-secret-key-not-for-production
+  PAYMENT_GATEWAY_BACKEND: stub
+  EMAIL_BACKEND: mailpit
+  MAILPIT_SMTP_HOST: localhost
+  MAILPIT_SMTP_PORT: '1025'
+
+jobs:
+  # ── Backend full regression ────────────────────────────────────────────────
+  backend-full:
+    name: Backend full test suite
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: fundrbolt_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      mailpit:
+        image: axllent/mailpit:latest
+        ports:
+          - 1025:1025
+          - 8025:8025
+        options: >-
+          --health-cmd "wget -q --spider http://localhost:8025/livez || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Poetry
+        run: pipx install poetry
+      - name: Install backend dependencies
+        run: poetry install
+      - name: Run all backend tests
+        run: poetry run pytest -v --tb=short -q
+
+  # ── Full-suite E2E (Chromium) ─────────────────────────────────────────────
+  full-suite-chromium:
+    name: E2E full suite — ${{ matrix.group }}
+    runs-on: ubuntu-latest
+    needs: backend-full
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        group:
+          - auth
+          - admin-event-setup
+          - donor-registration
+          - auction-bidding
+          - checkin-live
+          - imports
+          - cross-cutting
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: fundrbolt_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      mailpit:
+        image: axllent/mailpit:latest
+        ports:
+          - 1025:1025
+          - 8025:8025
+        options: >-
+          --health-cmd "wget -q --spider http://localhost:8025/livez || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Install Poetry
+        run: pipx install poetry
+      - name: Install backend dependencies
+        working-directory: backend
+        run: poetry install
+      - name: Run Alembic migrations
+        working-directory: backend
+        run: poetry run alembic upgrade head
+      - name: Seed test database
+        run: |
+          DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/fundrbolt_test \
+          REDIS_URL=redis://localhost:6379/1 \
+          JWT_SECRET_KEY=nightly-ci-secret-key-not-for-production \
+          PAYMENT_GATEWAY_BACKEND=stub \
+          EMAIL_BACKEND=mailpit \
+          poetry run -C backend python tests/seed/seed.py
+      - name: Start backend server
+        working-directory: backend
+        run: |
+          nohup poetry run uvicorn app.main:fastapi_app --host 0.0.0.0 --port 8000 &
+          for i in $(seq 1 20); do
+            if curl -sf http://localhost:8000/health; then break; fi
+            sleep 2
+          done
+      - name: Install E2E dependencies
+        run: pnpm install --filter fundrbolt-e2e... --no-frozen-lockfile
+      - name: Install Playwright browsers
+        working-directory: e2e
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Run full suite — ${{ matrix.group }}
+        working-directory: e2e
+        env:
+          API_URL: http://localhost:8000/api/v1
+          MAILPIT_API_URL: http://localhost:8025
+        run: pnpm exec playwright test full-suite/${{ matrix.group }}/
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.group }}
+          path: e2e/playwright-report/
+          retention-days: 14
+
+  # ── Mobile WebKit subset ──────────────────────────────────────────────────
+  mobile-webkit:
+    name: E2E mobile WebKit subset
+    runs-on: ubuntu-latest
+    needs: backend-full
+    continue-on-error: true
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: fundrbolt_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Install Poetry
+        run: pipx install poetry
+      - name: Install backend dependencies
+        working-directory: backend
+        run: poetry install
+      - name: Run Alembic migrations
+        working-directory: backend
+        run: poetry run alembic upgrade head
+      - name: Seed test database
+        run: |
+          DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/fundrbolt_test \
+          REDIS_URL=redis://localhost:6379/1 \
+          JWT_SECRET_KEY=nightly-ci-secret-key-not-for-production \
+          PAYMENT_GATEWAY_BACKEND=stub \
+          EMAIL_BACKEND=console \
+          poetry run -C backend python tests/seed/seed.py
+      - name: Start backend server
+        working-directory: backend
+        run: |
+          nohup poetry run uvicorn app.main:fastapi_app --host 0.0.0.0 --port 8000 &
+          for i in $(seq 1 20); do
+            if curl -sf http://localhost:8000/health; then break; fi
+            sleep 2
+          done
+      - name: Install E2E dependencies
+        run: pnpm install --filter fundrbolt-e2e... --no-frozen-lockfile
+      - name: Install Playwright browsers (WebKit)
+        working-directory: e2e
+        run: pnpm exec playwright install --with-deps webkit
+      - name: Run mobile WebKit suite
+        working-directory: e2e
+        env:
+          API_URL: http://localhost:8000/api/v1
+        run: pnpm test:mobile
+      - name: Upload mobile report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-mobile-webkit
+          path: e2e/playwright-report/
+          retention-days: 14
+
+  # ── Notify Teams ──────────────────────────────────────────────────────────
+  notify-teams:
+    name: Notify Teams channel
+    runs-on: ubuntu-latest
+    needs: [backend-full, full-suite-chromium, mobile-webkit]
+    if: always()
+    steps:
+      - name: Build result summary
+        id: summary
+        run: |
+          backend="${{ needs.backend-full.result }}"
+          e2e="${{ needs.full-suite-chromium.result }}"
+          mobile="${{ needs.mobile-webkit.result }}"
+          if [[ "$backend" == "success" && "$e2e" == "success" && "$mobile" == "success" ]]; then
+            status="✅ All nightly checks passed"
+            color="00AA00"
+          else
+            status="❌ Nightly regression failures — backend=$backend  e2e=$e2e  mobile=$mobile"
+            color="AA0000"
+          fi
+          echo "status=$status" >> $GITHUB_OUTPUT
+          echo "color=$color"   >> $GITHUB_OUTPUT
+
+      - name: Post to Teams
+        if: env.MSTEAMS_WEBHOOK_URL != ''
+        env:
+          MSTEAMS_WEBHOOK_URL: ${{ secrets.MSTEAMS_WEBHOOK_URL }}
+        run: |
+          curl -s -H "Content-Type: application/json" -d '{
+            "@type": "MessageCard",
+            "@context": "https://schema.org/extensions",
+            "themeColor": "${{ steps.summary.outputs.color }}",
+            "summary": "FundrBolt Nightly Regression",
+            "sections": [{
+              "activityTitle": "FundrBolt Nightly Regression",
+              "activitySubtitle": "${{ steps.summary.outputs.status }}",
+              "facts": [
+                { "name": "Backend",  "value": "${{ needs.backend-full.result }}" },
+                { "name": "E2E Full", "value": "${{ needs.full-suite-chromium.result }}" },
+                { "name": "Mobile",   "value": "${{ needs.mobile-webkit.result }}" },
+                { "name": "Run",      "value": "${{ github.run_id }}" }
+              ]
+            }],
+            "potentialAction": [{
+              "@type": "OpenUri",
+              "name": "View Run",
+              "targets": [{ "os": "default", "uri": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" }]
+            }]
+          }' "$MSTEAMS_WEBHOOK_URL"
+
+  # ── Create/update GitHub Issues for failures ─────────────────────────────
+  update-github-issues:
+    name: Update GitHub Issues
+    runs-on: ubuntu-latest
+    needs: [backend-full, full-suite-chromium, mobile-webkit]
+    if: always()
+    permissions:
+      issues: write
+    steps:
+      - name: Create issue on backend failure
+        if: needs.backend-full.result == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue list --repo "${{ github.repository }}" --label "nightly-failure" --label "backend" --state open --json number --jq '.[0].number' > /tmp/existing_issue.txt
+          if [[ -s /tmp/existing_issue.txt ]]; then
+            issue_num=$(cat /tmp/existing_issue.txt)
+            gh issue comment "$issue_num" --repo "${{ github.repository }}" \
+              --body "Still failing as of nightly run [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) on $(date -u +%Y-%m-%d)"
+          else
+            gh issue create --repo "${{ github.repository }}" \
+              --title "🔴 Nightly: Backend test suite failing" \
+              --label "nightly-failure,backend" \
+              --body "Nightly regression backend suite failed.\n\nRun: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\nDate: $(date -u)"
+          fi
+
+      - name: Close backend issue on success
+        if: needs.backend-full.result == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue list --repo "${{ github.repository }}" --label "nightly-failure" --label "backend" --state open --json number --jq '.[].number' | \
+          xargs -I{} gh issue close {} --repo "${{ github.repository }}" --comment "Backend suite passing again as of run ${{ github.run_id }}" || true

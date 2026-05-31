@@ -1,0 +1,77 @@
+name: critical-path-gate
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  backend-ci:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: fundrbolt_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/fundrbolt_test
+      REDIS_URL: redis://localhost:6379/1
+      JWT_SECRET_KEY: test-secret-key-for-ci-only-please-change
+      PAYMENT_GATEWAY_BACKEND: stub
+      EMAIL_BACKEND: console
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Poetry
+        run: pipx install poetry
+      - name: Install backend dependencies
+        run: poetry install
+      - name: Run backend CI
+        run: |
+          poetry run ruff check .
+          poetry run ruff format --check .
+          poetry run mypy app --strict --ignore-missing-imports --exclude 'app/tests'
+          poetry run pytest -v --tb=short app/tests/integration/test_auth_and_gdpr_flow.py app/tests/integration/test_ticket_checkout_flow.py app/tests/integration/test_bid_flow.py app/tests/integration/test_ticket_assignment_flow.py
+
+  critical-path-playwright:
+    runs-on: ubuntu-latest
+    needs: backend-ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Install E2E dependencies
+        run: pnpm install --filter fundrbolt-e2e... --no-frozen-lockfile
+      - name: Install Playwright browsers
+        working-directory: e2e
+        run: pnpm exec playwright install --with-deps chromium webkit
+      - name: Run critical path suite
+        working-directory: e2e
+        run: pnpm test:critical-path
