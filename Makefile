@@ -1,4 +1,4 @@
-.PHONY: help install test lint format clean docker-up docker-down migrate dev-backend dev-frontend dev-fullstack validate-infra deploy-infra check-commits ngrok-start ngrok-stop ngrok-status ngrok-local smoke-donor-event-page test-checkin-e2e kill-debug restart-debug
+.PHONY: help install test lint format clean docker-up docker-down migrate dev-backend dev-frontend dev-fullstack validate-infra deploy-infra check-commits ngrok-start ngrok-stop ngrok-status ngrok-local smoke-donor-event-page test-checkin-e2e test-e2e test-critical-path test-all test-e2e-report seed kill-debug restart-debug
 
 # Default target
 help:
@@ -15,6 +15,10 @@ help:
 	@echo "  make test-backend     - Run backend tests with coverage"
 	@echo "  make test-frontend    - Run frontend tests"
 	@echo "  make test-checkin-e2e - Run donor check-in Playwright smoke tests"
+	@echo "  make test-critical-path - Run critical-path Playwright suite"
+	@echo "  make test-e2e        - Run full Playwright E2E suite"
+	@echo "  make test-all        - Run backend tests then Playwright E2E suite"
+	@echo "  make test-e2e-report - Open Playwright HTML report"
 	@echo "  make smoke-donor-event-page - Run donor event page smoke check"
 	@echo "  make test-watch       - Run backend tests in watch mode"
 	@echo ""
@@ -29,6 +33,7 @@ help:
 	@echo "  make migrate-create   - Create new migration (use NAME=description)"
 	@echo "  make migrate-down     - Rollback last migration"
 	@echo "  make db-seed          - Seed test users"
+	@echo "  make seed             - Seed the beta automation fixture set"
 	@echo ""
 	@echo "Docker:"
 	@echo "  make docker-up        - Start Docker services (PostgreSQL, Redis)"
@@ -91,6 +96,20 @@ test-frontend:
 test-checkin-e2e:
 	@echo "Running donor check-in Playwright smoke tests..."
 	cd frontend/donor-pwa && pnpm test:checkin:e2e
+
+test-critical-path:
+	@echo "Running critical-path Playwright suite..."
+	cd e2e && pnpm playwright test critical-path/
+
+test-e2e:
+	@echo "Running full Playwright E2E suite..."
+	cd e2e && pnpm playwright test full-suite/
+
+test-all: test-backend test-e2e
+
+test-e2e-report:
+	@echo "Opening Playwright report..."
+	cd e2e && pnpm playwright show-report
 
 test-watch:
 	@echo "Running backend tests in watch mode..."
@@ -161,6 +180,10 @@ migrate-history:
 db-seed:
 	@echo "Seeding test users..."
 	cd backend && poetry run python seed_test_users.py
+
+seed:
+	@echo "Seeding beta automation fixtures..."
+	cd backend && poetry run python ../tests/seed/seed.py
 
 # Docker
 docker-up:

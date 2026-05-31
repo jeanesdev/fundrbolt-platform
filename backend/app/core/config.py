@@ -38,6 +38,9 @@ class Settings(BaseSettings):
 
     # Azure Communication Services (Email) - Optional for local dev
     azure_communication_connection_string: str | None = None
+    email_backend: str = "azure_acs"
+    mailpit_smtp_host: str = "localhost"
+    mailpit_smtp_port: int = 1025
     email_from_address: EmailStr = "noreply@fundrbolt.com"
     email_from_name: str = "FundrBolt"
 
@@ -141,6 +144,17 @@ class Settings(BaseSettings):
         if len(v) < 32:
             raise ValueError("JWT_SECRET_KEY must be at least 32 characters")
         return v
+
+    @field_validator("email_backend")
+    @classmethod
+    def validate_email_backend(cls, v: str) -> str:
+        """Ensure configured email backend is supported."""
+        normalized = v.strip().lower()
+        allowed_backends = {"azure_acs", "mailpit", "console"}
+        if normalized not in allowed_backends:
+            allowed_list = ", ".join(sorted(allowed_backends))
+            raise ValueError(f"EMAIL_BACKEND must be one of: {allowed_list}")
+        return normalized
 
     @field_validator("social_auth_enabled_providers")
     @classmethod

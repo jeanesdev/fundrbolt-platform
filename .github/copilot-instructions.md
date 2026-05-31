@@ -101,7 +101,7 @@ tests/
 
 ### Quick Reference
 - **Development**: `make dev-backend` or `make b`, `make dev-frontend` or `make f`, `make dev-fullstack`
-- **Testing**: `make test` or `make t`, `make test-coverage`, `make test-watch`
+- **Testing**: `make test` or `make t`, `make test-coverage`, `make test-watch`, `make seed`, `make test-critical-path`, `make test-e2e`, `make test-e2e-report`
 - **Code Quality**: `make lint`, `make format`, `make type-check`, `make check-commits`
 - **Database**: `make migrate` or `make m`, `make migrate-create NAME="description"`, `make db-seed`
 - **Docker**: `make docker-up`, `make docker-down`, `make docker-logs`

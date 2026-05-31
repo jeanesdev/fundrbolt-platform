@@ -42,7 +42,21 @@ make dev-fullstack
 
 # Run tests
 make test
+
+# Seed integration test data (idempotent)
+make seed
+
+# Run critical-path E2E tests (PR gate)
+make test-critical-path
+
+# Run full E2E suite (nightly only)
+make test-e2e
+
+# Open latest Playwright HTML report
+make test-e2e-report
 ```
+
+See [e2e/quickstart.md](./e2e) and [`.specify/specs/047-integration-testing-beta/quickstart.md`](.specify/specs/047-integration-testing-beta/quickstart.md) for local E2E setup.
 
 ### Infrastructure Setup
 

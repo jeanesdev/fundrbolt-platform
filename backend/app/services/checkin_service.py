@@ -224,10 +224,18 @@ class CheckInService:
             primary_guest.checked_in = True
 
         await db.commit()
-        await db.refresh(registration)
 
-        if primary_guest.check_in_time:
-            # T069: Send welcome notification after check-in
+        refreshed_result = await db.execute(query)
+        registration = refreshed_result.scalars().unique().first()
+        if not registration:
+            return None
+
+        primary_guest = next(
+            (guest for guest in registration.guests if guest.is_primary),
+            None,
+        )
+
+        if primary_guest and primary_guest.check_in_time:
             await CheckInService._send_welcome_notification(db, registration)
 
         return registration
@@ -305,14 +313,16 @@ class CheckInService:
             guest.checked_in = True
 
         await db.commit()
-        await db.refresh(guest)
 
-        if guest.check_in_time:
-            # T069: Send welcome notification after guest check-in
-            if guest.user_id and guest.registration:
-                await CheckInService._send_welcome_notification(
-                    db, guest.registration, user_id_override=guest.user_id
-                )
+        refreshed_result = await db.execute(query)
+        guest = refreshed_result.scalars().unique().first()
+        if not guest:
+            return None
+
+        if guest.check_in_time and guest.user_id and guest.registration:
+            await CheckInService._send_welcome_notification(
+                db, guest.registration, user_id_override=guest.user_id
+            )
 
         return guest
 

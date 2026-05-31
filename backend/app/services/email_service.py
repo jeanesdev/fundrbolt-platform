@@ -6,6 +6,8 @@ T159: Error handling and retry logic for email service failures
 
 import asyncio
 import os
+import smtplib
+from email.message import EmailMessage
 from typing import Any
 from urllib.parse import urlencode
 
@@ -216,19 +218,17 @@ class EmailService:
 
     def __init__(self) -> None:
         """Initialize email service."""
-        # Check if Azure Communication Services credentials are configured
+        # Azure credentials are only required for the production backend.
         self.enabled = bool(settings.azure_communication_connection_string)
 
-        if self.enabled:
-            logger.info(
-                "EmailService initialized with Azure Communication Services",
-                extra={"email_from": settings.email_from_address},
-            )
-        else:
-            logger.warning(
-                "EmailService initialized in MOCK MODE - emails will only be logged, not sent. "
-                "Set AZURE_COMMUNICATION_CONNECTION_STRING to enable real email sending."
-            )
+        logger.info(
+            "EmailService initialized",
+            extra={
+                "email_backend": settings.email_backend,
+                "email_from": settings.email_from_address,
+                "azure_enabled": self.enabled,
+            },
+        )
 
     def _get_logo_url(self, background: str = "dark") -> str:
         """
@@ -926,13 +926,15 @@ The FundrBolt Team
 
         for attempt in range(max_retries):
             try:
-                if self.enabled:
-                    # Send via Azure Communication Services
+                if settings.email_backend == "mailpit":
+                    await self._send_via_mailpit(
+                        to_email, subject, body, html_body, from_address, from_name
+                    )
+                elif settings.email_backend == "azure_acs" and self.enabled:
                     await self._send_via_azure(
                         to_email, subject, body, html_body, from_address, from_name
                     )
                 else:
-                    # Mock mode for development - just log
                     sender_display = from_address or settings.email_from_address
                     logger.info(
                         f"[MOCK EMAIL] {email_type} email\n"
@@ -1446,6 +1448,35 @@ If you have any questions about this decision, please contact us by replying to 
             email_type="npo_application_reopened",
             html_body=html_body,
         )
+
+    async def _send_via_mailpit(
+        self,
+        to_email: str,
+        subject: str,
+        body: str,
+        html_body: str | None = None,
+        from_address: str | None = None,
+        from_name: str | None = None,
+    ) -> None:
+        """Send email through Mailpit SMTP for local/CI integration tests."""
+
+        message = EmailMessage()
+        message["Subject"] = subject
+        message["From"] = (
+            f"{from_name or settings.email_from_name} <{from_address or settings.email_from_address}>"
+        )
+        message["To"] = to_email
+        message.set_content(body)
+        if html_body:
+            message.add_alternative(html_body, subtype="html")
+
+        def _send_sync() -> None:
+            with smtplib.SMTP(
+                settings.mailpit_smtp_host, settings.mailpit_smtp_port, timeout=10
+            ) as smtp:
+                smtp.send_message(message)
+
+        await asyncio.to_thread(_send_sync)
 
     async def _send_via_azure(
         self,

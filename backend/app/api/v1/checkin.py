@@ -1,6 +1,7 @@
 """Check-in API endpoints for event registration check-in operations."""
 
 import uuid
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -30,9 +31,9 @@ class RegistrationWithGuestsResponse(BaseModel):
     ticket_purchase_id: uuid.UUID | None
     status: str
     number_of_guests: int
-    check_in_time: str | None
-    created_at: str
-    updated_at: str
+    check_in_time: datetime | None
+    created_at: datetime
+    updated_at: datetime
     guests: list[RegistrationGuestResponse] = []
 
     class Config:

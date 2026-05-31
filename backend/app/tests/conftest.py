@@ -84,7 +84,6 @@ async def test_engine(test_database_url: str) -> AsyncGenerator[AsyncEngine, Non
         await conn.execute(text("DROP SCHEMA IF EXISTS public CASCADE"))
         await conn.execute(text("CREATE SCHEMA public"))
         await conn.execute(text("GRANT ALL ON SCHEMA public TO public"))
-        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pgcrypto"))
 
     # Create all tables including roles
     async with engine.begin() as conn:
@@ -93,7 +92,7 @@ async def test_engine(test_database_url: str) -> AsyncGenerator[AsyncEngine, Non
             text(
                 """
                 CREATE TABLE IF NOT EXISTS roles (
-                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    id UUID PRIMARY KEY,
                     name VARCHAR(50) UNIQUE NOT NULL,
                     description TEXT NOT NULL,
                     scope VARCHAR(20) NOT NULL,
@@ -115,18 +114,22 @@ async def test_engine(test_database_url: str) -> AsyncGenerator[AsyncEngine, Non
         await conn.execute(
             text(
                 """
-                INSERT INTO roles (name, description, scope) VALUES
-                    ('super_admin',
+                INSERT INTO roles (id, name, description, scope) VALUES
+                    ('00000000-0000-0000-0000-000000000001', 'super_admin',
                      'FundrBolt platform staff with full access to all NPOs and events',
                      'platform'),
-                    ('npo_admin',
+                    ('00000000-0000-0000-0000-000000000002', 'npo_admin',
                      'Full management access within assigned nonprofit organization(s)',
                      'npo'),
-                    ('event_coordinator',
+                    ('00000000-0000-0000-0000-000000000003', 'event_coordinator',
                      'Event and auction management within assigned NPO',
                      'npo'),
-                    ('staff', 'Donor registration and check-in within assigned events', 'event'),
-                    ('donor', 'Bidding and profile management only', 'own')
+                    ('00000000-0000-0000-0000-000000000004', 'staff',
+                     'Donor registration and check-in within assigned events',
+                     'event'),
+                    ('00000000-0000-0000-0000-000000000005', 'donor',
+                     'Bidding and profile management only',
+                     'own')
                 ON CONFLICT (name) DO NOTHING
             """
             )
