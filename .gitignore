@@ -69,9 +69,19 @@ dev-dist/
 
 # Debug/session screenshots (Copilot agent artifacts)
 *.png
+*.jpeg
+*.jpg
 !frontend/**/*.png
+!frontend/**/*.jpeg
+!frontend/**/*.jpg
 !backend/**/*.png
+!backend/**/*.jpeg
+!backend/**/*.jpg
 !docs/**/*.png
+!docs/**/*.jpeg
+!docs/**/*.jpg
 !infrastructure/**/*.png
+!infrastructure/**/*.jpeg
+!infrastructure/**/*.jpg
 quick-sale-dialog-snapshot.md
 test_quick_sale.py
