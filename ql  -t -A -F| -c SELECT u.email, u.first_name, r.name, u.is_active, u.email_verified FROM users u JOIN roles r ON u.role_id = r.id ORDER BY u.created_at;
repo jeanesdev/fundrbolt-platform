@@ -1,4 +1,0 @@
-        email        | first_name | last_name |    role     | is_active | email_verified
----------------------+------------+-----------+-------------+-----------+----------------
- admin@fundrbolt.com | Super      | Admin     | super_admin | t         | t
-(1 row)
