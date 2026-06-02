@@ -13,13 +13,13 @@ test('concurrent bids keep a single winning state', async ({ page, donorApi, see
   const nextBid = Number(item.min_next_bid_amount ?? item.starting_bid ?? 10)
 
   const [first, second] = await Promise.all([
-    page.request.post(`${API_URL}/donor/events/${seedRefs.liveEventId}/auction-items/${itemId}/bids`, {
+    page.request.post(`${API_URL}/auction/bids`, {
       headers: { Authorization: `Bearer ${session.accessToken}` },
-      data: { amount: nextBid },
+      data: { event_id: seedRefs.liveEventId, auction_item_id: itemId, bid_amount: nextBid, bid_type: 'regular' },
     }),
-    page.request.post(`${API_URL}/donor/events/${seedRefs.liveEventId}/auction-items/${itemId}/bids`, {
+    page.request.post(`${API_URL}/auction/bids`, {
       headers: { Authorization: `Bearer ${session.accessToken}` },
-      data: { amount: nextBid + 10 },
+      data: { event_id: seedRefs.liveEventId, auction_item_id: itemId, bid_amount: nextBid + 10, bid_type: 'regular' },
     }),
   ])
 

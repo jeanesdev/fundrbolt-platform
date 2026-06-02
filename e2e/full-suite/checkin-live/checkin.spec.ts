@@ -21,23 +21,21 @@ test('duplicate check-in is rejected', async ({ page }) => {
     data: { email: process.env.SEED_DONOR_EMAIL ?? 'automation+donor@fundrbolt.com' },
   })
   const body = (await lookup.json()) as Record<string, unknown>
-  const matches = Array.isArray(body.matches)
-    ? (body.matches as Array<Record<string, unknown>>)
-    : Array.isArray(body.results)
-      ? (body.results as Array<Record<string, unknown>>)
-      : []
+  const matches = Array.isArray(body.registrations)
+    ? (body.registrations as Array<Record<string, unknown>>)
+    : []
   test.skip(matches.length === 0, 'No seeded registration available for duplicate check-in assertion')
 
   const registrationId = String(matches[0]?.registration_id ?? matches[0]?.id ?? '')
-  const first = await page.request.patch(`${API_URL}/registrations/${registrationId}/checkin`, {
+  const first = await page.request.post(`${API_URL}/checkin/registrations/${registrationId}`, {
     headers: { Authorization: `Bearer ${session.accessToken}` },
-    data: { checked_in: true },
+    data: {},
   })
   expect(first.status()).toBeLessThan(500)
 
-  const second = await page.request.patch(`${API_URL}/registrations/${registrationId}/checkin`, {
+  const second = await page.request.post(`${API_URL}/checkin/registrations/${registrationId}`, {
     headers: { Authorization: `Bearer ${session.accessToken}` },
-    data: { checked_in: true },
+    data: {},
   })
   expect([400, 409, 422]).toContain(second.status())
 })

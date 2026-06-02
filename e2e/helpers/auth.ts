@@ -21,12 +21,31 @@ const roleEmails: Record<SeedRole, string> = {
   donor: process.env.SEED_DONOR_EMAIL ?? 'automation+donor@fundrbolt.com',
 }
 
+type LoginResult = {
+  apiClient: ApiClient
+  accessToken: string
+  refreshToken: string
+  user: Record<string, unknown>
+}
+
+type CacheEntry = LoginResult & { expiresAt: number }
+
+const tokenCache = new Map<string, CacheEntry>()
+
+const TOKEN_TTL_MS = 12 * 60 * 1000 // 12 minutes (access tokens expire in 15)
+
 export async function loginAs(role: SeedRole): Promise<{
   apiClient: ApiClient
   accessToken: string
   refreshToken: string
   user: Record<string, unknown>
 }> {
+  const email = roleEmails[role]
+  const cached = tokenCache.get(email)
+  if (cached && cached.expiresAt > Date.now()) {
+    return { apiClient: cached.apiClient, accessToken: cached.accessToken, refreshToken: cached.refreshToken, user: cached.user }
+  }
+
   const response = await fetch(`${API_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -38,12 +57,14 @@ export async function loginAs(role: SeedRole): Promise<{
   }
 
   const body = (await response.json()) as LoginResponse
-  return {
+  const result: LoginResult = {
     apiClient: createApiClient(API_URL, body.access_token),
     accessToken: body.access_token,
     refreshToken: body.refresh_token,
     user: body.user,
   }
+  tokenCache.set(email, { ...result, expiresAt: Date.now() + TOKEN_TTL_MS })
+  return result
 }
 
 export async function storeSeedAuth(page: Page, role: SeedRole, app: 'admin' | 'donor' = 'donor'): Promise<void> {

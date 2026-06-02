@@ -15,7 +15,7 @@ export class MailpitClient {
   constructor(private readonly baseUrl: string) {}
 
   async listMessages(): Promise<MailpitMessage[]> {
-    const response = await fetch(`${this.baseUrl}/api/v2/messages`)
+    const response = await fetch(`${this.baseUrl}/api/v1/messages`)
     if (!response.ok) {
       throw new Error(`Mailpit list failed: ${response.status} ${await response.text()}`)
     }
