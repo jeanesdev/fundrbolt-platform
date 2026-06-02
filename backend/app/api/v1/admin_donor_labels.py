@@ -321,6 +321,12 @@ async def dismiss_single_suggestion(
     assignment = next((item for item in assignments if item.label_id == label_id), None)
     if assignment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Suggestion not found")
+    if not assignment.is_suggested:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot dismiss a confirmed label via the suggestion endpoint. "
+            "Remove it via the label management endpoint instead.",
+        )
 
     await db.delete(assignment)
     await db.commit()

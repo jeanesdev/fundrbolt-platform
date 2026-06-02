@@ -441,6 +441,7 @@ class CheckoutService:
         event_id = session.event_id
         user_id = session.user_id
         display_order = 0
+        positive_subtotal_cents = 0  # running total of positive items, used to cap discount
 
         # ── Winning auction bids ──────────────────────────────────────────────
         bid_result = await self.db.execute(
@@ -469,6 +470,7 @@ class CheckoutService:
                 display_order=display_order,
             )
             self.db.add(item)
+            positive_subtotal_cents += amount_cents
             display_order += 1
 
         # ── Quick-entry paddle-raise donations ────────────────────────────────
@@ -489,6 +491,7 @@ class CheckoutService:
                 display_order=display_order,
             )
             self.db.add(item)
+            positive_subtotal_cents += amount_cents
             display_order += 1
 
         # ── Quick-entry live bids ─────────────────────────────────────────────
@@ -513,6 +516,7 @@ class CheckoutService:
                 display_order=display_order,
             )
             self.db.add(item)
+            positive_subtotal_cents += amount_cents
             display_order += 1
 
         # ── Unpaid ticket purchases ───────────────────────────────────────────
@@ -537,6 +541,7 @@ class CheckoutService:
                 display_order=display_order,
             )
             self.db.add(item)
+            positive_subtotal_cents += amount_cents
             display_order += 1
 
         # ── Revenue generator entries ─────────────────────────────────────────
@@ -564,6 +569,7 @@ class CheckoutService:
                 display_order=display_order,
             )
             self.db.add(item)
+            positive_subtotal_cents += amount_cents
             display_order += 1
 
         survey_response_result = await self.db.execute(
@@ -582,17 +588,21 @@ class CheckoutService:
         )
         survey_response = survey_response_result.scalar_one_or_none()
         if survey_response is not None:
-            self.db.add(
-                CheckoutItem(
-                    session_id=session.id,
-                    name="Profile Survey Discount",
-                    original_amount_cents=-survey_response.discount_cents_applied,
-                    source_type=CheckoutItemSourceTypeEnum.SURVEY_DISCOUNT,
-                    source_id=survey_response.id,
-                    display_order=display_order,
+            # Cap discount so it never exceeds the positive items — prevents line items
+            # from summing to a negative value (e.g. $20 discount on only $5 of charges).
+            discount_to_apply = min(survey_response.discount_cents_applied, positive_subtotal_cents)
+            if discount_to_apply > 0:
+                self.db.add(
+                    CheckoutItem(
+                        session_id=session.id,
+                        name="Profile Survey Discount",
+                        original_amount_cents=-discount_to_apply,
+                        source_type=CheckoutItemSourceTypeEnum.SURVEY_DISCOUNT,
+                        source_id=survey_response.id,
+                        display_order=display_order,
+                    )
                 )
-            )
-            display_order += 1
+                display_order += 1
 
         await self.db.flush()
 

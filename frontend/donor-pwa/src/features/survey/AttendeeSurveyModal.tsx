@@ -36,7 +36,13 @@ export function AttendeeSurveyModal({
 }: AttendeeSurveyModalProps) {
   const [answers, setAnswers] = useState<Record<string, string>>({})
 
-  const questionCount = survey.questions.length
+  // Only active questions count — inactive ones are already filtered by the
+  // backend (donor_only=True) but this guard makes the component robust.
+  const activeQuestions = useMemo(
+    () => survey.questions.filter((q) => q.is_active),
+    [survey.questions]
+  )
+  const questionCount = activeQuestions.length
   const completedCount = useMemo(
     () => Object.values(answers).filter(Boolean).length,
     [answers]
@@ -45,7 +51,15 @@ export function AttendeeSurveyModal({
 
   return (
     <Dialog open={open}>
-      <DialogContent className='flex h-[100dvh] w-screen max-w-none flex-col gap-0 rounded-none border-0 p-0 sm:h-[100dvh] sm:max-w-none'>
+      <DialogContent
+        className='flex h-[100dvh] w-screen max-w-none flex-col gap-0 rounded-none border-0 p-0 sm:h-[100dvh] sm:max-w-none'
+        // Prevent accidental dismissal via Escape or outside-click.
+        // The only intentional exit paths are "Skip for now" and "Submit survey".
+        // A non-intentional close would not record a SurveyResponse row, which is
+        // correct per spec: partial/unsaved state → modal reappears on next visit.
+        onEscapeKeyDown={(e) => e.preventDefault()}
+        onPointerDownOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader className='border-b px-5 py-4 text-left sm:px-8'>
           <div className='mb-3 flex items-center gap-2 text-sm font-medium text-amber-600'>
             <Gift className='h-4 w-4' />
@@ -64,7 +78,7 @@ export function AttendeeSurveyModal({
 
         <div className='flex-1 overflow-y-auto px-5 py-5 sm:px-8'>
           <div className='mx-auto max-w-4xl space-y-6'>
-            {survey.questions
+            {activeQuestions
               .slice()
               .sort((a, b) => a.display_order - b.display_order)
               .map((question, index) => (
@@ -126,7 +140,7 @@ export function AttendeeSurveyModal({
               <Button
                 onClick={() =>
                   onComplete(
-                    survey.questions.map((question) => ({
+                    activeQuestions.map((question) => ({
                       question_id: question.id,
                       option_id: answers[question.id],
                     }))
