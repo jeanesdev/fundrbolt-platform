@@ -15,6 +15,7 @@ class SurveyQuestionOptionResponse(BaseModel):
     id: UUID
     text: str
     display_order: int
+    is_other: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -67,6 +68,7 @@ class SurveyQuestionOptionCreateRequest(BaseModel):
     id: UUID | None = None
     text: str = Field(min_length=1, max_length=300)
     display_order: int = Field(default=0, ge=0)
+    is_other: bool = False
 
 
 class SurveyQuestionCreateRequest(BaseModel):
@@ -117,6 +119,7 @@ class DonorSurveyAnswerInput(BaseModel):
 
     question_id: UUID
     option_id: UUID
+    other_text: str | None = Field(default=None, max_length=500)
 
 
 class DonorSurveySubmitRequest(BaseModel):

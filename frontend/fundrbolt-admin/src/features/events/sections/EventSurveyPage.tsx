@@ -1,14 +1,3 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { eventApi } from '@/services/event-service'
-import {
-  eventSurveyService,
-  type SurveyConfig,
-  type SurveyQuestion,
-  type SurveyQuestionInput,
-} from '@/services/eventSurveyService'
-import { Plus, RefreshCcw, Save, Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -16,6 +5,17 @@ import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
 import { useDonorLabels } from '@/features/users/hooks/use-donor-labels'
+import { eventApi } from '@/services/event-service'
+import {
+  eventSurveyService,
+  type SurveyConfig,
+  type SurveyQuestion,
+  type SurveyQuestionInput,
+} from '@/services/eventSurveyService'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Plus, RefreshCcw, Save, Trash2 } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
 const emptyQuestion = (): SurveyQuestionInput => ({
   text: '',
@@ -66,6 +66,7 @@ function normalizeQuestion(question: SurveyQuestionInput): SurveyQuestionInput {
         ...option,
         text: option.text.trim(),
         display_order: index,
+        is_other: option.is_other ?? false,
       }))
       .filter((option) => option.text.length > 0),
   }
@@ -195,6 +196,7 @@ export function EventSurveyPage() {
         id: option.id,
         text: option.text,
         display_order: option.display_order,
+        is_other: option.is_other,
       })),
     }
 
@@ -229,19 +231,22 @@ export function EventSurveyPage() {
             </div>
             <div className='space-y-2'>
               <label className='text-sm font-medium'>
-                Discount amount (cents)
+                Discount amount ($)
               </label>
               <Input
                 type='number'
                 min={0}
-                value={configDraft.discount_cents}
+                step={0.01}
+                value={(configDraft.discount_cents / 100).toFixed(2)}
                 onChange={(event) =>
                   setConfigDraft((prev) =>
                     prev
                       ? {
-                          ...prev,
-                          discount_cents: Number(event.target.value || 0),
-                        }
+                        ...prev,
+                        discount_cents: Math.round(
+                          Number(event.target.value || 0) * 100
+                        ),
+                      }
                       : prev
                   )
                 }
@@ -453,6 +458,7 @@ export function EventSurveyPage() {
                         <div key={option.id ?? index} className='flex gap-2'>
                           <Input
                             value={option.text}
+                            placeholder={option.is_other ? 'Other (label shown to donor)' : ''}
                             onChange={(event) => {
                               const nextOptions = [...draft.options]
                               nextOptions[index] = {
@@ -465,6 +471,11 @@ export function EventSurveyPage() {
                               })
                             }}
                           />
+                          {option.is_other && (
+                            <span className='bg-muted text-muted-foreground self-center rounded px-2 py-1 text-xs font-medium whitespace-nowrap'>
+                              Other
+                            </span>
+                          )}
                           <Button
                             type='button'
                             variant='outline'
@@ -485,23 +496,64 @@ export function EventSurveyPage() {
                         </div>
                       ))}
                     </div>
-                    <Button
-                      type='button'
-                      variant='ghost'
-                      size='sm'
-                      onClick={() =>
-                        setQuestionDraft(question.id, {
-                          ...draft,
-                          options: [
-                            ...draft.options,
-                            { text: '', display_order: draft.options.length },
-                          ],
-                        })
-                      }
-                    >
-                      <Plus className='mr-2 h-4 w-4' />
-                      Add option
-                    </Button>
+                    <div className='flex flex-wrap gap-2'>
+                      <Button
+                        type='button'
+                        variant='ghost'
+                        size='sm'
+                        onClick={() =>
+                          setQuestionDraft(question.id, {
+                            ...draft,
+                            options: [
+                              ...draft.options,
+                              { text: '', display_order: draft.options.length },
+                            ],
+                          })
+                        }
+                      >
+                        <Plus className='mr-2 h-4 w-4' />
+                        Add option
+                      </Button>
+                      {draft.options.some((o) => o.is_other) ? (
+                        <Button
+                          type='button'
+                          variant='ghost'
+                          size='sm'
+                          onClick={() =>
+                            setQuestionDraft(question.id, {
+                              ...draft,
+                              options: draft.options.filter(
+                                (o) => !o.is_other
+                              ),
+                            })
+                          }
+                        >
+                          Remove "Other" option
+                        </Button>
+                      ) : (
+                        <Button
+                          type='button'
+                          variant='ghost'
+                          size='sm'
+                          onClick={() =>
+                            setQuestionDraft(question.id, {
+                              ...draft,
+                              options: [
+                                ...draft.options,
+                                {
+                                  text: 'Other',
+                                  display_order: draft.options.length,
+                                  is_other: true,
+                                },
+                              ],
+                            })
+                          }
+                        >
+                          <Plus className='mr-2 h-4 w-4' />
+                          Add "Other" option
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -548,6 +600,7 @@ export function EventSurveyPage() {
               <div key={index} className='flex gap-2'>
                 <Input
                   value={option.text}
+                  placeholder={option.is_other ? 'Other (label shown to donor)' : ''}
                   onChange={(event) => {
                     const nextOptions = [...draftQuestion.options]
                     nextOptions[index] = { ...option, text: event.target.value }
@@ -557,6 +610,11 @@ export function EventSurveyPage() {
                     }))
                   }}
                 />
+                {option.is_other && (
+                  <span className='bg-muted text-muted-foreground self-center rounded px-2 py-1 text-xs font-medium whitespace-nowrap'>
+                    Other
+                  </span>
+                )}
                 <Button
                   type='button'
                   variant='outline'
@@ -575,23 +633,62 @@ export function EventSurveyPage() {
                 </Button>
               </div>
             ))}
-            <Button
-              type='button'
-              variant='ghost'
-              size='sm'
-              onClick={() =>
-                setDraftQuestion((prev) => ({
-                  ...prev,
-                  options: [
-                    ...prev.options,
-                    { text: '', display_order: prev.options.length },
-                  ],
-                }))
-              }
-            >
-              <Plus className='mr-2 h-4 w-4' />
-              Add option
-            </Button>
+            <div className='flex flex-wrap gap-2'>
+              <Button
+                type='button'
+                variant='ghost'
+                size='sm'
+                onClick={() =>
+                  setDraftQuestion((prev) => ({
+                    ...prev,
+                    options: [
+                      ...prev.options,
+                      { text: '', display_order: prev.options.length },
+                    ],
+                  }))
+                }
+              >
+                <Plus className='mr-2 h-4 w-4' />
+                Add option
+              </Button>
+              {draftQuestion.options.some((o) => o.is_other) ? (
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='sm'
+                  onClick={() =>
+                    setDraftQuestion((prev) => ({
+                      ...prev,
+                      options: prev.options.filter((o) => !o.is_other),
+                    }))
+                  }
+                >
+                  Remove "Other" option
+                </Button>
+              ) : (
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='sm'
+                  onClick={() =>
+                    setDraftQuestion((prev) => ({
+                      ...prev,
+                      options: [
+                        ...prev.options,
+                        {
+                          text: 'Other',
+                          display_order: prev.options.length,
+                          is_other: true,
+                        },
+                      ],
+                    }))
+                  }
+                >
+                  <Plus className='mr-2 h-4 w-4' />
+                  Add "Other" option
+                </Button>
+              )}
+            </div>
           </div>
           <Button
             type='button'

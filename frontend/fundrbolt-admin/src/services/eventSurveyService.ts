@@ -4,6 +4,7 @@ export interface SurveyQuestionOption {
   id: string
   text: string
   display_order: number
+  is_other: boolean
 }
 
 export interface SurveyQuestion {
@@ -40,6 +41,7 @@ export interface SurveyQuestionInput {
     id?: string
     text: string
     display_order: number
+    is_other?: boolean
   }>
 }
 

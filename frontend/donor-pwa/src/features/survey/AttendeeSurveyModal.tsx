@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
 
 interface AttendeeSurveyModalProps {
   open: boolean
@@ -17,7 +18,11 @@ interface AttendeeSurveyModalProps {
   isSubmitting?: boolean
   onSkip: () => void
   onComplete: (
-    answers: Array<{ question_id: string; option_id: string }>
+    answers: Array<{
+      question_id: string
+      option_id: string
+      other_text?: string | null
+    }>
   ) => void
 }
 
@@ -34,7 +39,10 @@ export function AttendeeSurveyModal({
   onSkip,
   onComplete,
 }: AttendeeSurveyModalProps) {
+  // Maps question_id → selected option_id
   const [answers, setAnswers] = useState<Record<string, string>>({})
+  // Maps question_id → typed "other" text (only used when is_other option selected)
+  const [otherTexts, setOtherTexts] = useState<Record<string, string>>({})
 
   // Only active questions count — inactive ones are already filtered by the
   // backend (donor_only=True) but this guard makes the component robust.
@@ -43,10 +51,22 @@ export function AttendeeSurveyModal({
     [survey.questions]
   )
   const questionCount = activeQuestions.length
-  const completedCount = useMemo(
-    () => Object.values(answers).filter(Boolean).length,
-    [answers]
-  )
+
+  const completedCount = useMemo(() => {
+    return activeQuestions.filter((question) => {
+      const selectedOptionId = answers[question.id]
+      if (!selectedOptionId) return false
+      const selectedOption = question.options.find(
+        (o) => o.id === selectedOptionId
+      )
+      // "Other" option requires non-empty typed text to count as complete
+      if (selectedOption?.is_other) {
+        return (otherTexts[question.id] ?? '').trim().length > 0
+      }
+      return true
+    }).length
+  }, [activeQuestions, answers, otherTexts])
+
   const canSubmit = questionCount > 0 && completedCount === questionCount
 
   return (
@@ -81,46 +101,68 @@ export function AttendeeSurveyModal({
             {activeQuestions
               .slice()
               .sort((a, b) => a.display_order - b.display_order)
-              .map((question, index) => (
-                <section
-                  key={question.id}
-                  className='space-y-3 rounded-2xl border p-4 sm:p-6'
-                >
-                  <div className='text-muted-foreground flex items-center gap-2 text-xs font-semibold tracking-wide uppercase'>
-                    <Sparkles className='h-3.5 w-3.5' />
-                    Question {index + 1}
-                  </div>
-                  <h3 className='text-lg font-semibold'>{question.text}</h3>
-                  <div className='grid gap-3 sm:grid-cols-2'>
-                    {question.options
-                      .slice()
-                      .sort((a, b) => a.display_order - b.display_order)
-                      .map((option) => {
-                        const selected = answers[question.id] === option.id
-                        return (
-                          <button
-                            key={option.id}
-                            type='button'
-                            className={cn(
-                              'rounded-xl border px-4 py-3 text-left text-sm transition-colors',
-                              selected
-                                ? 'border-primary bg-primary/10 text-primary'
-                                : 'border-border hover:bg-muted/60'
-                            )}
-                            onClick={() =>
-                              setAnswers((prev) => ({
-                                ...prev,
-                                [question.id]: option.id,
-                              }))
-                            }
-                          >
-                            {option.text}
-                          </button>
-                        )
-                      })}
-                  </div>
-                </section>
-              ))}
+              .map((question, index) => {
+                const selectedOptionId = answers[question.id]
+                const selectedOption = question.options.find(
+                  (o) => o.id === selectedOptionId
+                )
+                return (
+                  <section
+                    key={question.id}
+                    className='space-y-3 rounded-2xl border p-4 sm:p-6'
+                  >
+                    <div className='text-muted-foreground flex items-center gap-2 text-xs font-semibold tracking-wide uppercase'>
+                      <Sparkles className='h-3.5 w-3.5' />
+                      Question {index + 1}
+                    </div>
+                    <h3 className='text-lg font-semibold'>{question.text}</h3>
+                    <div className='grid gap-3 sm:grid-cols-2'>
+                      {question.options
+                        .slice()
+                        .sort((a, b) => a.display_order - b.display_order)
+                        .map((option) => {
+                          const selected = selectedOptionId === option.id
+                          return (
+                            <button
+                              key={option.id}
+                              type='button'
+                              className={cn(
+                                'rounded-xl border px-4 py-3 text-left text-sm transition-colors',
+                                selected
+                                  ? 'border-primary bg-primary/10 text-primary'
+                                  : 'border-border hover:bg-muted/60'
+                              )}
+                              onClick={() =>
+                                setAnswers((prev) => ({
+                                  ...prev,
+                                  [question.id]: option.id,
+                                }))
+                              }
+                            >
+                              {option.text}
+                            </button>
+                          )
+                        })}
+                    </div>
+                    {selectedOption?.is_other && (
+                      <Textarea
+                        autoFocus
+                        placeholder='Please describe your answer…'
+                        maxLength={500}
+                        rows={3}
+                        value={otherTexts[question.id] ?? ''}
+                        onChange={(e) =>
+                          setOtherTexts((prev) => ({
+                            ...prev,
+                            [question.id]: e.target.value,
+                          }))
+                        }
+                        className='mt-2'
+                      />
+                    )}
+                  </section>
+                )
+              })}
           </div>
         </div>
 
@@ -140,10 +182,19 @@ export function AttendeeSurveyModal({
               <Button
                 onClick={() =>
                   onComplete(
-                    activeQuestions.map((question) => ({
-                      question_id: question.id,
-                      option_id: answers[question.id],
-                    }))
+                    activeQuestions.map((question) => {
+                      const optionId = answers[question.id]
+                      const selectedOption = question.options.find(
+                        (o) => o.id === optionId
+                      )
+                      return {
+                        question_id: question.id,
+                        option_id: optionId,
+                        other_text: selectedOption?.is_other
+                          ? (otherTexts[question.id] ?? '').trim() || null
+                          : null,
+                      }
+                    })
                   )
                 }
                 disabled={!canSubmit || isSubmitting}

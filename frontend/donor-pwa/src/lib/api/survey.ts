@@ -4,6 +4,7 @@ export interface DonorSurveyOption {
   id: string
   text: string
   display_order: number
+  is_other: boolean
 }
 
 export interface DonorSurveyQuestion {
@@ -50,7 +51,11 @@ export async function submitDonorSurvey(
     | { action: 'skip'; answers?: [] }
     | {
         action: 'complete'
-        answers: Array<{ question_id: string; option_id: string }>
+        answers: Array<{
+          question_id: string
+          option_id: string
+          other_text?: string | null
+        }>
       }
 ): Promise<DonorSurveySubmitResponse> {
   const response = await apiClient.post<DonorSurveySubmitResponse>(

@@ -163,6 +163,7 @@ class SurveyService:
                             id=option.id,
                             text=option.text,
                             display_order=option.display_order,
+                            is_other=option.is_other,
                         )
                         for option in options
                     ],
@@ -218,12 +219,6 @@ class SurveyService:
     async def get_survey_status_for_donor(
         self, registration_id: UUID
     ) -> tuple[bool, EventSurveyConfig | None]:
-        existing_response = await self.db.scalar(
-            select(SurveyResponse.id).where(SurveyResponse.registration_id == registration_id)
-        )
-        if existing_response is not None:
-            return False, None
-
         registration = await self.db.scalar(
             select(EventRegistration).where(EventRegistration.id == registration_id)
         )
@@ -260,13 +255,10 @@ class SurveyService:
         registration, event = row
 
         existing = await self.db.scalar(
-            select(SurveyResponse.id).where(SurveyResponse.registration_id == registration_id)
+            select(SurveyResponse)
+            .where(SurveyResponse.registration_id == registration_id)
+            .options(selectinload(SurveyResponse.answers))
         )
-        if existing is not None:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Survey response already exists for this registration",
-            )
 
         config = await self._get_config_by_event_id(registration.event_id)
         if config is None:
@@ -287,19 +279,37 @@ class SurveyService:
             )
 
         discount_cents = config.discount_cents if action == "complete" else 0
-        response = SurveyResponse(
-            registration_id=registration_id,
-            survey_config_id=config.id,
-            status="completed" if action == "complete" else "skipped",
-            discount_cents_applied=discount_cents,
-            completed_at=datetime.now(UTC) if action == "complete" else None,
-        )
-        self.db.add(response)
+
+        if existing is not None:
+            # Overwrite previous response: delete old answers and update the record
+            for old_answer in list(existing.answers):
+                await self.db.delete(old_answer)
+            await self.db.flush()
+            existing.survey_config_id = config.id
+            existing.status = "completed" if action == "complete" else "skipped"
+            existing.discount_cents_applied = discount_cents
+            existing.completed_at = datetime.now(UTC) if action == "complete" else None
+            response = existing
+        else:
+            response = SurveyResponse(
+                registration_id=registration_id,
+                survey_config_id=config.id,
+                status="completed" if action == "complete" else "skipped",
+                discount_cents_applied=discount_cents,
+                completed_at=datetime.now(UTC) if action == "complete" else None,
+            )
+            self.db.add(response)
         await self.db.flush()
 
         created_answers: list[SurveyAnswer] = []
         if action == "complete":
-            answer_map = {answer["question_id"]: answer["option_id"] for answer in answers}
+            answer_map = {
+                answer["question_id"]: {
+                    "option_id": answer["option_id"],
+                    "other_text": answer.get("other_text"),
+                }
+                for answer in answers
+            }
             expected_question_ids = {question.id for question in eligible_questions}
             if set(answer_map.keys()) != expected_question_ids:
                 raise HTTPException(
@@ -308,8 +318,13 @@ class SurveyService:
                 )
 
             for question in eligible_questions:
+                answer_data = answer_map[question.id]
                 selected_option = next(
-                    (option for option in question.options if option.id == answer_map[question.id]),
+                    (
+                        option
+                        for option in question.options
+                        if option.id == answer_data["option_id"]
+                    ),
                     None,
                 )
                 if selected_option is None:
@@ -317,12 +332,28 @@ class SurveyService:
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="Selected option does not belong to the requested question",
                     )
+
+                other_text: str | None = None
+                if selected_option.is_other:
+                    raw = str(answer_data.get("other_text") or "")
+                    stripped = raw.strip()
+                    if not stripped:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Question '{question.text}' requires a typed answer for the 'Other' option",
+                        )
+                    other_text = stripped
+
+                # Use the typed text as the readable snapshot when "Other" is chosen
+                option_snapshot = f"Other: {other_text}" if other_text else selected_option.text
+
                 survey_answer = SurveyAnswer(
                     response_id=response.id,
                     question_id=question.id,
                     selected_option_id=selected_option.id,
                     question_text_snapshot=question.text,
-                    option_text_snapshot=selected_option.text,
+                    option_text_snapshot=option_snapshot,
+                    other_text=other_text,
                 )
                 self.db.add(survey_answer)
                 created_answers.append(survey_answer)
@@ -411,7 +442,11 @@ class SurveyService:
                 is_active=question.is_active,
             )
             copied_question.options = [
-                SurveyQuestionOption(text=option.text, display_order=option.display_order)
+                SurveyQuestionOption(
+                    text=option.text,
+                    display_order=option.display_order,
+                    is_other=option.is_other,
+                )
                 for option in sorted(question.options, key=lambda item: item.display_order)
             ]
             self.db.add(copied_question)
@@ -434,7 +469,11 @@ class SurveyService:
             is_active=data.is_active,
         )
         question.options = [
-            SurveyQuestionOption(text=option.text, display_order=option.display_order)
+            SurveyQuestionOption(
+                text=option.text,
+                display_order=option.display_order,
+                is_other=option.is_other,
+            )
             for option in data.options
         ]
         self.db.add(question)
@@ -462,6 +501,7 @@ class SurveyService:
                     option = existing_options[option_data.id]
                     option.text = option_data.text
                     option.display_order = option_data.display_order
+                    option.is_other = option_data.is_other
                     retained_ids.add(option.id)
                     new_options.append(option)
                 else:
@@ -469,6 +509,7 @@ class SurveyService:
                         question_id=question.id,
                         text=option_data.text,
                         display_order=option_data.display_order,
+                        is_other=option_data.is_other,
                     )
                     self.db.add(option)
                     new_options.append(option)

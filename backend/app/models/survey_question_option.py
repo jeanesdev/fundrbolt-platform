@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Index, Integer, String
+from sqlalchemy import Boolean, ForeignKey, Index, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -28,6 +28,12 @@ class SurveyQuestionOption(Base, UUIDMixin, TimestampMixin):
     )
     text: Mapped[str] = mapped_column(String(300), nullable=False)
     display_order: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    is_other: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+    )
 
     question: Mapped[SurveyQuestion] = relationship("SurveyQuestion", back_populates="options")
 
