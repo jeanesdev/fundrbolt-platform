@@ -3,7 +3,7 @@
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, ForeignKey, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -31,10 +31,23 @@ class DonorLabelAssignment(Base, UUIDMixin, TimestampMixin):
         nullable=False,
         index=True,
     )
+    is_suggested: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        server_default="false",
+        default=False,
+    )
+    source: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        server_default="manual",
+        default="manual",
+    )
 
     user: Mapped["User"] = relationship("User", back_populates="donor_label_assignments")
     label: Mapped["DonorLabel"] = relationship("DonorLabel", back_populates="assignments")
 
     __table_args__ = (
         UniqueConstraint("user_id", "label_id", name="uq_donor_label_assignments_pair"),
+        CheckConstraint("source IN ('manual', 'survey_auto')", name="ck_dla_source"),
     )

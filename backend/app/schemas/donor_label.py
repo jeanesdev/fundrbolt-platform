@@ -27,6 +27,7 @@ class DonorLabelResponse(BaseModel):
     npo_id: uuid.UUID
     name: str
     color: str | None = None
+    is_system_default: bool = False
     created_at: datetime
     updated_at: datetime
 
@@ -51,5 +52,13 @@ class DonorLabelAssignmentInfo(BaseModel):
     id: uuid.UUID
     name: str
     color: str | None = None
+    is_suggested: bool = False
+    source: str = "manual"
 
     model_config = {"from_attributes": True}
+
+
+class DonorLabelWithAssignmentInfo(DonorLabelAssignmentInfo):
+    """Donor label plus assignment metadata for profile views."""
+
+    is_system_default: bool = False

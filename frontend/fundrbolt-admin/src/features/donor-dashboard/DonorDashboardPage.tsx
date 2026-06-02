@@ -7,6 +7,7 @@ import { DonorProfilePanel } from './components/DonorProfilePanel'
 import { GivingCategoryCharts } from './components/GivingCategoryCharts'
 import { OutbidLeadersTab } from './components/OutbidLeadersTab'
 import { ScopeToggle } from './components/ScopeToggle'
+import { SurveyAnswersTab } from './components/SurveyAnswersTab'
 
 type Scope = 'event' | 'all'
 
@@ -60,6 +61,7 @@ export function DonorDashboardPage() {
           <TabsTrigger value='outbid'>Outbid Leaders</TabsTrigger>
           <TabsTrigger value='bidwars'>Bid Wars</TabsTrigger>
           <TabsTrigger value='categories'>Categories</TabsTrigger>
+          <TabsTrigger value='survey-answers'>Survey Answers</TabsTrigger>
         </TabsList>
 
         <TabsContent value='leaderboard' className='space-y-4'>
@@ -82,6 +84,13 @@ export function DonorDashboardPage() {
 
         <TabsContent value='categories' className='space-y-4'>
           <GivingCategoryCharts eventId={eventId} />
+        </TabsContent>
+
+        <TabsContent value='survey-answers' className='space-y-4'>
+          <SurveyAnswersTab
+            eventId={eventId}
+            onSelectDonor={setSelectedDonorId}
+          />
         </TabsContent>
       </Tabs>
     </div>

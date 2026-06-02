@@ -33,12 +33,14 @@ from app.models.checkout_session import (
     CheckoutStatusEnum,
 )
 from app.models.event import Event
+from app.models.event_registration import EventRegistration
 from app.models.payment_transaction import PaymentTransaction, TransactionStatus
 from app.models.quick_entry_bid import QuickEntryBid, QuickEntryBidStatus
 from app.models.quick_entry_buy_now_bid import QuickEntryBuyNowBid
 from app.models.quick_entry_donation import QuickEntryDonation
 from app.models.registration_guest import RegistrationGuest
 from app.models.revenue_generator_entry import RevenueGeneratorEntry
+from app.models.survey_response import SurveyResponse
 from app.models.ticket_management import PaymentStatus, TicketPurchase
 from app.schemas.checkout import AdminAddCheckoutItemRequest, CheckoutConfirmRequest
 from app.schemas.payment import (
@@ -564,6 +566,34 @@ class CheckoutService:
             self.db.add(item)
             display_order += 1
 
+        survey_response_result = await self.db.execute(
+            select(SurveyResponse)
+            .join(EventRegistration, SurveyResponse.registration_id == EventRegistration.id)
+            .where(
+                EventRegistration.user_id == user_id,
+                EventRegistration.event_id == event_id,
+                SurveyResponse.status == "completed",
+                SurveyResponse.discount_cents_applied > 0,
+            )
+            .order_by(
+                SurveyResponse.completed_at.desc().nullslast(), SurveyResponse.created_at.desc()
+            )
+            .limit(1)
+        )
+        survey_response = survey_response_result.scalar_one_or_none()
+        if survey_response is not None:
+            self.db.add(
+                CheckoutItem(
+                    session_id=session.id,
+                    name="Profile Survey Discount",
+                    original_amount_cents=-survey_response.discount_cents_applied,
+                    source_type=CheckoutItemSourceTypeEnum.SURVEY_DISCOUNT,
+                    source_id=survey_response.id,
+                    display_order=display_order,
+                )
+            )
+            display_order += 1
+
         await self.db.flush()
 
     async def _refresh_item_names(self, session: CheckoutSession) -> None:
@@ -655,7 +685,7 @@ class CheckoutService:
         )
         active_items = list(result.scalars().all())
 
-        subtotal = sum(i.effective_amount_cents for i in active_items)
+        subtotal = max(sum(i.effective_amount_cents for i in active_items), 0)
         session.subtotal_cents = subtotal
 
         # Compute processing fee from checkout configuration

@@ -2,10 +2,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import * as donorLabelsApi from '../api/donor-labels-api'
 
-export function useDonorLabels(npoId: string | null) {
+export function useDonorLabels(
+  npoId: string | null,
+  params?: { system_defaults_only?: boolean }
+) {
   return useQuery({
-    queryKey: ['donor-labels', npoId],
-    queryFn: () => donorLabelsApi.listDonorLabels(npoId!),
+    queryKey: ['donor-labels', npoId, params],
+    queryFn: () => donorLabelsApi.listDonorLabels(npoId!, params),
     enabled: !!npoId,
   })
 }
@@ -69,6 +72,12 @@ export function useSetUserDonorLabels(npoId: string | null) {
       queryClient.invalidateQueries({
         queryKey: ['user-donor-labels', npoId, variables.userId],
       })
+      queryClient.invalidateQueries({
+        queryKey: ['donor-dashboard', 'profile', variables.userId],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['donor-dashboard', 'leaderboard'],
+      })
       queryClient.invalidateQueries({ queryKey: ['users', variables.userId] })
       queryClient.invalidateQueries({ queryKey: ['users'] })
       queryClient.invalidateQueries({ queryKey: ['event-attendees'] })
@@ -76,6 +85,78 @@ export function useSetUserDonorLabels(npoId: string | null) {
     },
     onError: () => {
       toast.error('Failed to update labels')
+    },
+  })
+}
+
+export function useConfirmSuggestedDonorLabel(npoId: string | null) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ userId, labelId }: { userId: string; labelId: string }) =>
+      donorLabelsApi.confirmSuggestedDonorLabel(npoId!, userId, labelId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['user-donor-labels', npoId, variables.userId],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['donor-dashboard', 'profile', variables.userId],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['donor-dashboard', 'leaderboard'],
+      })
+      toast.success('Suggested label confirmed')
+    },
+    onError: () => {
+      toast.error('Failed to confirm suggested label')
+    },
+  })
+}
+
+export function useDismissSuggestedDonorLabel(npoId: string | null) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ userId, labelId }: { userId: string; labelId: string }) =>
+      donorLabelsApi.dismissSuggestedDonorLabel(npoId!, userId, labelId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['user-donor-labels', npoId, variables.userId],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['donor-dashboard', 'profile', variables.userId],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['donor-dashboard', 'leaderboard'],
+      })
+      toast.success('Suggested label dismissed')
+    },
+    onError: () => {
+      toast.error('Failed to dismiss suggested label')
+    },
+  })
+}
+
+export function useConfirmAllSuggestedDonorLabels(npoId: string | null) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (userId: string) =>
+      donorLabelsApi.confirmAllSuggestedDonorLabels(npoId!, userId),
+    onSuccess: (_, userId) => {
+      queryClient.invalidateQueries({
+        queryKey: ['user-donor-labels', npoId, userId],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['donor-dashboard', 'profile', userId],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['donor-dashboard', 'leaderboard'],
+      })
+      toast.success('All suggested labels confirmed')
+    },
+    onError: () => {
+      toast.error('Failed to confirm suggested labels')
     },
   })
 }

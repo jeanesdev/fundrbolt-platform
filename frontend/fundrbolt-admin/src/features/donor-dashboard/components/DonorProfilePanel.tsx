@@ -22,7 +22,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { InlineDonorLabels } from '@/components/admin/InlineDonorLabels'
 import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import {
+  useConfirmAllSuggestedDonorLabels,
+  useConfirmSuggestedDonorLabel,
+  useDismissSuggestedDonorLabel,
+} from '@/features/users/hooks/use-donor-labels'
 import { useDonorProfile } from '../hooks/useDonorDashboard'
 
 const fmt = (n: number) =>
@@ -79,6 +85,12 @@ export function DonorProfilePanel({
     isError,
     refetch,
   } = useDonorProfile(userId, { event_id: eventId, npo_id: npoId })
+
+  const confirmSuggestedLabel = useConfirmSuggestedDonorLabel(npoId ?? null)
+  const dismissSuggestedLabel = useDismissSuggestedDonorLabel(npoId ?? null)
+  const confirmAllSuggestedLabels = useConfirmAllSuggestedDonorLabels(
+    npoId ?? null
+  )
 
   const activeFilterCount = Object.values(filters).filter(Boolean).length
 
@@ -169,6 +181,10 @@ export function DonorProfilePanel({
   // Determine if cross-NPO context should be shown in activity tables
   const showNpoColumn = npoGroups.size > 1
 
+  const suggestedLabels = profile.donor_labels.filter(
+    (label) => label.is_suggested
+  )
+
   const categoryChartData = profile.category_interests.map((c) => ({
     name: c.category,
     bids: c.bid_count,
@@ -239,6 +255,131 @@ export function DonorProfilePanel({
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className='text-base'>Donor labels</CardTitle>
+        </CardHeader>
+        <CardContent className='space-y-4'>
+          <InlineDonorLabels
+            labels={profile.donor_labels}
+            userId={profile.user_id}
+            npoId={npoId ?? null}
+          />
+          {suggestedLabels.length > 0 ? (
+            <div className='space-y-3'>
+              <div className='flex items-center justify-between gap-2'>
+                <p className='text-sm font-medium'>
+                  Suggested from survey answers
+                </p>
+                {npoId ? (
+                  <Button
+                    size='sm'
+                    variant='outline'
+                    onClick={() =>
+                      confirmAllSuggestedLabels.mutate(profile.user_id)
+                    }
+                  >
+                    Confirm all
+                  </Button>
+                ) : null}
+              </div>
+              <div className='space-y-2'>
+                {suggestedLabels.map((label) => (
+                  <div
+                    key={label.id}
+                    className='flex flex-wrap items-center justify-between gap-2 rounded-md border p-3'
+                  >
+                    <Badge variant='outline'>{label.name}</Badge>
+                    {npoId ? (
+                      <div className='flex gap-2'>
+                        <Button
+                          size='sm'
+                          variant='outline'
+                          onClick={() =>
+                            confirmSuggestedLabel.mutate({
+                              userId: profile.user_id,
+                              labelId: label.id,
+                            })
+                          }
+                        >
+                          Confirm
+                        </Button>
+                        <Button
+                          size='sm'
+                          variant='ghost'
+                          onClick={() =>
+                            dismissSuggestedLabel.mutate({
+                              userId: profile.user_id,
+                              labelId: label.id,
+                            })
+                          }
+                        >
+                          Dismiss
+                        </Button>
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className='text-muted-foreground text-sm'>
+              No pending label suggestions.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className='text-base'>Survey response</CardTitle>
+        </CardHeader>
+        <CardContent className='space-y-3'>
+          {!profile.survey_response ? (
+            <p className='text-muted-foreground text-sm'>
+              No survey response recorded.
+            </p>
+          ) : (
+            <>
+              <div className='flex flex-wrap items-center gap-2'>
+                <Badge
+                  variant={profile.survey_completed ? 'default' : 'secondary'}
+                >
+                  {profile.survey_completed ? 'Completed' : 'Skipped'}
+                </Badge>
+                <span className='text-sm font-medium'>
+                  {profile.survey_response.event_name}
+                </span>
+                {profile.survey_response.completed_at ? (
+                  <span className='text-muted-foreground text-sm'>
+                    {fmtDateTime(profile.survey_response.completed_at)}
+                  </span>
+                ) : null}
+              </div>
+              <p className='text-muted-foreground text-sm'>
+                Discount applied:{' '}
+                {fmt(profile.survey_response.discount_cents_applied / 100)}
+              </p>
+              <div className='space-y-2'>
+                {profile.survey_response.answers.map((answer) => (
+                  <div
+                    key={answer.question_text}
+                    className='rounded-md border p-3'
+                  >
+                    <p className='text-sm font-medium'>
+                      {answer.question_text}
+                    </p>
+                    <p className='text-muted-foreground text-sm'>
+                      {answer.option_text}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Card filter bar (shared for card mode) */}
       {viewMode === 'card' && (

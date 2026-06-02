@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from app.models.donation import Donation
     from app.models.donation_label import DonationLabel
     from app.models.event_registration import EventRegistration
+    from app.models.event_survey_config import EventSurveyConfig
     from app.models.event_table import EventTable
     from app.models.npo import NPO
     from app.models.payment_transaction import PaymentTransaction
@@ -345,6 +346,12 @@ class Event(Base, UUIDMixin, TimestampMixin):
         "EventRegistration",
         back_populates="event",
         cascade="all, delete-orphan",
+    )
+    event_survey_config: Mapped["EventSurveyConfig | None"] = relationship(
+        "EventSurveyConfig",
+        back_populates="event",
+        cascade="all, delete-orphan",
+        uselist=False,
     )
     # Feature 014: Table customization relationship
     tables: Mapped[list["EventTable"]] = relationship(

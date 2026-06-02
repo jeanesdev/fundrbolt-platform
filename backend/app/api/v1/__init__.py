@@ -15,6 +15,7 @@ from app.api.v1 import (
     admin_donor_dashboard,
     admin_donor_labels,
     admin_event_dashboard,
+    admin_event_survey,
     admin_notifications,
     admin_npo_credentials,
     admin_payments,
@@ -39,6 +40,7 @@ from app.api.v1 import (
     donor_revenue_generators,
     donor_run_of_show,
     donor_seating,
+    donor_survey,
     event_custom_options,
     event_preview,
     events,
@@ -91,6 +93,7 @@ api_router.include_router(events_food_options.router, tags=["events", "food-opti
 api_router.include_router(sponsors.router, tags=["events", "sponsors"])
 api_router.include_router(admin_donations.router, tags=["donations"])
 api_router.include_router(admin_donor_labels.router, tags=["admin-donor-labels"])
+api_router.include_router(admin_event_survey.router, tags=["admin-event-survey"])
 api_router.include_router(registrations.router, tags=["registrations"])
 api_router.include_router(checkin.router, tags=["checkin"])
 api_router.include_router(quick_sale.router, tags=["quick-sale"])
@@ -120,6 +123,7 @@ api_router.include_router(admin_donor_dashboard.router)
 api_router.include_router(admin_auction_dashboard.router)
 api_router.include_router(admin_quick_entry.router)
 api_router.include_router(donor_seating.router, tags=["donor-seating"])
+api_router.include_router(donor_survey.router, tags=["donor-survey"])
 api_router.include_router(notifications.router, tags=["notifications"])
 api_router.include_router(push_subscriptions.router, tags=["push-notifications"])
 api_router.include_router(notification_preferences.router, tags=["notifications"])

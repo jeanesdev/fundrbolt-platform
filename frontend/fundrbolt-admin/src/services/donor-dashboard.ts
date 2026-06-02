@@ -1,5 +1,28 @@
 import apiClient from '@/lib/axios'
 
+export interface DonorLabelSummary {
+  id: string
+  name: string
+  color: string | null
+  is_system_default?: boolean
+  is_suggested?: boolean
+  source?: string
+}
+
+export interface SurveyAnswerSummary {
+  question_text: string
+  option_text: string
+}
+
+export interface SurveyResponseSummary {
+  event_id: string
+  event_name: string
+  status: 'completed' | 'skipped'
+  completed_at: string | null
+  discount_cents_applied: number
+  answers: SurveyAnswerSummary[]
+}
+
 // --- Types ---
 
 export interface DonorLeaderboardEntry {
@@ -15,6 +38,9 @@ export interface DonorLeaderboardEntry {
   silent_auction_total: number
   live_auction_total: number
   buy_now_total: number
+  survey_completed: boolean
+  donor_labels: DonorLabelSummary[]
+  survey_answers: Record<string, string>
 }
 
 export interface DonorLeaderboardResponse {
@@ -104,6 +130,9 @@ export interface DonorProfileResponse {
   ticket_history: TicketRecord[]
   category_interests: CategoryInterest[]
   outbid_summary: OutbidSummary
+  donor_labels: DonorLabelSummary[]
+  survey_completed: boolean
+  survey_response: SurveyResponseSummary | null
 }
 
 export interface OutbidLeaderEntry {
@@ -180,8 +209,33 @@ export interface LeaderboardParams {
   filter_col?: string
   filter_min?: number
   filter_max?: number
+  label_ids?: string[]
   page?: number
   per_page?: number
+}
+
+export interface SurveyAnswerColumn {
+  id: string
+  text: string
+}
+
+export interface SurveyAnswerDonorRow {
+  user_id: string
+  name: string
+  answers: Record<string, string>
+}
+
+export interface SurveyAnswersResponse {
+  questions: SurveyAnswerColumn[]
+  donors: SurveyAnswerDonorRow[]
+}
+
+export interface EventSurveyAnswerParams {
+  eventId?: string
+  sort_by_question_id?: string
+  sort_order?: 'asc' | 'desc'
+  filter_question_id?: string
+  filter_option_text?: string
 }
 
 export interface ScopedParams {
@@ -209,6 +263,15 @@ class DonorDashboardService {
     const response = await apiClient.get<DonorProfileResponse>(
       `/admin/donor-dashboard/donors/${userId}`,
       { params }
+    )
+    return response.data
+  }
+
+  async getEventSurveyAnswers(params: EventSurveyAnswerParams) {
+    const { eventId, ...queryParams } = params
+    const response = await apiClient.get<SurveyAnswersResponse>(
+      `/admin/events/${eventId}/survey/donor-answers`,
+      { params: queryParams }
     )
     return response.data
   }
@@ -244,6 +307,9 @@ class DonorDashboardService {
     if (params.sort_by) searchParams.set('sort_by', params.sort_by)
     if (params.sort_order) searchParams.set('sort_order', params.sort_order)
     if (params.search) searchParams.set('search', params.search)
+    params.label_ids?.forEach((labelId) =>
+      searchParams.append('label_ids', labelId)
+    )
     const qs = searchParams.toString()
     return `/admin/donor-dashboard/leaderboard/export${qs ? `?${qs}` : ''}`
   }

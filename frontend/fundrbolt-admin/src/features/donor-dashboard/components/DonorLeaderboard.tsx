@@ -1,10 +1,24 @@
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useMemo, useState } from 'react'
+import {
+  ArrowDown,
+  ArrowUp,
+  Bell,
+  ChevronRight,
+  ChevronsUpDown,
+  Download,
+  Filter,
+  Search,
+  X,
+} from 'lucide-react'
+import apiClient from '@/lib/axios'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -20,25 +34,22 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import apiClient from '@/lib/axios'
-import {
-  ArrowDown,
-  ArrowUp,
-  Bell,
-  ChevronRight,
-  ChevronsUpDown,
-  Download,
-  Filter,
-  Search,
-  X,
-} from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useDonorLabels } from '@/features/users/hooks/use-donor-labels'
 import { useDonorLeaderboard } from '../hooks/useDonorDashboard'
 import { SendNotificationDialog } from './SendNotificationDialog'
 
 const fmt = (n: number) =>
   n.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
+
+const getLabelStyle = (color: string | null) =>
+  color
+    ? {
+        backgroundColor: `${color}20`,
+        borderColor: `${color}60`,
+        color,
+      }
+    : {}
 
 interface DonorLeaderboardProps {
   eventId?: string
@@ -105,7 +116,8 @@ function SortIcon({
   sortBy: SortColumn
   sortOrder: 'asc' | 'desc'
 }) {
-  if (sortBy !== column) return <ChevronsUpDown className='h-3.5 w-3.5 opacity-50' />
+  if (sortBy !== column)
+    return <ChevronsUpDown className='h-3.5 w-3.5 opacity-50' />
   return sortOrder === 'desc' ? (
     <ArrowDown className='h-3.5 w-3.5' />
   ) : (
@@ -162,7 +174,9 @@ function ColHeader({
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align='start' className='w-52'>
-          <DropdownMenuLabel className='text-muted-foreground text-xs'>Sort</DropdownMenuLabel>
+          <DropdownMenuLabel className='text-muted-foreground text-xs'>
+            Sort
+          </DropdownMenuLabel>
           <DropdownMenuItem onClick={() => onSort(col, 'desc')}>
             <ArrowDown className='mr-2 h-4 w-4' />
             Highest first
@@ -172,7 +186,9 @@ function ColHeader({
             Lowest first
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuLabel className='text-muted-foreground text-xs'>Filter</DropdownMenuLabel>
+          <DropdownMenuLabel className='text-muted-foreground text-xs'>
+            Filter
+          </DropdownMenuLabel>
           <DropdownMenuItem onClick={() => handlePreset('zero_only')}>
             Show only $0 (none)
           </DropdownMenuItem>
@@ -209,7 +225,12 @@ function ColHeader({
               className='h-7 w-full text-xs'
               onClick={(e) => {
                 e.stopPropagation()
-                onFilter({ col, preset: 'custom', min: customMin, max: customMax })
+                onFilter({
+                  col,
+                  preset: 'custom',
+                  min: customMin,
+                  max: customMax,
+                })
               }}
             >
               Apply
@@ -218,7 +239,10 @@ function ColHeader({
           {isFiltered && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onClearFilter} className='text-destructive'>
+              <DropdownMenuItem
+                onClick={onClearFilter}
+                className='text-destructive'
+              >
                 <X className='mr-2 h-4 w-4' />
                 Clear filter
               </DropdownMenuItem>
@@ -243,6 +267,7 @@ export function DonorLeaderboard({
   const [page, setPage] = useState(1)
   const [cardFiltersOpen, setCardFiltersOpen] = useState(false)
   const [activeFilter, setActiveFilter] = useState<ColumnFilter | null>(null)
+  const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([])
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [notifyOpen, setNotifyOpen] = useState(false)
   const perPage = 25
@@ -264,6 +289,8 @@ export function DonorLeaderboard({
     }
   }, [activeFilter])
 
+  const { data: donorLabelsData } = useDonorLabels(npoId ?? null)
+
   const query = useDonorLeaderboard({
     event_id: eventId,
     npo_id: npoId,
@@ -271,6 +298,7 @@ export function DonorLeaderboard({
     sort_order: sortOrder,
     search: searchQuery,
     ...filterParams,
+    label_ids: selectedLabelIds.length > 0 ? selectedLabelIds : undefined,
     page,
     per_page: perPage,
   })
@@ -295,6 +323,7 @@ export function DonorLeaderboard({
 
   const handleClearFilter = () => {
     setActiveFilter(null)
+    setSelectedLabelIds([])
     setPage(1)
   }
 
@@ -302,6 +331,7 @@ export function DonorLeaderboard({
     setSearch('')
     setFilters(defaultFilters)
     setActiveFilter(null)
+    setSelectedLabelIds([])
     setPage(1)
   }
 
@@ -316,6 +346,8 @@ export function DonorLeaderboard({
             sort_by: sortBy,
             sort_order: sortOrder,
             search: searchQuery,
+            label_ids:
+              selectedLabelIds.length > 0 ? selectedLabelIds : undefined,
           },
           responseType: 'blob',
         }
@@ -378,7 +410,9 @@ export function DonorLeaderboard({
       }
       if (
         filters.ticket_total &&
-        !normalize(row.ticket_total).includes(filters.ticket_total.toLowerCase())
+        !normalize(row.ticket_total).includes(
+          filters.ticket_total.toLowerCase()
+        )
       ) {
         return false
       }
@@ -408,7 +442,9 @@ export function DonorLeaderboard({
       }
       if (
         filters.buy_now_total &&
-        !normalize(row.buy_now_total).includes(filters.buy_now_total.toLowerCase())
+        !normalize(row.buy_now_total).includes(
+          filters.buy_now_total.toLowerCase()
+        )
       ) {
         return false
       }
@@ -505,7 +541,7 @@ export function DonorLeaderboard({
   })
 
   const filterLabel = activeFilter
-    ? NUMERIC_COLS.find((c) => c.key === activeFilter.col)?.label ?? ''
+    ? (NUMERIC_COLS.find((c) => c.key === activeFilter.col)?.label ?? '')
     : ''
 
   const filterSummary = activeFilter
@@ -517,7 +553,8 @@ export function DonorLeaderboard({
     : ''
   const activeFilterCount =
     Object.values(filters).filter((value) => value.trim().length > 0).length +
-    (activeFilter ? 1 : 0)
+    (activeFilter ? 1 : 0) +
+    selectedLabelIds.length
 
   return (
     <>
@@ -556,6 +593,47 @@ export function DonorLeaderboard({
                 className='w-[200px] pl-8'
               />
             </div>
+            {npoId && donorLabelsData?.items?.length ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant='outline' size='sm'>
+                    <Filter className='mr-1 h-4 w-4' />
+                    Labels
+                    {selectedLabelIds.length > 0
+                      ? ` (${selectedLabelIds.length})`
+                      : ''}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align='end' className='w-64'>
+                  <DropdownMenuLabel>Filter by label</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {donorLabelsData.items.map((label) => (
+                    <DropdownMenuCheckboxItem
+                      key={label.id}
+                      checked={selectedLabelIds.includes(label.id)}
+                      onCheckedChange={(checked) => {
+                        setSelectedLabelIds((prev) =>
+                          checked
+                            ? [...prev, label.id]
+                            : prev.filter((id) => id !== label.id)
+                        )
+                        setPage(1)
+                      }}
+                    >
+                      <span
+                        className={`mr-2 inline-block h-2.5 w-2.5 rounded-full ${label.color ? '' : 'bg-muted-foreground/40'}`}
+                        style={
+                          label.color
+                            ? { backgroundColor: label.color }
+                            : undefined
+                        }
+                      />
+                      {label.name}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
             {activeFilterCount > 0 && (
               <Button variant='ghost' size='sm' onClick={clearAllFilters}>
                 <X className='mr-1 h-4 w-4' />
@@ -587,9 +665,7 @@ export function DonorLeaderboard({
                 onClick={() => setNotifyOpen(true)}
                 disabled={!eventId}
                 title={
-                  !eventId
-                    ? 'Select an event to send notifications'
-                    : undefined
+                  !eventId ? 'Select an event to send notifications' : undefined
                 }
               >
                 <Bell className='mr-1.5 h-4 w-4' />
@@ -636,7 +712,11 @@ export function DonorLeaderboard({
                     </Button>
                   )}
                   {!activeFilter && !searchQuery && (
-                    <Button variant='outline' size='sm' onClick={clearAllFilters}>
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={clearAllFilters}
+                    >
                       <X className='mr-1 h-3.5 w-3.5' />
                       Clear all
                     </Button>
@@ -701,10 +781,11 @@ export function DonorLeaderboard({
                 {filteredItems.map((donor, i) => (
                   <div
                     key={donor.user_id}
-                    className={`hover:bg-muted/50 space-y-2 rounded-md border p-3 ${selectedIds.has(donor.user_id)
-                      ? 'border-primary bg-primary/5'
-                      : ''
-                      }`}
+                    className={`hover:bg-muted/50 space-y-2 rounded-md border p-3 ${
+                      selectedIds.has(donor.user_id)
+                        ? 'border-primary bg-primary/5'
+                        : ''
+                    }`}
                   >
                     <div className='flex items-start gap-2'>
                       <Checkbox
@@ -740,7 +821,27 @@ export function DonorLeaderboard({
                               Inactive
                             </Badge>
                           )}
+                          {donor.survey_completed && (
+                            <Badge variant='secondary' className='text-xs'>
+                              Survey complete
+                            </Badge>
+                          )}
                         </div>
+                        {donor.donor_labels.length > 0 && (
+                          <div className='mt-2 flex flex-wrap gap-1'>
+                            {donor.donor_labels.map((label) => (
+                              <Badge
+                                key={label.id}
+                                variant='outline'
+                                className='text-[11px]'
+                                style={getLabelStyle(label.color)}
+                              >
+                                {label.name}
+                                {label.is_suggested ? ' (suggested)' : ''}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
                         <dl className='mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm'>
                           <dt className='text-muted-foreground'>Total Given</dt>
                           <dd className='font-semibold'>
@@ -941,8 +1042,9 @@ export function DonorLeaderboard({
                     filteredItems.map((donor, i) => (
                       <TableRow
                         key={donor.user_id}
-                        className={`hover:bg-muted/50 cursor-pointer ${selectedIds.has(donor.user_id) ? 'bg-primary/5' : ''
-                          }`}
+                        className={`hover:bg-muted/50 cursor-pointer ${
+                          selectedIds.has(donor.user_id) ? 'bg-primary/5' : ''
+                        }`}
                         onClick={() => onSelectDonor(donor.user_id)}
                       >
                         <TableCell
@@ -972,7 +1074,27 @@ export function DonorLeaderboard({
                                 Inactive
                               </Badge>
                             )}
+                            {donor.survey_completed && (
+                              <Badge variant='secondary' className='text-xs'>
+                                Survey complete
+                              </Badge>
+                            )}
                           </div>
+                          {donor.donor_labels.length > 0 && (
+                            <div className='mt-1 flex flex-wrap gap-1'>
+                              {donor.donor_labels.map((label) => (
+                                <Badge
+                                  key={label.id}
+                                  variant='outline'
+                                  className='text-[11px]'
+                                  style={getLabelStyle(label.color)}
+                                >
+                                  {label.name}
+                                  {label.is_suggested ? ' (suggested)' : ''}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell className='text-right font-semibold'>
                           {fmt(donor.total_given)}

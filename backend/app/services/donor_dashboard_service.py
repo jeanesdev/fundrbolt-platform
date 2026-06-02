@@ -15,6 +15,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.auction_bid import AuctionBid, BidStatus, PaddleRaiseContribution
 from app.models.auction_item import AuctionItem
 from app.models.donation import Donation, DonationStatus
+from app.models.donor_label import DonorLabel
+from app.models.donor_label_assignment import DonorLabelAssignment
 from app.models.event import Event, EventStatus
 from app.models.event_registration import EventRegistration
 from app.models.npo import NPO
@@ -23,6 +25,8 @@ from app.models.quick_entry_buy_now_bid import QuickEntryBuyNowBid
 from app.models.quick_entry_donation import QuickEntryDonation
 from app.models.registration_guest import RegistrationGuest
 from app.models.revenue_generator_entry import RevenueGeneratorEntry
+from app.models.survey_answer import SurveyAnswer
+from app.models.survey_response import SurveyResponse
 from app.models.ticket_management import PaymentStatus, TicketPackage, TicketPurchase
 from app.models.user import User
 from app.schemas.donor_dashboard import (
@@ -44,6 +48,8 @@ from app.schemas.donor_dashboard import (
     OutbidSummary,
     TicketRecord,
 )
+from app.schemas.donor_label import DonorLabelWithAssignmentInfo
+from app.schemas.survey import SurveyAnswerDetail, SurveyResponseSummary
 
 # Valid sort columns for the leaderboard
 _LEADERBOARD_SORT_COLUMNS = {
@@ -78,6 +84,7 @@ class DonorDashboardService:
         filter_col: str | None = None,
         filter_min: float | None = None,
         filter_max: float | None = None,
+        label_ids: list[UUID] | None = None,
         page: int = 1,
         per_page: int = 25,
         _known_total: int | None = None,
@@ -230,6 +237,23 @@ class DonorDashboardService:
             "distinct_donors"
         )
 
+        if label_ids:
+            label_user_sq = (
+                select(distinct(DonorLabelAssignment.user_id).label("user_id"))
+                .join(DonorLabel, DonorLabel.id == DonorLabelAssignment.label_id)
+                .where(
+                    DonorLabelAssignment.label_id.in_(label_ids),
+                    DonorLabelAssignment.is_suggested.is_(False),
+                    DonorLabel.npo_id.in_(accessible_npo_ids),
+                )
+                .subquery("label_user_sq")
+            )
+            distinct_donors = (
+                select(distinct_donors.c.user_id)
+                .join(label_user_sq, label_user_sq.c.user_id == distinct_donors.c.user_id)
+                .subquery("distinct_donors")
+            )
+
         # ----- Main query -----
         ticket_val = func.coalesce(ticket_sq.c.ticket_total, 0)
         donation_val = (
@@ -329,6 +353,11 @@ class DonorDashboardService:
             )
         ).all()
 
+        donor_context = await self._load_donor_context(
+            [r.user_id for r in rows],
+            accessible_npo_ids,
+            event_id=event_id,
+        )
         items = [
             DonorLeaderboardEntry(
                 user_id=r.user_id,
@@ -343,6 +372,9 @@ class DonorDashboardService:
                 silent_auction_total=float(r.silent_auction_total),
                 live_auction_total=float(r.live_auction_total),
                 buy_now_total=float(r.buy_now_total),
+                survey_completed=donor_context.get(r.user_id, {}).get("survey_completed", False),
+                donor_labels=donor_context.get(r.user_id, {}).get("labels", []),
+                survey_answers=donor_context.get(r.user_id, {}).get("survey_answers", {}),
             )
             for r in rows
         ]
@@ -451,6 +483,11 @@ class DonorDashboardService:
         total_given = sum(e.total_given_at_event for e in event_history) if event_history else 0
         events_attended = sum(1 for e in event_history if e.checked_in)
 
+        donor_context = await self._load_donor_context(
+            [user_id], accessible_npo_ids, event_id=event_id
+        )
+        context = donor_context.get(user_id, {})
+
         return DonorProfileResponse(
             user_id=user.id,
             first_name=user.first_name,
@@ -466,6 +503,9 @@ class DonorDashboardService:
             ticket_history=ticket_history,
             category_interests=category_interests,
             outbid_summary=outbid_summary,
+            donor_labels=context.get("labels", []),
+            survey_completed=context.get("survey_completed", False),
+            survey_response=context.get("survey_response"),
         )
 
     async def _get_event_history(self, user_id: UUID, event_filter: Any) -> list[EventAttendance]:
@@ -512,6 +552,129 @@ class DonorDashboardService:
                 )
             )
         return results
+
+    async def _load_donor_context(
+        self,
+        user_ids: list[UUID],
+        accessible_npo_ids: list[UUID],
+        *,
+        event_id: UUID | None = None,
+    ) -> dict[UUID, dict[str, Any]]:
+        if not user_ids:
+            return {}
+
+        context: dict[UUID, dict[str, Any]] = {
+            user_id: {
+                "labels": [],
+                "survey_completed": False,
+                "survey_answers": {},
+                "survey_response": None,
+            }
+            for user_id in user_ids
+        }
+
+        label_stmt = (
+            select(
+                DonorLabelAssignment.user_id,
+                DonorLabel.id.label("label_id"),
+                DonorLabel.name,
+                DonorLabel.color,
+                DonorLabel.is_system_default,
+                DonorLabelAssignment.is_suggested,
+                DonorLabelAssignment.source,
+            )
+            .join(DonorLabel, DonorLabel.id == DonorLabelAssignment.label_id)
+            .where(
+                DonorLabelAssignment.user_id.in_(user_ids),
+                DonorLabel.npo_id.in_(accessible_npo_ids),
+            )
+            .order_by(DonorLabel.name.asc())
+        )
+        for row in (await self.db.execute(label_stmt)).all():
+            context[row.user_id]["labels"].append(
+                DonorLabelWithAssignmentInfo(
+                    id=row.label_id,
+                    name=row.name,
+                    color=row.color,
+                    is_system_default=row.is_system_default,
+                    is_suggested=row.is_suggested,
+                    source=row.source,
+                )
+            )
+
+        response_stmt = (
+            select(
+                SurveyResponse.id.label("response_id"),
+                EventRegistration.user_id,
+                SurveyResponse.status,
+                SurveyResponse.completed_at,
+                SurveyResponse.discount_cents_applied,
+                Event.id.label("event_id"),
+                Event.name.label("event_name"),
+            )
+            .join(EventRegistration, SurveyResponse.registration_id == EventRegistration.id)
+            .join(Event, EventRegistration.event_id == Event.id)
+            .where(
+                EventRegistration.user_id.in_(user_ids),
+                Event.npo_id.in_(accessible_npo_ids),
+                *([Event.id == event_id] if event_id else []),
+            )
+            .order_by(
+                EventRegistration.user_id.asc(),
+                SurveyResponse.completed_at.desc().nullslast(),
+                SurveyResponse.created_at.desc(),
+            )
+        )
+        latest_by_user: dict[UUID, Any] = {}
+        for response_row in (await self.db.execute(response_stmt)).all():
+            latest_by_user.setdefault(response_row.user_id, response_row)
+
+        if not latest_by_user:
+            return context
+
+        response_ids = [row.response_id for row in latest_by_user.values()]
+        answers_by_response: dict[UUID, list[SurveyAnswerDetail]] = {
+            response_id: [] for response_id in response_ids
+        }
+        answer_map_by_response: dict[UUID, dict[str, str]] = {
+            response_id: {} for response_id in response_ids
+        }
+        answer_stmt = (
+            select(
+                SurveyAnswer.response_id,
+                SurveyAnswer.question_text_snapshot,
+                SurveyAnswer.option_text_snapshot,
+            )
+            .where(SurveyAnswer.response_id.in_(response_ids))
+            .order_by(SurveyAnswer.response_id.asc(), SurveyAnswer.created_at.asc())
+        )
+        for answer_row in (await self.db.execute(answer_stmt)).all():
+            answers_by_response[answer_row.response_id].append(
+                SurveyAnswerDetail(
+                    question_text=answer_row.question_text_snapshot,
+                    option_text=answer_row.option_text_snapshot,
+                )
+            )
+            answer_map_by_response[answer_row.response_id][answer_row.question_text_snapshot] = (
+                answer_row.option_text_snapshot
+            )
+
+        for user_id, response_row in latest_by_user.items():
+            summary = SurveyResponseSummary(
+                event_id=response_row.event_id,
+                event_name=response_row.event_name,
+                status=response_row.status,
+                completed_at=response_row.completed_at,
+                discount_cents_applied=response_row.discount_cents_applied,
+                answers=answers_by_response.get(response_row.response_id, []),
+            )
+            context[user_id]["survey_completed"] = response_row.status == "completed"
+            context[user_id]["survey_answers"] = answer_map_by_response.get(
+                response_row.response_id, {}
+            )
+            context[user_id]["survey_response"] = summary
+
+        return context
 
     async def _get_user_event_giving(self, user_id: UUID, event_id: UUID) -> float:
         """Sum all giving for a user at a specific event."""
@@ -1534,6 +1697,7 @@ class DonorDashboardService:
         sort_by: str = "total_given",
         sort_order: str = "desc",
         search: str | None = None,
+        label_ids: list[UUID] | None = None,
     ) -> str:
         """Generate CSV string of the full leaderboard (all rows, paginated internally)."""
         output = io.StringIO()
@@ -1552,6 +1716,8 @@ class DonorDashboardService:
                 "Silent Auction",
                 "Live Auction",
                 "Buy Now",
+                "Survey Completed",
+                "Donor Labels",
             ]
         )
 
@@ -1566,6 +1732,7 @@ class DonorDashboardService:
                 sort_by=sort_by,
                 sort_order=sort_order,
                 search=search,
+                label_ids=label_ids,
                 page=page,
                 per_page=batch_size,
                 _known_total=known_total,
@@ -1588,6 +1755,10 @@ class DonorDashboardService:
                         f"{entry.silent_auction_total:.2f}",
                         f"{entry.live_auction_total:.2f}",
                         f"{entry.buy_now_total:.2f}",
+                        "Yes" if entry.survey_completed else "No",
+                        "; ".join(
+                            label.name for label in entry.donor_labels if not label.is_suggested
+                        ),
                     ]
                 )
             if page >= result.pages:

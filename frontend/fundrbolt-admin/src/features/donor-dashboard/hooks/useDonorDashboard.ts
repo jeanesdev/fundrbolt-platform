@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import {
   donorDashboardService,
+  type EventSurveyAnswerParams,
   type LeaderboardParams,
   type PaginatedScopedParams,
   type ScopedParams,
@@ -19,6 +20,15 @@ export function useDonorProfile(userId: string | null, params: ScopedParams) {
     queryKey: ['donor-dashboard', 'profile', userId, params],
     queryFn: () => donorDashboardService.getDonorProfile(userId!, params),
     enabled: Boolean(userId),
+  })
+}
+
+export function useEventSurveyAnswers(params: EventSurveyAnswerParams) {
+  return useQuery({
+    queryKey: ['donor-dashboard', 'survey-answers', params],
+    queryFn: () => donorDashboardService.getEventSurveyAnswers(params),
+    enabled: Boolean(params.eventId),
+    refetchInterval: 60_000,
   })
 }
 

@@ -5,6 +5,7 @@ export interface DonorLabel {
   npo_id: string
   name: string
   color: string | null
+  is_system_default?: boolean
   created_at: string
   updated_at: string
 }
@@ -24,10 +25,12 @@ export interface UpdateDonorLabelRequest {
 }
 
 export async function listDonorLabels(
-  npoId: string
+  npoId: string,
+  params?: { system_defaults_only?: boolean }
 ): Promise<DonorLabelListResponse> {
   const response = await apiClient.get<DonorLabelListResponse>(
-    `/admin/npos/${npoId}/donor-labels`
+    `/admin/npos/${npoId}/donor-labels`,
+    { params }
   )
   return response.data
 }
@@ -66,6 +69,9 @@ export interface DonorLabelAssignmentInfo {
   id: string
   name: string
   color: string | null
+  is_system_default?: boolean
+  is_suggested?: boolean
+  source?: string
 }
 
 export async function getUserDonorLabels(
@@ -86,6 +92,37 @@ export async function setUserDonorLabels(
   const response = await apiClient.put<DonorLabelAssignmentInfo[]>(
     `/admin/npos/${npoId}/donor-labels/users/${userId}`,
     { label_ids: labelIds }
+  )
+  return response.data
+}
+
+export async function confirmSuggestedDonorLabel(
+  npoId: string,
+  userId: string,
+  labelId: string
+): Promise<DonorLabelAssignmentInfo> {
+  const response = await apiClient.patch<DonorLabelAssignmentInfo>(
+    `/admin/npos/${npoId}/donor-labels/users/${userId}/suggestions/${labelId}/confirm`
+  )
+  return response.data
+}
+
+export async function dismissSuggestedDonorLabel(
+  npoId: string,
+  userId: string,
+  labelId: string
+): Promise<void> {
+  await apiClient.delete(
+    `/admin/npos/${npoId}/donor-labels/users/${userId}/suggestions/${labelId}`
+  )
+}
+
+export async function confirmAllSuggestedDonorLabels(
+  npoId: string,
+  userId: string
+): Promise<{ confirmed: number }> {
+  const response = await apiClient.patch<{ confirmed: number }>(
+    `/admin/npos/${npoId}/donor-labels/users/${userId}/suggestions/confirm-all`
   )
   return response.data
 }
