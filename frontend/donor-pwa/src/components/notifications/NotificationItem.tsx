@@ -9,6 +9,7 @@ import type { NotificationData } from '@/services/notification-service'
 import {
   Bell,
   CheckCircle2,
+  ClipboardList,
   Clock,
   Gavel,
   Gift,
@@ -45,6 +46,8 @@ function NotificationIcon({ type }: { type: string }) {
       return <Clock className={className} />
     case 'welcome':
       return <Gift className={className} />
+    case 'survey_invitation':
+      return <ClipboardList className={className} />
     default:
       return <Bell className={className} />
   }

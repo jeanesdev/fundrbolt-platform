@@ -42,6 +42,7 @@ class NotificationTypeEnum(str, enum.Enum):
     PROXY_BID_TRIGGERED = "proxy_bid_triggered"
     WELCOME = "welcome"
     CUSTOM = "custom"
+    SURVEY_INVITATION = "survey_invitation"
 
 
 class NotificationPriorityEnum(str, enum.Enum):
