@@ -23,6 +23,8 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    env:
+      RATE_LIMIT_ENABLED: "true"
     services:
       postgres:
         image: postgres:15
