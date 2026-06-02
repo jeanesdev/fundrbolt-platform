@@ -146,7 +146,7 @@ jobs:
           JWT_SECRET_KEY=nightly-ci-secret-key-not-for-production \
           PAYMENT_GATEWAY_BACKEND=stub \
           EMAIL_BACKEND=mailpit \
-          poetry run -C backend python ../../tests/seed/seed.py
+          poetry run -C backend python ../tests/seed/seed.py
       - name: Start backend server
         working-directory: backend
         run: |
@@ -230,7 +230,7 @@ jobs:
           JWT_SECRET_KEY=nightly-ci-secret-key-not-for-production \
           PAYMENT_GATEWAY_BACKEND=stub \
           EMAIL_BACKEND=console \
-          poetry run -C backend python ../../tests/seed/seed.py
+          poetry run -C backend python ../tests/seed/seed.py
       - name: Start backend server
         working-directory: backend
         run: |
