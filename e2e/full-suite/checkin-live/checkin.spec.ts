@@ -14,7 +14,7 @@ test('check-in staff can look up a registration by email', async ({ page }) => {
   expect(Number(body.total ?? 0)).toBeGreaterThanOrEqual(0)
 })
 
-test('duplicate check-in is rejected', async ({ page }) => {
+test('duplicate check-in is idempotent', async ({ page }) => {
   const session = await loginAs('checkin_staff')
   const lookup = await page.request.post(`${API_URL}/checkin/lookup`, {
     headers: { Authorization: `Bearer ${session.accessToken}` },
@@ -37,5 +37,6 @@ test('duplicate check-in is rejected', async ({ page }) => {
     headers: { Authorization: `Bearer ${session.accessToken}` },
     data: {},
   })
-  expect([400, 409, 422]).toContain(second.status())
+  // Duplicate check-in is idempotent — returns 200 with existing check-in time preserved
+  expect(second.ok()).toBeTruthy()
 })

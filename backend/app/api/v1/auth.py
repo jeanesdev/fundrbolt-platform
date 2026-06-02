@@ -230,7 +230,8 @@ async def login(
     # Check rate limit (5 failed attempts per 15 min per IP)
     redis_service = RedisService()
     rate_limit_key = f"login_attempt:{ip_address}"
-    if await redis_service.is_rate_limited(
+    settings = get_settings()
+    if settings.rate_limit_enabled and await redis_service.is_rate_limited(
         rate_limit_key,
         max_attempts=5,
         window_seconds=900,

@@ -44,6 +44,7 @@ import { Route as AuthenticatedNposIndexRouteImport } from './routes/_authentica
 import { Route as AuthenticatedEventsIndexRouteImport } from './routes/_authenticated/events/index'
 import { Route as NpoSlugDonateNowRouteImport } from './routes/npo.$slug.donate-now'
 import { Route as EventsSlugTicketsRouteImport } from './routes/events.$slug.tickets'
+import { Route as EventsSlugSurveyRouteImport } from './routes/events.$slug.survey'
 import { Route as EventsSlugRegisterRouteImport } from './routes/events.$slug.register'
 import { Route as EventsSlugCheckoutRouteImport } from './routes/events.$slug.checkout'
 import { Route as EventsSlugCheckinRouteImport } from './routes/events.$slug.checkin'
@@ -246,6 +247,11 @@ const EventsSlugTicketsRoute = EventsSlugTicketsRouteImport.update({
   path: '/tickets',
   getParentRoute: () => EventsSlugRoute,
 } as any)
+const EventsSlugSurveyRoute = EventsSlugSurveyRouteImport.update({
+  id: '/survey',
+  path: '/survey',
+  getParentRoute: () => EventsSlugRoute,
+} as any)
 const EventsSlugRegisterRoute = EventsSlugRegisterRouteImport.update({
   id: '/register',
   path: '/register',
@@ -415,6 +421,7 @@ export interface FileRoutesByFullPath {
   '/events/$slug/checkin': typeof EventsSlugCheckinRoute
   '/events/$slug/checkout': typeof EventsSlugCheckoutRoute
   '/events/$slug/register': typeof EventsSlugRegisterRoute
+  '/events/$slug/survey': typeof EventsSlugSurveyRoute
   '/events/$slug/tickets': typeof EventsSlugTicketsRouteWithChildren
   '/npo/$slug/donate-now': typeof NpoSlugDonateNowRoute
   '/events/': typeof AuthenticatedEventsIndexRoute
@@ -470,6 +477,7 @@ export interface FileRoutesByTo {
   '/events/$slug/checkin': typeof EventsSlugCheckinRoute
   '/events/$slug/checkout': typeof EventsSlugCheckoutRoute
   '/events/$slug/register': typeof EventsSlugRegisterRoute
+  '/events/$slug/survey': typeof EventsSlugSurveyRoute
   '/npo/$slug/donate-now': typeof NpoSlugDonateNowRoute
   '/events': typeof AuthenticatedEventsIndexRoute
   '/npos': typeof AuthenticatedNposIndexRoute
@@ -529,6 +537,7 @@ export interface FileRoutesById {
   '/events/$slug/checkin': typeof EventsSlugCheckinRoute
   '/events/$slug/checkout': typeof EventsSlugCheckoutRoute
   '/events/$slug/register': typeof EventsSlugRegisterRoute
+  '/events/$slug/survey': typeof EventsSlugSurveyRoute
   '/events/$slug/tickets': typeof EventsSlugTicketsRouteWithChildren
   '/npo/$slug/donate-now': typeof NpoSlugDonateNowRoute
   '/_authenticated/events/': typeof AuthenticatedEventsIndexRoute
@@ -589,6 +598,7 @@ export interface FileRouteTypes {
     | '/events/$slug/checkin'
     | '/events/$slug/checkout'
     | '/events/$slug/register'
+    | '/events/$slug/survey'
     | '/events/$slug/tickets'
     | '/npo/$slug/donate-now'
     | '/events/'
@@ -644,6 +654,7 @@ export interface FileRouteTypes {
     | '/events/$slug/checkin'
     | '/events/$slug/checkout'
     | '/events/$slug/register'
+    | '/events/$slug/survey'
     | '/npo/$slug/donate-now'
     | '/events'
     | '/npos'
@@ -702,6 +713,7 @@ export interface FileRouteTypes {
     | '/events/$slug/checkin'
     | '/events/$slug/checkout'
     | '/events/$slug/register'
+    | '/events/$slug/survey'
     | '/events/$slug/tickets'
     | '/npo/$slug/donate-now'
     | '/_authenticated/events/'
@@ -995,6 +1007,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EventsSlugTicketsRouteImport
       parentRoute: typeof EventsSlugRoute
     }
+    '/events/$slug/survey': {
+      id: '/events/$slug/survey'
+      path: '/survey'
+      fullPath: '/events/$slug/survey'
+      preLoaderRoute: typeof EventsSlugSurveyRouteImport
+      parentRoute: typeof EventsSlugRoute
+    }
     '/events/$slug/register': {
       id: '/events/$slug/register'
       path: '/register'
@@ -1278,6 +1297,7 @@ interface EventsSlugRouteChildren {
   EventsSlugCheckinRoute: typeof EventsSlugCheckinRoute
   EventsSlugCheckoutRoute: typeof EventsSlugCheckoutRoute
   EventsSlugRegisterRoute: typeof EventsSlugRegisterRoute
+  EventsSlugSurveyRoute: typeof EventsSlugSurveyRoute
   EventsSlugTicketsRoute: typeof EventsSlugTicketsRouteWithChildren
   EventsSlugIndexRoute: typeof EventsSlugIndexRoute
 }
@@ -1286,6 +1306,7 @@ const EventsSlugRouteChildren: EventsSlugRouteChildren = {
   EventsSlugCheckinRoute: EventsSlugCheckinRoute,
   EventsSlugCheckoutRoute: EventsSlugCheckoutRoute,
   EventsSlugRegisterRoute: EventsSlugRegisterRoute,
+  EventsSlugSurveyRoute: EventsSlugSurveyRoute,
   EventsSlugTicketsRoute: EventsSlugTicketsRouteWithChildren,
   EventsSlugIndexRoute: EventsSlugIndexRoute,
 }

@@ -11,6 +11,7 @@ from typing import Any, ParamSpec, TypeVar
 from fastapi import HTTPException, Request, status
 from redis.exceptions import ResponseError
 
+from app.core.config import get_settings
 from app.core.redis import get_redis
 from app.services.redis_service import RedisService
 
@@ -179,6 +180,10 @@ def rate_limit(
 
             if not request:
                 # If no request object, skip rate limiting
+                return await func(*args, **kwargs)
+
+            # Skip rate limiting if disabled (e.g., in test environments)
+            if not get_settings().rate_limit_enabled:
                 return await func(*args, **kwargs)
 
             # Get identifier (IP address or custom key)

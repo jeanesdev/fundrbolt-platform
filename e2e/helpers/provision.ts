@@ -35,6 +35,7 @@ export async function provisionUser(apiClient: ApiClient, payload: Record<string
 export async function provisionTicketPackage(apiClient: ApiClient, eventId: string, payload: Record<string, unknown> = {}) {
   const suffix = randomUUID().slice(0, 8)
   return apiClient.post(`/admin/events/${eventId}/packages`, {
+    event_id: eventId,
     name: `Automation Package ${suffix}`,
     price: 125,
     seats_per_package: 1,
