@@ -22,7 +22,7 @@ test('promo code validation accepts a valid code', async ({ adminApi, donorApi }
     applies_to_all_packages: true,
   })
 
-  const validation = await donorApi.post<Record<string, unknown>>(`/events/${eventId}/promo-codes/${code}/validate`, {
+  const validation = await adminApi.post<Record<string, unknown>>(`/admin/events/${eventId}/promo-codes/validate/${code}`, {
     items: [{ package_id: ticketPackage.id, quantity: 1 }],
   })
 
