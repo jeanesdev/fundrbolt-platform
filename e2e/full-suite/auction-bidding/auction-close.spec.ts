@@ -15,7 +15,7 @@ test('closing an auction endpoint transitions the event response', async ({ page
 
 test('auction close endpoint is accessible by admin', async ({ page, seedRefs }) => {
   const session = await loginAs('npo_admin')
-  const response = await page.request.post(`${API_URL}/events/${seedRefs.liveEventSlug}/close`, {
+  const response = await page.request.post(`${API_URL}/events/${seedRefs.liveEventId}/close`, {
     headers: { Authorization: `Bearer ${session.accessToken}` },
   })
 

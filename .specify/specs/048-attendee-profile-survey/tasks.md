@@ -159,7 +159,7 @@
   - Load `DonorLabelAssignment` rows for this user (joined to DonorLabel for NPO filtering), include `is_suggested`, `source`
 - [ ] T047 Add new endpoint `GET /admin/events/{event_id}/survey/donor-answers` in `admin_event_survey.py` — returns all survey answers for the event as a 2D structure:
   - Response: `{ questions: [{id, text}], donors: [{user_id, name, answers: {question_id: option_text_snapshot}}] }`
-  - Supports `sort_by_question_id` query param + `sort_order` (`asc`/`desc`)  
+  - Supports `sort_by_question_id` query param + `sort_order` (`asc`/`desc`)
   - Supports `filter_question_id` + `filter_option_text` query params for answer filtering
   - Used by Donor Dashboard to render dynamic survey columns
 - [ ] T048 Extend `GET /admin/donor-dashboard/leaderboard` to support:

@@ -4,7 +4,7 @@ import { expect, test } from '../../fixtures/base-fixtures'
 
 test('admin can fetch event analytics dashboard data', async ({ page, seedRefs }) => {
   const session = await loginAs('npo_admin')
-  const response = await page.request.get(`${API_URL}/admin/events/${seedRefs.liveEventSlug}/dashboard`, {
+  const response = await page.request.get(`${API_URL}/admin/events/${seedRefs.liveEventId}/dashboard`, {
     headers: { Authorization: `Bearer ${session.accessToken}` },
   })
   const body = (await response.json()) as Record<string, unknown>

@@ -4,7 +4,7 @@ import { expect, test } from '../../fixtures/base-fixtures'
 
 test('admin can fetch run-of-show items', async ({ page, seedRefs }) => {
   const session = await loginAs('npo_admin')
-  const response = await page.request.get(`${API_URL}/admin/events/${seedRefs.liveEventSlug}/run-of-show`, {
+  const response = await page.request.get(`${API_URL}/admin/events/${seedRefs.liveEventId}/run-of-show`, {
     headers: { Authorization: `Bearer ${session.accessToken}` },
   })
 
@@ -13,7 +13,7 @@ test('admin can fetch run-of-show items', async ({ page, seedRefs }) => {
 
 test('admin can fetch checklist items', async ({ page, seedRefs }) => {
   const session = await loginAs('npo_admin')
-  const response = await page.request.get(`${API_URL}/admin/events/${seedRefs.liveEventSlug}/checklist`, {
+  const response = await page.request.get(`${API_URL}/admin/events/${seedRefs.liveEventId}/checklist`, {
     headers: { Authorization: `Bearer ${session.accessToken}` },
   })
 

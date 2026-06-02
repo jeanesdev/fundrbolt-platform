@@ -9,6 +9,10 @@ export type SeedRefs = {
   futureEventSlug: string
   liveEventSlug: string
   pastEventSlug: string
+  nonprofitId: string
+  futureEventId: string
+  liveEventId: string
+  pastEventId: string
 }
 
 export const test = base.extend<{
@@ -30,12 +34,22 @@ export const test = base.extend<{
     const session = await loginAs('super_admin')
     await use(session.apiClient)
   },
-  seedRefs: async ({}, use) => {
+  seedRefs: async ({ adminApi }, use) => {
+    const eventsRes = await adminApi.get<{ items: Array<{ id: string; slug: string; npo_id: string }> }>('/events')
+    const items = eventsRes.items ?? []
+    const find = (slug: string) => items.find((e) => e.slug === slug)
+    const live = find('seed-live-event')
+    const future = find('seed-future-event')
+    const past = find('seed-past-event')
     await use({
       nonprofitSlug: 'seed-nonprofit',
       futureEventSlug: 'seed-future-event',
       liveEventSlug: 'seed-live-event',
       pastEventSlug: 'seed-past-event',
+      nonprofitId: live?.npo_id ?? future?.npo_id ?? past?.npo_id ?? '',
+      liveEventId: live?.id ?? '',
+      futureEventId: future?.id ?? '',
+      pastEventId: past?.id ?? '',
     })
   },
   mailpit: async ({}, use) => {

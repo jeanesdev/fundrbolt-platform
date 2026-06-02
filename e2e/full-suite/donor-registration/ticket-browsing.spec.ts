@@ -4,7 +4,7 @@ import { provisionEvent, provisionTicketPackage } from '../../helpers/provision'
 import { expect, test } from '../../fixtures/base-fixtures'
 
 test('donor can list ticket packages for the seeded live event', async ({ donorApi, seedRefs }) => {
-  const packages = await donorApi.get<Record<string, unknown>>(`/events/${seedRefs.liveEventSlug}/ticket-packages`)
+  const packages = await donorApi.get<Record<string, unknown>>(`/events/${seedRefs.liveEventSlug}/tickets`)
 
   expect(packages).toBeTruthy()
 })

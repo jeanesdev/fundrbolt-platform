@@ -4,7 +4,7 @@ import { expect, test } from '../../fixtures/base-fixtures'
 
 test('concurrent bids keep a single winning state', async ({ page, donorApi, seedRefs }) => {
   const session = await loginAs('donor')
-  const listing = await donorApi.get<Record<string, unknown>>(`/events/${seedRefs.liveEventSlug}/auction-items?auction_type=silent`)
+  const listing = await donorApi.get<Record<string, unknown>>(`/events/${seedRefs.liveEventId}/auction-items?auction_type=silent`)
   const items = Array.isArray(listing.items) ? (listing.items as Array<Record<string, unknown>>) : []
   expect(items.length).toBeGreaterThan(0)
 
@@ -13,11 +13,11 @@ test('concurrent bids keep a single winning state', async ({ page, donorApi, see
   const nextBid = Number(item.min_next_bid_amount ?? item.starting_bid ?? 10)
 
   const [first, second] = await Promise.all([
-    page.request.post(`${API_URL}/donor/events/${seedRefs.liveEventSlug}/auction-items/${itemId}/bids`, {
+    page.request.post(`${API_URL}/donor/events/${seedRefs.liveEventId}/auction-items/${itemId}/bids`, {
       headers: { Authorization: `Bearer ${session.accessToken}` },
       data: { amount: nextBid },
     }),
-    page.request.post(`${API_URL}/donor/events/${seedRefs.liveEventSlug}/auction-items/${itemId}/bids`, {
+    page.request.post(`${API_URL}/donor/events/${seedRefs.liveEventId}/auction-items/${itemId}/bids`, {
       headers: { Authorization: `Bearer ${session.accessToken}` },
       data: { amount: nextBid + 10 },
     }),
