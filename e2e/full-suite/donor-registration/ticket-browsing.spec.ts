@@ -15,7 +15,7 @@ test('promo code validation accepts a valid code', async ({ adminApi, donorApi }
   const ticketPackage = (await provisionTicketPackage(adminApi, eventId)) as Record<string, unknown>
   const code = `SAVE-${randomUUID().slice(0, 8).toUpperCase()}`
 
-  await adminApi.post(`/events/${eventId}/promo-codes`, {
+  await adminApi.post(`/admin/events/${eventId}/promo-codes`, {
     code,
     discount_type: 'percentage',
     discount_value: 10,
