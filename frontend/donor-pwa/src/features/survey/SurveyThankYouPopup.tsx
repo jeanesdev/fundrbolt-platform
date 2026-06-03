@@ -86,15 +86,21 @@ export function SurveyThankYouPopup({
             )}
 
             <div className='flex w-full flex-col gap-2'>
+              <Button className='w-full' onClick={handleApply}>
+                Apply at checkout
+              </Button>
+
               {discountCents > 0 && npoName && !donateClicked && (
-                <Button
-                  variant='outline'
-                  className='w-full gap-2 border-rose-300 text-rose-700 hover:bg-rose-50 hover:text-rose-800'
-                  onClick={handleDonateBack}
-                >
-                  <Heart className='h-4 w-4 text-rose-500' />
-                  Donate {formatDollars(discountCents)} back to {npoName}
-                </Button>
+                <>
+                  <div className='text-center text-xs font-medium text-gray-400'>or</div>
+                  <Button
+                    className='w-full gap-2'
+                    onClick={handleDonateBack}
+                  >
+                    <Heart className='h-4 w-4' />
+                    Apply this {formatDollars(discountCents)} back to {npoName}
+                  </Button>
+                </>
               )}
 
               {donateClicked && (
@@ -102,10 +108,6 @@ export function SurveyThankYouPopup({
                   ❤️ Thank you for donating back to {npoName}!
                 </div>
               )}
-
-              <Button className='w-full' onClick={handleApply}>
-                Apply at checkout
-              </Button>
             </div>
           </div>
         </Dialog.Content>
