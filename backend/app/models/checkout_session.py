@@ -47,6 +47,7 @@ class CheckoutItemSourceTypeEnum(str, enum.Enum):
     TICKET = "ticket"
     REVENUE_GENERATOR = "revenue_generator"
     SURVEY_DISCOUNT = "survey_discount"
+    SURVEY_DONATE_BACK = "survey_donate_back"
     MANUAL = "manual"
 
 

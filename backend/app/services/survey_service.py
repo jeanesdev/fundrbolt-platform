@@ -220,7 +220,7 @@ class SurveyService:
 
     async def get_survey_status_for_donor(
         self, registration_id: UUID
-    ) -> tuple[bool, EventSurveyConfig | None]:
+    ) -> tuple[bool, EventSurveyConfig | None, bool, int]:
         registration = await self.db.scalar(
             select(EventRegistration).where(EventRegistration.id == registration_id)
         )
@@ -231,12 +231,21 @@ class SurveyService:
 
         config = await self._get_config_by_event_id(registration.event_id)
         if config is None or not config.is_active:
-            return False, None
+            return False, None, False, 0
 
         donor_view = self.serialize_config(config, donor_only=True)
         if not donor_view.questions:
-            return False, None
-        return True, config
+            return False, None, False, 0
+
+        existing_response = await self.db.scalar(
+            select(SurveyResponse).where(SurveyResponse.registration_id == registration_id)
+        )
+        if existing_response is not None:
+            is_completed = existing_response.status == "completed"
+            discount_earned = existing_response.discount_cents_applied
+            return False, config, is_completed, discount_earned
+
+        return True, config, False, 0
 
     async def submit_survey_response(
         self,
@@ -283,6 +292,9 @@ class SurveyService:
         discount_cents = config.discount_cents if action == "complete" else 0
 
         if existing is not None:
+            # On retake: preserve the already-applied discount so it is never granted twice
+            if existing.discount_cents_applied > 0:
+                discount_cents = existing.discount_cents_applied
             # Overwrite previous response: delete old answers and update the record
             for old_answer in list(existing.answers):
                 await self.db.delete(old_answer)
@@ -408,6 +420,28 @@ class SurveyService:
             discount_cents_applied=response.discount_cents_applied,
             suggested_label_ids=suggested_label_ids,
         )
+
+    async def mark_donate_back(self, registration_id: UUID) -> SurveyResponse:
+        """Mark the donor's survey response as donate_back=True.
+
+        Raises 404 if no response exists, 400 if the response is not completed
+        or has no discount to donate back.
+        """
+        response = await self.db.scalar(
+            select(SurveyResponse).where(SurveyResponse.registration_id == registration_id)
+        )
+        if response is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Survey response not found"
+            )
+        if response.status != "completed" or response.discount_cents_applied == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No completed survey discount to donate back",
+            )
+        response.donate_back = True
+        await self.db.flush()
+        return response
 
     async def reset_to_default_questions(self, survey_config_id: UUID) -> EventSurveyConfig:
         config = await self._get_config_by_id(survey_config_id)

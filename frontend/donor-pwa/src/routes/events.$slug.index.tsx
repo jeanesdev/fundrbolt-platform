@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
@@ -15,7 +15,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { type EventContextOption } from '@/stores/event-context-store'
 import { getEventBySlug, type EventMediaUsageTag } from '@/lib/api/events'
 import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
-import { getDonorSurveyStatus, submitDonorSurvey } from '@/lib/api/survey'
+import { getDonorSurveyStatus, markSurveyDonateBack, submitDonorSurvey } from '@/lib/api/survey'
 import { getMyInventory } from '@/lib/api/ticket-purchases'
 import apiClient from '@/lib/axios'
 import { hasValidRefreshToken } from '@/lib/storage/tokens'
@@ -34,6 +34,7 @@ import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { EventHomePage } from '@/features/events/EventHomePage'
 import { AttendeeSurveyModal } from '@/features/survey/AttendeeSurveyModal'
+import { SurveyThankYouPopup } from '@/features/survey/SurveyThankYouPopup'
 
 interface PublicAuctionPreviewItem {
   id: string
@@ -111,6 +112,8 @@ function RouteComponent() {
   const isRegisteredInContext = availableEvents.some(
     (eventOption) => eventOption.slug === slug && eventOption.is_registered
   )
+  const npoName =
+    availableEvents.find((e) => e.slug === slug)?.npo_name ?? null
   const isRegisteredFromQuery =
     registrationsData?.events?.some(
       (registeredEvent) => registeredEvent.slug === slug
@@ -127,6 +130,20 @@ function RouteComponent() {
     enabled: isAuthenticated && isRegistered && Boolean(event?.id),
     staleTime: 60_000,
   })
+  // Use slug (available synchronously from route params) so the initial state
+  // is correct on first render — avoids a race where cached `should_show:true`
+  // triggers the overlay before the async event.id is known.
+  const [surveyDismissed, setSurveyDismissed] = useState(
+    () => localStorage.getItem(`survey_dismissed_${slug}`) === 'true'
+  )
+  const [surveyThankYou, setSurveyThankYou] = useState<{
+    discountCents: number
+  } | null>(null)
+
+  const dismissSurvey = () => {
+    localStorage.setItem(`survey_dismissed_${slug}`, 'true')
+    setSurveyDismissed(true)
+  }
 
   const submitSurveyMutation = useMutation({
     mutationFn: (payload: Parameters<typeof submitDonorSurvey>[1]) =>
@@ -135,7 +152,10 @@ function RouteComponent() {
       await queryClient.invalidateQueries({
         queryKey: ['donor-survey-status', event?.id],
       })
-      if (response.status === 'completed') {
+      dismissSurvey()
+      if (response.status === 'completed' && response.discount_cents_applied > 0) {
+        setSurveyThankYou({ discountCents: response.discount_cents_applied })
+      } else if (response.status === 'completed') {
         toast.success('Thanks for sharing your preferences!')
       } else {
         toast.success('You can complete the survey later from this event page.')
@@ -343,17 +363,29 @@ function RouteComponent() {
         <>
           <EventHomePage />
           {surveyStatusQuery.data?.should_show &&
-          surveyStatusQuery.data.survey ? (
+          surveyStatusQuery.data.survey &&
+          !surveyDismissed ? (
             <AttendeeSurveyModal
               open
               survey={surveyStatusQuery.data.survey}
               isSubmitting={submitSurveyMutation.isPending}
+              onClose={() => dismissSurvey()}
               onSkip={() => submitSurveyMutation.mutate({ action: 'skip' })}
               onComplete={(answers) =>
                 submitSurveyMutation.mutate({ action: 'complete', answers })
               }
             />
           ) : null}
+          <SurveyThankYouPopup
+            key={surveyThankYou !== null ? 'popup-open' : 'popup-closed'}
+            open={surveyThankYou !== null}
+            discountCents={surveyThankYou?.discountCents ?? 0}
+            npoName={npoName}
+            onDonateBack={() => {
+              if (event?.id) markSurveyDonateBack(event.id).catch(() => null)
+            }}
+            onApply={() => setSurveyThankYou(null)}
+          />
         </>
       )
     }

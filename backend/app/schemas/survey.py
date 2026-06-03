@@ -115,6 +115,8 @@ class DonorSurveyStatusResponse(BaseModel):
 
     should_show: bool
     survey: SurveyConfigResponse | None = None
+    is_completed: bool = False
+    discount_cents_applied: int = 0
 
 
 class DonorSurveyAnswerInput(BaseModel):

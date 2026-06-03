@@ -29,6 +29,8 @@ export interface DonorSurveyConfig {
 export interface DonorSurveyStatusResponse {
   should_show: boolean
   survey: DonorSurveyConfig | null
+  is_completed: boolean
+  discount_cents_applied: number
 }
 
 export interface DonorSurveySubmitResponse {
@@ -64,4 +66,8 @@ export async function submitDonorSurvey(
     payload
   )
   return response.data
+}
+
+export async function markSurveyDonateBack(eventId: string): Promise<void> {
+  await apiClient.post(`/donor/events/${eventId}/survey/donate-back`)
 }

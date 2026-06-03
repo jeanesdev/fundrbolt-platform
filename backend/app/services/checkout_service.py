@@ -34,6 +34,7 @@ from app.models.checkout_session import (
 )
 from app.models.event import Event
 from app.models.event_registration import EventRegistration
+from app.models.npo import NPO
 from app.models.payment_transaction import PaymentTransaction, TransactionStatus
 from app.models.quick_entry_bid import QuickEntryBid, QuickEntryBidStatus
 from app.models.quick_entry_buy_now_bid import QuickEntryBuyNowBid
@@ -595,7 +596,7 @@ class CheckoutService:
                 self.db.add(
                     CheckoutItem(
                         session_id=session.id,
-                        name="Profile Survey Discount",
+                        name="Survey Discount",
                         original_amount_cents=-discount_to_apply,
                         source_type=CheckoutItemSourceTypeEnum.SURVEY_DISCOUNT,
                         source_id=survey_response.id,
@@ -603,6 +604,23 @@ class CheckoutService:
                     )
                 )
                 display_order += 1
+
+                if survey_response.donate_back:
+                    npo = await self.db.scalar(
+                        select(NPO).join(Event, Event.npo_id == NPO.id).where(Event.id == event_id)
+                    )
+                    npo_name = npo.name if npo else "the organization"
+                    self.db.add(
+                        CheckoutItem(
+                            session_id=session.id,
+                            name=f"Donation to {npo_name}",
+                            original_amount_cents=discount_to_apply,
+                            source_type=CheckoutItemSourceTypeEnum.SURVEY_DONATE_BACK,
+                            source_id=survey_response.id,
+                            display_order=display_order,
+                        )
+                    )
+                    display_order += 1
 
         await self.db.flush()
 
@@ -617,7 +635,11 @@ class CheckoutService:
         # Gather items by source type that can be looked up
         items_by_source: dict[CheckoutItemSourceTypeEnum, list[CheckoutItem]] = {}
         for item in session.items:
-            if item.source_id is None or item.source_type in (CheckoutItemSourceTypeEnum.MANUAL,):
+            if item.source_id is None or item.source_type in (
+                CheckoutItemSourceTypeEnum.MANUAL,
+                CheckoutItemSourceTypeEnum.SURVEY_DISCOUNT,
+                CheckoutItemSourceTypeEnum.SURVEY_DONATE_BACK,
+            ):
                 continue
             items_by_source.setdefault(item.source_type, []).append(item)
 
