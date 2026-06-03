@@ -615,14 +615,25 @@ class SurveyService:
             .scalars()
             .all()
         )
+        # Accumulate multiple answers per question (for multi-select questions)
+        answer_lists: dict[UUID, dict[str, list[str]]] = {}
         for response in responses:
             donor = donor_rows.get(response.registration_id)
             if donor is None:
                 continue
+            reg_id = response.registration_id
+            if reg_id not in answer_lists:
+                answer_lists[reg_id] = {}
             for answer in response.answers:
                 if answer.question_id is None:
                     continue
-                donor.answers[str(answer.question_id)] = answer.option_text_snapshot
+                qid = str(answer.question_id)
+                answer_lists[reg_id].setdefault(qid, []).append(answer.option_text_snapshot)
+
+        for reg_id, answer_map in answer_lists.items():
+            donor = donor_rows.get(reg_id)
+            if donor is not None:
+                donor.answers = {qid: ", ".join(texts) for qid, texts in answer_map.items()}
 
         donors = list(donor_rows.values())
         if filter_question_id and filter_option_text is not None:

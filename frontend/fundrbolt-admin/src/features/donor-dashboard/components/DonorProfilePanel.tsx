@@ -1,15 +1,5 @@
-import { useMemo, useState } from 'react'
-import { ArrowLeft, Filter, Mail, Phone, X } from 'lucide-react'
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
-import { useViewPreference } from '@/hooks/use-view-preference'
+import { InlineDonorLabels } from '@/components/admin/InlineDonorLabels'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -22,13 +12,23 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { InlineDonorLabels } from '@/components/admin/InlineDonorLabels'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import {
   useConfirmAllSuggestedDonorLabels,
   useConfirmSuggestedDonorLabel,
   useDismissSuggestedDonorLabel,
 } from '@/features/users/hooks/use-donor-labels'
+import { useViewPreference } from '@/hooks/use-view-preference'
+import { ArrowLeft, Filter, Mail, Phone, X } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import { useDonorProfile } from '../hooks/useDonorDashboard'
 
 const fmt = (n: number) =>
@@ -362,16 +362,19 @@ export function DonorProfilePanel({
                 {fmt(profile.survey_response.discount_cents_applied / 100)}
               </p>
               <div className='space-y-2'>
-                {profile.survey_response.answers.map((answer) => (
-                  <div
-                    key={answer.question_text}
-                    className='rounded-md border p-3'
-                  >
-                    <p className='text-sm font-medium'>
-                      {answer.question_text}
-                    </p>
+                {Object.entries(
+                  profile.survey_response.answers.reduce<
+                    Record<string, string[]>
+                  >((acc, answer) => {
+                    acc[answer.question_text] ??= []
+                    acc[answer.question_text].push(answer.option_text)
+                    return acc
+                  }, {})
+                ).map(([question, options]) => (
+                  <div key={question} className='rounded-md border p-3'>
+                    <p className='text-sm font-medium'>{question}</p>
                     <p className='text-muted-foreground text-sm'>
-                      {answer.option_text}
+                      {options.join(', ')}
                     </p>
                   </div>
                 ))}

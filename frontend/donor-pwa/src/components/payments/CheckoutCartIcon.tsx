@@ -61,7 +61,7 @@ export function CheckoutCartIcon({
       className={`relative inline-flex items-center justify-center rounded-lg p-2 transition-colors ${colorClasses}`}
       aria-label={`Checkout${itemCount > 0 ? ` (${itemCount} item${itemCount !== 1 ? 's' : ''})` : ''}`}
     >
-      <ShoppingCart className='animate-cart-shake h-5 w-5' />
+      <ShoppingCart className={`h-5 w-5${itemCount > 0 ? ' animate-cart-shake' : ''}`} />
       {itemCount > 0 && (
         <span className='absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] leading-none font-bold text-white'>
           {itemCount > 9 ? '9+' : itemCount}

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useParams } from '@tanstack/react-router'
 import { useEventContext } from '@/hooks/use-event-context'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { BidWarsTab } from './components/BidWarsTab'
@@ -13,18 +14,22 @@ type Scope = 'event' | 'all'
 
 export function DonorDashboardPage() {
   const { selectedEventId } = useEventContext()
+  const routeParams = useParams({ strict: false }) as { eventId?: string }
+  // URL param takes precedence over globally selected event
+  const effectiveEventId = routeParams.eventId ?? selectedEventId ?? null
+
   const [scopePreference, setScopePreference] = useState<Scope>(
-    selectedEventId ? 'event' : 'all'
+    effectiveEventId ? 'event' : 'all'
   )
   const [selectedDonorId, setSelectedDonorId] = useState<string | null>(null)
 
   // If no event is selected, force scope to 'all' regardless of preference
   const scope = useMemo<Scope>(
-    () => (selectedEventId ? scopePreference : 'all'),
-    [selectedEventId, scopePreference]
+    () => (effectiveEventId ? scopePreference : 'all'),
+    [effectiveEventId, scopePreference]
   )
 
-  const eventId = scope === 'event' ? (selectedEventId ?? undefined) : undefined
+  const eventId = scope === 'event' ? (effectiveEventId ?? undefined) : undefined
 
   // If a donor is selected, show the profile panel
   if (selectedDonorId) {
@@ -51,7 +56,7 @@ export function DonorDashboardPage() {
         <ScopeToggle
           value={scope}
           onChange={setScopePreference}
-          hasEvent={!!selectedEventId}
+          hasEvent={!!effectiveEventId}
         />
       </div>
 

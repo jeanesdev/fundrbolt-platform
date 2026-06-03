@@ -648,6 +648,10 @@ class DonorDashboardService:
             .where(SurveyAnswer.response_id.in_(response_ids))
             .order_by(SurveyAnswer.response_id.asc(), SurveyAnswer.created_at.asc())
         )
+        # Build parallel list structures: flat detail list and accumulated answer map
+        answer_lists_by_response: dict[UUID, dict[str, list[str]]] = {
+            response_id: {} for response_id in response_ids
+        }
         for answer_row in (await self.db.execute(answer_stmt)).all():
             answers_by_response[answer_row.response_id].append(
                 SurveyAnswerDetail(
@@ -655,9 +659,14 @@ class DonorDashboardService:
                     option_text=answer_row.option_text_snapshot,
                 )
             )
-            answer_map_by_response[answer_row.response_id][answer_row.question_text_snapshot] = (
-                answer_row.option_text_snapshot
-            )
+            answer_lists_by_response[answer_row.response_id].setdefault(
+                answer_row.question_text_snapshot, []
+            ).append(answer_row.option_text_snapshot)
+
+        for response_id, question_map in answer_lists_by_response.items():
+            answer_map_by_response[response_id] = {
+                q: ", ".join(opts) for q, opts in question_map.items()
+            }
 
         for user_id, response_row in latest_by_user.items():
             summary = SurveyResponseSummary(

@@ -688,7 +688,7 @@ export function EventForm({
               control={form.control}
               name='timezone'
               render={({ field }) => (
-                <FormItem className='min-w-0'>
+                <FormItem className='min-w-0 self-start'>
                   <Label htmlFor='timezone'>Timezone *</Label>
                   <Select
                     value={field.value}
