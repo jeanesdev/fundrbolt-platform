@@ -53,7 +53,7 @@ function RootComponent() {
         onDismiss={dismissUpdate}
       />
       <Outlet />
-      <Toaster duration={5000} position='top-center' offset='calc(env(safe-area-inset-top, 0px) + 8px)' mobileOffset='calc(env(safe-area-inset-top, 0px) + 8px)' />
+      <Toaster closeButton position='top-center' offset='calc(env(safe-area-inset-top, 0px) + 8px)' mobileOffset='calc(env(safe-area-inset-top, 0px) + 8px)' toastOptions={{ duration: 5000 }} />
       <NotificationToastOverlay />
       {isMobile && <InstallPromptBanner appId='donor' hidden={cookieConsentShowing} />}
     </>
