@@ -48,7 +48,7 @@ export function SurveyThankYouPopup({
         <Dialog.Content className='data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-1/2 left-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-xl focus:outline-none'>
           <Dialog.Close asChild>
             <button
-              className='absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100'
+              className='absolute top-4 right-4 rounded-sm text-gray-500 transition-colors hover:text-gray-900'
               aria-label='Close'
             >
               <X className='h-4 w-4' />
@@ -61,20 +61,20 @@ export function SurveyThankYouPopup({
             </div>
 
             <div className='space-y-1'>
-              <Dialog.Title className='text-xl font-bold'>
+              <Dialog.Title className='text-xl font-bold text-gray-900'>
                 Thank you! 🎉
               </Dialog.Title>
-              <Dialog.Description className='text-muted-foreground text-sm'>
+              <Dialog.Description className='text-sm text-gray-600'>
                 Your preferences help us create a better experience for you.
               </Dialog.Description>
             </div>
 
             {discountCents > 0 && (
-              <div className='w-full rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm'>
-                <p className='font-semibold text-green-800'>
+              <div className='w-full rounded-xl border border-green-300 bg-green-50 px-4 py-3 text-sm'>
+                <p className='font-semibold text-green-900'>
                   {formatDollars(discountCents)} survey discount earned!
                 </p>
-                <p className='text-green-700'>
+                <p className='text-green-800'>
                   This will be automatically applied at checkout.
                 </p>
               </div>
@@ -84,7 +84,7 @@ export function SurveyThankYouPopup({
               {discountCents > 0 && npoName && !donateClicked && (
                 <Button
                   variant='outline'
-                  className='w-full gap-2'
+                  className='w-full gap-2 border-rose-300 text-rose-700 hover:bg-rose-50 hover:text-rose-800'
                   onClick={handleDonateBack}
                 >
                   <Heart className='h-4 w-4 text-rose-500' />
