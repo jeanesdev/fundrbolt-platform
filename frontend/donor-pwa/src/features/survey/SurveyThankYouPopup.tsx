@@ -34,6 +34,11 @@ export function SurveyThankYouPopup({
   const handleDonateBack = () => {
     setDonateClicked(true)
     onDonateBack()
+    setTimeout(onApply, 1500)
+  }
+
+  const handleApply = () => {
+    setTimeout(onApply, 1500)
   }
 
   return (
@@ -98,7 +103,7 @@ export function SurveyThankYouPopup({
                 </div>
               )}
 
-              <Button className='w-full' onClick={onApply}>
+              <Button className='w-full' onClick={handleApply}>
                 Apply at checkout
               </Button>
             </div>
