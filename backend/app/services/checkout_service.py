@@ -607,14 +607,22 @@ class CheckoutService:
         event_id = session.event_id
         user_id = session.user_id
 
-        # Remove stale survey discount / donate-back items (may not exist yet)
-        for item in list(session.items):
-            if item.source_type in (
-                CheckoutItemSourceTypeEnum.SURVEY_DISCOUNT,
-                CheckoutItemSourceTypeEnum.SURVEY_DONATE_BACK,
-            ):
-                await self.db.delete(item)
-                session.items.remove(item)
+        # Remove stale survey discount / donate-back items using a direct DB
+        # query to avoid lazy-loading session.items (unsafe in async context
+        # when the session object was just created and items never eager-loaded).
+        stale_result = await self.db.execute(
+            select(CheckoutItem).where(
+                CheckoutItem.session_id == session.id,
+                CheckoutItem.source_type.in_(
+                    [
+                        CheckoutItemSourceTypeEnum.SURVEY_DISCOUNT,
+                        CheckoutItemSourceTypeEnum.SURVEY_DONATE_BACK,
+                    ]
+                ),
+            )
+        )
+        for item in stale_result.scalars().all():
+            await self.db.delete(item)
 
         survey_response_result = await self.db.execute(
             select(SurveyResponse)
@@ -648,7 +656,6 @@ class CheckoutService:
             display_order=next_display_order,
         )
         self.db.add(discount_item)
-        session.items.append(discount_item)
         next_display_order += 1
 
         if survey_response.donate_back:
@@ -665,7 +672,6 @@ class CheckoutService:
                 display_order=next_display_order,
             )
             self.db.add(donate_item)
-            session.items.append(donate_item)
 
     async def _refresh_item_names(self, session: CheckoutSession) -> None:
         """Update item names from their source records.
