@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
@@ -136,6 +136,24 @@ function RouteComponent() {
   const [surveyDismissed, setSurveyDismissed] = useState(
     () => localStorage.getItem(`survey_dismissed_${slug}`) === 'true'
   )
+  // surveyModalOpen is set to true the first time the query resolves with
+  // should_show=true, and is only ever cleared by explicit user action (exit /
+  // skip / complete). This prevents query refetches from closing the modal
+  // while the user is interacting with it.
+  const [surveyModalOpen, setSurveyModalOpen] = useState(false)
+  const surveyModalOpenedRef = useRef(false)
+  useEffect(() => {
+    if (
+      surveyStatusQuery.data?.should_show &&
+      surveyStatusQuery.data.survey &&
+      !surveyDismissed &&
+      !surveyModalOpenedRef.current
+    ) {
+      surveyModalOpenedRef.current = true
+      setSurveyModalOpen(true)
+    }
+  }, [surveyStatusQuery.data, surveyDismissed])
+
   const [surveyThankYou, setSurveyThankYou] = useState<{
     discountCents: number
   } | null>(null)
@@ -143,6 +161,7 @@ function RouteComponent() {
   const dismissSurvey = () => {
     localStorage.setItem(`survey_dismissed_${slug}`, 'true')
     setSurveyDismissed(true)
+    setSurveyModalOpen(false)
   }
 
   const submitSurveyMutation = useMutation({
@@ -362,9 +381,7 @@ function RouteComponent() {
       return (
         <>
           <EventHomePage />
-          {surveyStatusQuery.data?.should_show &&
-          surveyStatusQuery.data.survey &&
-          !surveyDismissed ? (
+          {surveyModalOpen && surveyStatusQuery.data?.survey ? (
             <AttendeeSurveyModal
               open
               survey={surveyStatusQuery.data.survey}
