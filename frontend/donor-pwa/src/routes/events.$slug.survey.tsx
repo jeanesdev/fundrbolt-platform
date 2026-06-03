@@ -79,7 +79,7 @@ function RouteComponent() {
     )
   }
 
-  // Survey already completed or unavailable — navigate back to event home
+  // Survey unavailable — navigate back to event home
   if (
     surveyStatusQuery.isFetched &&
     (!surveyStatusQuery.data?.should_show || !surveyStatusQuery.data?.survey)
@@ -87,9 +87,7 @@ function RouteComponent() {
     return (
       <div className='flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center'>
         <p className='text-muted-foreground text-lg'>
-          {surveyStatusQuery.isError
-            ? 'Survey is not available.'
-            : 'You have already completed this survey. Thank you!'}
+          This survey is not currently available.
         </p>
         <button
           className='text-primary text-sm underline'
@@ -112,6 +110,7 @@ function RouteComponent() {
       open
       survey={surveyStatusQuery.data.survey}
       isSubmitting={submitSurveyMutation.isPending}
+      onClose={() => navigate({ to: '/events/$slug', params: { slug } })}
       onSkip={() => submitSurveyMutation.mutate({ action: 'skip' })}
       onComplete={(answers) =>
         submitSurveyMutation.mutate({ action: 'complete', answers })

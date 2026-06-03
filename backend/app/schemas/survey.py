@@ -27,6 +27,7 @@ class SurveyQuestionResponse(BaseModel):
     text: str
     display_order: int
     is_active: bool
+    allow_multiple: bool = False
     options: list[SurveyQuestionOptionResponse] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
@@ -77,6 +78,7 @@ class SurveyQuestionCreateRequest(BaseModel):
     text: str = Field(min_length=1, max_length=500)
     display_order: int = Field(default=0, ge=0)
     is_active: bool = True
+    allow_multiple: bool = False
     options: list[SurveyQuestionOptionCreateRequest]
 
     @field_validator("options")
@@ -95,6 +97,7 @@ class SurveyQuestionUpdateRequest(BaseModel):
     text: str | None = Field(default=None, min_length=1, max_length=500)
     display_order: int | None = Field(default=None, ge=0)
     is_active: bool | None = None
+    allow_multiple: bool | None = None
     options: list[SurveyQuestionOptionCreateRequest] | None = None
 
     @field_validator("options")
@@ -118,7 +121,7 @@ class DonorSurveyAnswerInput(BaseModel):
     """Selected answer for a donor survey question."""
 
     question_id: UUID
-    option_id: UUID
+    option_ids: list[UUID]
     other_text: str | None = Field(default=None, max_length=500)
 
 

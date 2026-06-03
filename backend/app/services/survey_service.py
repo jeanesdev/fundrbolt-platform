@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -158,6 +159,7 @@ class SurveyService:
                     text=question.text,
                     display_order=question.display_order,
                     is_active=question.is_active,
+                    allow_multiple=question.allow_multiple,
                     options=[
                         SurveyQuestionOptionResponse(
                             id=option.id,
@@ -240,7 +242,7 @@ class SurveyService:
         self,
         registration_id: UUID,
         action: str,
-        answers: list[dict[str, UUID]],
+        answers: list[dict[str, Any]],
     ) -> SurveySubmitResult:
         registration_row = await self.db.execute(
             select(EventRegistration, Event)
@@ -305,7 +307,7 @@ class SurveyService:
         if action == "complete":
             answer_map = {
                 answer["question_id"]: {
-                    "option_id": answer["option_id"],
+                    "option_ids": answer["option_ids"],
                     "other_text": answer.get("other_text"),
                 }
                 for answer in answers
@@ -319,44 +321,52 @@ class SurveyService:
 
             for question in eligible_questions:
                 answer_data = answer_map[question.id]
-                selected_option = next(
-                    (
-                        option
-                        for option in question.options
-                        if option.id == answer_data["option_id"]
-                    ),
-                    None,
-                )
-                if selected_option is None:
+                selected_option_ids: list[UUID] = list(answer_data["option_ids"])
+
+                if not selected_option_ids:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Selected option does not belong to the requested question",
+                        detail=f"Question '{question.text}' requires at least one selected option",
+                    )
+                if not question.allow_multiple and len(selected_option_ids) > 1:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Question '{question.text}' only allows a single selection",
                     )
 
-                other_text: str | None = None
-                if selected_option.is_other:
-                    raw = str(answer_data.get("other_text") or "")
-                    stripped = raw.strip()
-                    if not stripped:
+                option_lookup = {option.id: option for option in question.options}
+                for option_id in selected_option_ids:
+                    selected_option = option_lookup.get(option_id)
+                    if selected_option is None:
                         raise HTTPException(
                             status_code=status.HTTP_400_BAD_REQUEST,
-                            detail=f"Question '{question.text}' requires a typed answer for the 'Other' option",
+                            detail="Selected option does not belong to the requested question",
                         )
-                    other_text = stripped
 
-                # Use the typed text as the readable snapshot when "Other" is chosen
-                option_snapshot = f"Other: {other_text}" if other_text else selected_option.text
+                    other_text: str | None = None
+                    if selected_option.is_other:
+                        raw = str(answer_data.get("other_text") or "")
+                        stripped = raw.strip()
+                        if not stripped:
+                            raise HTTPException(
+                                status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=f"Question '{question.text}' requires a typed answer for the 'Other' option",
+                            )
+                        other_text = stripped
 
-                survey_answer = SurveyAnswer(
-                    response_id=response.id,
-                    question_id=question.id,
-                    selected_option_id=selected_option.id,
-                    question_text_snapshot=question.text,
-                    option_text_snapshot=option_snapshot,
-                    other_text=other_text,
-                )
-                self.db.add(survey_answer)
-                created_answers.append(survey_answer)
+                    # Use the typed text as the readable snapshot when "Other" is chosen
+                    option_snapshot = f"Other: {other_text}" if other_text else selected_option.text
+
+                    survey_answer = SurveyAnswer(
+                        response_id=response.id,
+                        question_id=question.id,
+                        selected_option_id=selected_option.id,
+                        question_text_snapshot=question.text,
+                        option_text_snapshot=option_snapshot,
+                        other_text=other_text,
+                    )
+                    self.db.add(survey_answer)
+                    created_answers.append(survey_answer)
 
         await self.db.flush()
 
@@ -440,6 +450,7 @@ class SurveyService:
                 text=question.text,
                 display_order=question.display_order,
                 is_active=question.is_active,
+                allow_multiple=question.allow_multiple,
             )
             copied_question.options = [
                 SurveyQuestionOption(
@@ -467,6 +478,7 @@ class SurveyService:
             text=data.text,
             display_order=data.display_order,
             is_active=data.is_active,
+            allow_multiple=data.allow_multiple,
         )
         question.options = [
             SurveyQuestionOption(
@@ -492,6 +504,8 @@ class SurveyService:
             question.display_order = data.display_order
         if data.is_active is not None:
             question.is_active = data.is_active
+        if data.allow_multiple is not None:
+            question.allow_multiple = data.allow_multiple
         if data.options is not None:
             existing_options = {option.id: option for option in question.options}
             retained_ids: set[UUID] = set()

@@ -31,6 +31,7 @@ class SurveyQuestion(Base, UUIDMixin, TimestampMixin):
     text: Mapped[str] = mapped_column(String(500), nullable=False)
     display_order: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+    allow_multiple: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
 
     survey_config: Mapped[EventSurveyConfig] = relationship(
         "EventSurveyConfig",

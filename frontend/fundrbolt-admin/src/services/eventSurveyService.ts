@@ -12,6 +12,7 @@ export interface SurveyQuestion {
   text: string
   display_order: number
   is_active: boolean
+  allow_multiple: boolean
   options: SurveyQuestionOption[]
 }
 
@@ -37,6 +38,7 @@ export interface SurveyQuestionInput {
   text: string
   display_order: number
   is_active?: boolean
+  allow_multiple?: boolean
   options: Array<{
     id?: string
     text: string

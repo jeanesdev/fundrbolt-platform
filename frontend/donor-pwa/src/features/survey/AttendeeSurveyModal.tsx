@@ -1,7 +1,3 @@
-import { useMemo, useState } from 'react'
-import { Gift, Loader2, Sparkles } from 'lucide-react'
-import type { DonorSurveyConfig } from '@/lib/api/survey'
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -11,16 +7,21 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
+import type { DonorSurveyConfig } from '@/lib/api/survey'
+import { cn } from '@/lib/utils'
+import { Gift, Loader2, Sparkles } from 'lucide-react'
+import { useMemo, useState } from 'react'
 
 interface AttendeeSurveyModalProps {
   open: boolean
   survey: DonorSurveyConfig
   isSubmitting?: boolean
+  onClose?: () => void
   onSkip: () => void
   onComplete: (
     answers: Array<{
       question_id: string
-      option_id: string
+      option_ids: string[]
       other_text?: string | null
     }>
   ) => void
@@ -36,11 +37,12 @@ export function AttendeeSurveyModal({
   open,
   survey,
   isSubmitting = false,
+  onClose = () => {},
   onSkip,
   onComplete,
 }: AttendeeSurveyModalProps) {
-  // Maps question_id → selected option_id
-  const [answers, setAnswers] = useState<Record<string, string>>({})
+  // Maps question_id → selected option_id(s)
+  const [answers, setAnswers] = useState<Record<string, string[]>>({})
   // Maps question_id → typed "other" text (only used when is_other option selected)
   const [otherTexts, setOtherTexts] = useState<Record<string, string>>({})
 
@@ -54,13 +56,12 @@ export function AttendeeSurveyModal({
 
   const completedCount = useMemo(() => {
     return activeQuestions.filter((question) => {
-      const selectedOptionId = answers[question.id]
-      if (!selectedOptionId) return false
-      const selectedOption = question.options.find(
-        (o) => o.id === selectedOptionId
+      const selectedIds = answers[question.id] ?? []
+      if (selectedIds.length === 0) return false
+      const hasOtherSelected = selectedIds.some(
+        (id) => question.options.find((o) => o.id === id)?.is_other
       )
-      // "Other" option requires non-empty typed text to count as complete
-      if (selectedOption?.is_other) {
+      if (hasOtherSelected) {
         return (otherTexts[question.id] ?? '').trim().length > 0
       }
       return true
@@ -70,24 +71,21 @@ export function AttendeeSurveyModal({
   const canSubmit = questionCount > 0 && completedCount === questionCount
 
   return (
-    <Dialog open={open}>
+    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose() }}>
       <DialogContent
         className='flex h-[100dvh] w-screen max-w-none flex-col gap-0 rounded-none border-0 p-0 sm:h-[100dvh] sm:max-w-none'
-        // Prevent accidental dismissal via Escape or outside-click.
-        // The only intentional exit paths are "Skip for now" and "Submit survey".
-        // A non-intentional close would not record a SurveyResponse row, which is
-        // correct per spec: partial/unsaved state → modal reappears on next visit.
-        onEscapeKeyDown={(e) => e.preventDefault()}
+        // Prevent accidental dismissal via outside-click only; Escape and the
+        // X button are intentional exit paths that navigate back without saving.
         onPointerDownOutside={(e) => e.preventDefault()}
       >
         <DialogHeader className='border-b px-5 py-4 text-left sm:px-8'>
-          <div className='mb-3 flex items-center gap-2 text-sm font-medium text-amber-600'>
-            <Gift className='h-4 w-4' />
-            Complete this survey to earn {formatCurrency(
-              survey.discount_cents
-            )}{' '}
-            off checkout
-          </div>
+          {survey.discount_cents > 0 && (
+            <div className='mb-3 flex items-center gap-2 text-sm font-medium text-amber-600'>
+              <Gift className='h-4 w-4' />
+              Complete this survey to earn {formatCurrency(survey.discount_cents)}{' '}
+              off checkout
+            </div>
+          )}
           <DialogTitle className='text-2xl sm:text-3xl'>
             {survey.modal_prompt_title}
           </DialogTitle>
@@ -102,9 +100,9 @@ export function AttendeeSurveyModal({
               .slice()
               .sort((a, b) => a.display_order - b.display_order)
               .map((question, index) => {
-                const selectedOptionId = answers[question.id]
-                const selectedOption = question.options.find(
-                  (o) => o.id === selectedOptionId
+                const selectedIds: string[] = answers[question.id] ?? []
+                const hasOtherSelected = selectedIds.some(
+                  (id) => question.options.find((o) => o.id === id)?.is_other
                 )
                 return (
                   <section
@@ -116,12 +114,17 @@ export function AttendeeSurveyModal({
                       Question {index + 1}
                     </div>
                     <h3 className='text-lg font-semibold'>{question.text}</h3>
+                    {question.allow_multiple && (
+                      <p className='text-muted-foreground text-xs'>
+                        Select all that apply
+                      </p>
+                    )}
                     <div className='grid gap-3 sm:grid-cols-2'>
                       {question.options
                         .slice()
                         .sort((a, b) => a.display_order - b.display_order)
                         .map((option) => {
-                          const selected = selectedOptionId === option.id
+                          const selected = selectedIds.includes(option.id)
                           return (
                             <button
                               key={option.id}
@@ -133,10 +136,18 @@ export function AttendeeSurveyModal({
                                   : 'border-border hover:bg-muted/60'
                               )}
                               onClick={() =>
-                                setAnswers((prev) => ({
-                                  ...prev,
-                                  [question.id]: option.id,
-                                }))
+                                setAnswers((prev) => {
+                                  const current = prev[question.id] ?? []
+                                  let next: string[]
+                                  if (question.allow_multiple) {
+                                    next = current.includes(option.id)
+                                      ? current.filter((id) => id !== option.id)
+                                      : [...current, option.id]
+                                  } else {
+                                    next = [option.id]
+                                  }
+                                  return { ...prev, [question.id]: next }
+                                })
                               }
                             >
                               {option.text}
@@ -144,7 +155,7 @@ export function AttendeeSurveyModal({
                           )
                         })}
                     </div>
-                    {selectedOption?.is_other && (
+                    {hasOtherSelected && (
                       <Textarea
                         autoFocus
                         placeholder='Please describe your answer…'
@@ -183,14 +194,14 @@ export function AttendeeSurveyModal({
                 onClick={() =>
                   onComplete(
                     activeQuestions.map((question) => {
-                      const optionId = answers[question.id]
-                      const selectedOption = question.options.find(
-                        (o) => o.id === optionId
+                      const selectedIds = answers[question.id] ?? []
+                      const hasOtherSelected = selectedIds.some(
+                        (id) => question.options.find((o) => o.id === id)?.is_other
                       )
                       return {
                         question_id: question.id,
-                        option_id: optionId,
-                        other_text: selectedOption?.is_other
+                        option_ids: selectedIds,
+                        other_text: hasOtherSelected
                           ? (otherTexts[question.id] ?? '').trim() || null
                           : null,
                       }

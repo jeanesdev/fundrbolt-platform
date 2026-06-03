@@ -21,6 +21,7 @@ const emptyQuestion = (): SurveyQuestionInput => ({
   text: '',
   display_order: 0,
   is_active: true,
+  allow_multiple: false,
   options: [
     { text: '', display_order: 0 },
     { text: '', display_order: 1 },
@@ -109,10 +110,7 @@ export function EventSurveyPage() {
   const updateConfigMutation = useMutation({
     mutationFn: (payload: Partial<SurveyConfig>) =>
       eventSurveyService.updateSurvey(eventId, payload),
-    onSuccess: async () => {
-      toast.success('Survey settings saved')
-      await refreshSurvey()
-    },
+    onSuccess: () => refreshSurvey(),
     onError: () => toast.error('Failed to save survey settings'),
   })
 
@@ -156,10 +154,7 @@ export function EventSurveyPage() {
       questionId: string
       payload: SurveyQuestionInput
     }) => eventSurveyService.updateQuestion(eventId, questionId, payload),
-    onSuccess: async () => {
-      toast.success('Question updated')
-      await refreshSurvey()
-    },
+    onSuccess: () => refreshSurvey(),
     onError: () => toast.error('Failed to update question'),
   })
 
@@ -192,6 +187,7 @@ export function EventSurveyPage() {
       text: question.text,
       display_order: question.display_order,
       is_active: question.is_active,
+      allow_multiple: question.allow_multiple,
       options: question.options.map((option) => ({
         id: option.id,
         text: option.text,
@@ -202,6 +198,40 @@ export function EventSurveyPage() {
 
   const setQuestionDraft = (questionId: string, next: SurveyQuestionInput) => {
     setEditingQuestions((prev) => ({ ...prev, [questionId]: next }))
+  }
+
+  const isSaving =
+    updateConfigMutation.isPending || updateQuestionMutation.isPending
+
+  const handleSaveAll = async () => {
+    if (!configDraft) return
+    const promises: Promise<unknown>[] = []
+
+    promises.push(
+      updateConfigMutation.mutateAsync({
+        is_active: configDraft.is_active,
+        modal_prompt_title: configDraft.modal_prompt_title,
+        modal_prompt_body: configDraft.modal_prompt_body,
+        discount_cents: configDraft.discount_cents,
+      })
+    )
+
+    for (const [questionId, payload] of Object.entries(editingQuestions)) {
+      promises.push(
+        updateQuestionMutation.mutateAsync({
+          questionId,
+          payload: normalizeQuestion(payload),
+        })
+      )
+    }
+
+    try {
+      await Promise.all(promises)
+      toast.success('Survey saved')
+      setEditingQuestions({})
+    } catch {
+      // individual onError callbacks handle per-mutation toasts
+    }
   }
 
   if (surveyQuery.isLoading || !survey || !configDraft) {
@@ -279,21 +309,6 @@ export function EventSurveyPage() {
               />
               Survey active
             </label>
-            <Button
-              type='button'
-              onClick={() =>
-                updateConfigMutation.mutate({
-                  is_active: configDraft.is_active,
-                  modal_prompt_title: configDraft.modal_prompt_title,
-                  modal_prompt_body: configDraft.modal_prompt_body,
-                  discount_cents: configDraft.discount_cents,
-                })
-              }
-              disabled={updateConfigMutation.isPending}
-            >
-              <Save className='mr-2 h-4 w-4' />
-              Save settings
-            </Button>
             <Button
               type='button'
               variant='outline'
@@ -393,20 +408,18 @@ export function EventSurveyPage() {
                       />
                       Active
                     </label>
-                    <Button
-                      type='button'
-                      variant='outline'
-                      size='sm'
-                      onClick={() =>
-                        updateQuestionMutation.mutate({
-                          questionId: question.id,
-                          payload: normalizeQuestion(draft),
-                        })
-                      }
-                    >
-                      <Save className='mr-2 h-4 w-4' />
-                      Save
-                    </Button>
+                    <label className='flex items-center gap-2 text-sm'>
+                      <Switch
+                        checked={draft.allow_multiple ?? false}
+                        onCheckedChange={(checked) =>
+                          setQuestionDraft(question.id, {
+                            ...draft,
+                            allow_multiple: checked,
+                          })
+                        }
+                      />
+                      Multi-select
+                    </label>
                     <Button
                       type='button'
                       variant='destructive'
@@ -690,6 +703,15 @@ export function EventSurveyPage() {
               )}
             </div>
           </div>
+          <label className='flex items-center gap-2 text-sm font-medium'>
+            <Switch
+              checked={draftQuestion.allow_multiple ?? false}
+              onCheckedChange={(checked) =>
+                setDraftQuestion((prev) => ({ ...prev, allow_multiple: checked }))
+              }
+            />
+            Allow multiple selections
+          </label>
           <Button
             type='button'
             onClick={() =>
@@ -702,6 +724,20 @@ export function EventSurveyPage() {
           </Button>
         </CardContent>
       </Card>
+
+      <div className='sticky bottom-0 z-10 border-t bg-background py-3 px-6 flex items-center justify-end gap-4'>
+        {Object.keys(editingQuestions).length > 0 && (
+          <span className='text-muted-foreground text-sm'>
+            {Object.keys(editingQuestions).length} question
+            {Object.keys(editingQuestions).length > 1 ? 's' : ''} with unsaved
+            changes
+          </span>
+        )}
+        <Button type='button' onClick={handleSaveAll} disabled={isSaving}>
+          <Save className='mr-2 h-4 w-4' />
+          {isSaving ? 'Saving...' : 'Save all changes'}
+        </Button>
+      </div>
     </div>
   )
 }
