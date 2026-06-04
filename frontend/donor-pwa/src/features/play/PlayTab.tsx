@@ -73,13 +73,16 @@ export function PlayTab({ eventId, brandPrimary }: Props) {
       const responseData = axios.isAxiosError(error)
         ? error.response?.data
         : null
-      const detail =
-        responseData &&
-          typeof responseData === 'object' &&
-          'detail' in responseData &&
-          typeof responseData.detail === 'string'
+      const rawDetail =
+        responseData && typeof responseData === 'object' && 'detail' in responseData
           ? responseData.detail
           : null
+      const detail =
+        typeof rawDetail === 'string'
+          ? rawDetail
+          : rawDetail && typeof rawDetail === 'object' && 'message' in rawDetail
+            ? String(rawDetail.message)
+            : null
 
       toast.error(detail ?? 'Failed to purchase entry. Please try again.')
     } finally {

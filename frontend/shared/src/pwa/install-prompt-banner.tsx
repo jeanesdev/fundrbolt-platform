@@ -7,6 +7,8 @@ export interface InstallPromptBannerProps {
   appId: string
   /** Delay in milliseconds before showing the banner after page load. Default: 3000 */
   showDelay?: number
+  /** When true, the banner is suppressed but the internal hook keeps running to capture events. */
+  hidden?: boolean
 }
 
 /**
@@ -19,6 +21,7 @@ export interface InstallPromptBannerProps {
 export function InstallPromptBanner({
   appId,
   showDelay = 3000,
+  hidden = false,
 }: InstallPromptBannerProps) {
   const { canShow, isIOS, promptInstall, dismiss } = useInstallPrompt(appId)
   const [visible, setVisible] = useState(false)
@@ -39,7 +42,7 @@ export function InstallPromptBanner({
   }, [canShow, showDelay])
 
 
-  if (!visible || !canShow) return null
+  if (!visible || !canShow || hidden) return null
 
   return (
     <div

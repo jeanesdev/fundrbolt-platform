@@ -1,9 +1,3 @@
-import { Link, useSearch } from '@tanstack/react-router'
-import { Building2, HandCoins, Users } from 'lucide-react'
-import {
-  buildAdminPortalNpoOnboardingUrl,
-  buildAdminPortalSignUpUrl,
-} from '@/lib/admin-portal'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -13,6 +7,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import {
+  buildAdminPortalNpoOnboardingUrl,
+  buildAdminPortalSignUpUrl,
+} from '@/lib/admin-portal'
+import { Link, useSearch } from '@tanstack/react-router'
+import { Building2, HandCoins, Users } from 'lucide-react'
 import { AuthLayout } from '../auth-layout'
 import { DonorSignUpWizard } from './components/DonorSignUpWizard'
 
@@ -32,12 +32,12 @@ export function SignUp() {
             </CardDescription>
           </CardHeader>
           <CardContent className='grid gap-4'>
-            <div className='rounded-xl border p-5'>
+            <div className='min-w-0 rounded-xl border p-5'>
               <div className='mb-4 flex items-start gap-3'>
-                <div className='bg-primary/10 text-primary rounded-lg p-2'>
+                <div className='bg-primary/10 text-primary rounded-lg p-2 shrink-0'>
                   <Building2 className='h-5 w-5' />
                 </div>
-                <div>
+                <div className='min-w-0 flex-1'>
                   <h3 className='font-semibold'>Organization Administrator</h3>
                   <p className='text-muted-foreground text-sm'>
                     Start the staged onboarding flow in the admin app: create
@@ -46,19 +46,19 @@ export function SignUp() {
                   </p>
                 </div>
               </div>
-              <Button asChild className='w-full'>
+              <Button asChild className='h-auto w-full whitespace-normal py-2.5'>
                 <a href={buildAdminPortalNpoOnboardingUrl()}>
                   Continue as Organization Administrator
                 </a>
               </Button>
             </div>
 
-            <div className='rounded-xl border p-5'>
+            <div className='min-w-0 rounded-xl border p-5'>
               <div className='mb-4 flex items-start gap-3'>
-                <div className='bg-primary/10 text-primary rounded-lg p-2'>
+                <div className='bg-primary/10 text-primary rounded-lg p-2 shrink-0'>
                   <Users className='h-5 w-5' />
                 </div>
-                <div>
+                <div className='min-w-0 flex-1'>
                   <h3 className='font-semibold'>Event Staff or Team Member</h3>
                   <p className='text-muted-foreground text-sm'>
                     Create your account in the admin app if you were invited by
@@ -73,12 +73,12 @@ export function SignUp() {
               </Button>
             </div>
 
-            <div className='rounded-xl border p-5'>
+            <div className='min-w-0 rounded-xl border p-5'>
               <div className='mb-4 flex items-start gap-3'>
-                <div className='bg-primary/10 text-primary rounded-lg p-2'>
+                <div className='bg-primary/10 text-primary rounded-lg p-2 shrink-0'>
                   <HandCoins className='h-5 w-5' />
                 </div>
-                <div>
+                <div className='min-w-0 flex-1'>
                   <h3 className='font-semibold'>Attendee</h3>
                   <p className='text-muted-foreground text-sm'>
                     Create an attendee account here for ticketing, bidding, and

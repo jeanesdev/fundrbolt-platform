@@ -15,7 +15,7 @@ export class MailpitClient {
   constructor(private readonly baseUrl: string) {}
 
   async listMessages(): Promise<MailpitMessage[]> {
-    const response = await fetch(`${this.baseUrl}/api/v2/messages`)
+    const response = await fetch(`${this.baseUrl}/api/v1/messages`)
     if (!response.ok) {
       throw new Error(`Mailpit list failed: ${response.status} ${await response.text()}`)
     }
@@ -33,11 +33,19 @@ export class MailpitClient {
         return recipients.includes(opts.to.toLowerCase()) && message.Subject.includes(opts.subjectContains)
       })
       if (match) {
-        return match
+        return this.getMessage(match.ID)
       }
       await new Promise((resolve) => setTimeout(resolve, 250))
     }
     throw new Error(`Timed out waiting for email to ${opts.to} containing ${opts.subjectContains}`)
+  }
+
+  async getMessage(id: string): Promise<MailpitMessage> {
+    const response = await fetch(`${this.baseUrl}/api/v1/message/${id}`)
+    if (!response.ok) {
+      throw new Error(`Mailpit get message failed: ${response.status} ${await response.text()}`)
+    }
+    return (await response.json()) as MailpitMessage
   }
 
   extractLink(message: MailpitMessage, pattern: RegExp): string {

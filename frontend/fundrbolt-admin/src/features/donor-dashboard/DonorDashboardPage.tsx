@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useParams } from '@tanstack/react-router'
 import { useEventContext } from '@/hooks/use-event-context'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { BidWarsTab } from './components/BidWarsTab'
@@ -7,23 +8,28 @@ import { DonorProfilePanel } from './components/DonorProfilePanel'
 import { GivingCategoryCharts } from './components/GivingCategoryCharts'
 import { OutbidLeadersTab } from './components/OutbidLeadersTab'
 import { ScopeToggle } from './components/ScopeToggle'
+import { SurveyAnswersTab } from './components/SurveyAnswersTab'
 
 type Scope = 'event' | 'all'
 
 export function DonorDashboardPage() {
   const { selectedEventId } = useEventContext()
+  const routeParams = useParams({ strict: false }) as { eventId?: string }
+  // URL param takes precedence over globally selected event
+  const effectiveEventId = routeParams.eventId ?? selectedEventId ?? null
+
   const [scopePreference, setScopePreference] = useState<Scope>(
-    selectedEventId ? 'event' : 'all'
+    effectiveEventId ? 'event' : 'all'
   )
   const [selectedDonorId, setSelectedDonorId] = useState<string | null>(null)
 
   // If no event is selected, force scope to 'all' regardless of preference
   const scope = useMemo<Scope>(
-    () => (selectedEventId ? scopePreference : 'all'),
-    [selectedEventId, scopePreference]
+    () => (effectiveEventId ? scopePreference : 'all'),
+    [effectiveEventId, scopePreference]
   )
 
-  const eventId = scope === 'event' ? (selectedEventId ?? undefined) : undefined
+  const eventId = scope === 'event' ? (effectiveEventId ?? undefined) : undefined
 
   // If a donor is selected, show the profile panel
   if (selectedDonorId) {
@@ -50,7 +56,7 @@ export function DonorDashboardPage() {
         <ScopeToggle
           value={scope}
           onChange={setScopePreference}
-          hasEvent={!!selectedEventId}
+          hasEvent={!!effectiveEventId}
         />
       </div>
 
@@ -60,6 +66,7 @@ export function DonorDashboardPage() {
           <TabsTrigger value='outbid'>Outbid Leaders</TabsTrigger>
           <TabsTrigger value='bidwars'>Bid Wars</TabsTrigger>
           <TabsTrigger value='categories'>Categories</TabsTrigger>
+          <TabsTrigger value='survey-answers'>Survey Answers</TabsTrigger>
         </TabsList>
 
         <TabsContent value='leaderboard' className='space-y-4'>
@@ -82,6 +89,13 @@ export function DonorDashboardPage() {
 
         <TabsContent value='categories' className='space-y-4'>
           <GivingCategoryCharts eventId={eventId} />
+        </TabsContent>
+
+        <TabsContent value='survey-answers' className='space-y-4'>
+          <SurveyAnswersTab
+            eventId={eventId}
+            onSelectDonor={setSelectedDonorId}
+          />
         </TabsContent>
       </Tabs>
     </div>

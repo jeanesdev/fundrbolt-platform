@@ -78,7 +78,7 @@ import {
 } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import type { AxiosError } from 'axios'
-import { AlertCircle, Loader2, Ticket } from 'lucide-react'
+import { AlertCircle, Loader2, Ticket, TriangleAlert } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -1443,7 +1443,8 @@ export function EventHomePage() {
               Auction Items
             </h2>
             {!!(currentEvent as unknown as Record<string, unknown>)
-              .auction_close_datetime && (
+              .auction_close_datetime &&
+              new Date(currentEvent.event_datetime) <= getEffectiveNow() && (
                 <AuctionCountdownTimer
                   closeDateTime={
                     (currentEvent as unknown as Record<string, unknown>)
@@ -1636,6 +1637,7 @@ export function EventHomePage() {
         className='min-h-full pb-bottom-nav'
         style={{
           backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+          paddingBottom: tab === 'auction' ? 'calc(5rem + 40px + var(--bottom-safe-area, 0px))' : undefined,
         }}
       >
         {renderTabContent(tab)}
@@ -1684,6 +1686,28 @@ export function EventHomePage() {
           ))}
         </div>
       </main>
+
+      {/* Check-in reminder — fixed above the bottom nav bar, hidden once checked in */}
+      {visibleTab === 'auction' &&
+        !(
+          (seatingInfo as any)?.my_info?.checked_in ??
+          (seatingInfo?.myInfo as any)?.checked_in ??
+          seatingInfo?.myInfo?.checkedIn
+        ) && (
+        <div
+          className='fixed bottom-20 left-0 right-0 z-40 flex items-center gap-2 px-4 py-2.5 shadow-md'
+          style={{
+            backgroundColor: 'rgba(var(--event-primary, 59, 130, 246), 0.85)',
+            borderTop: '1px solid rgba(var(--event-primary, 59, 130, 246), 0.5)',
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          <TriangleAlert className='h-4 w-4 shrink-0 text-white' />
+          <p className='text-xs font-semibold text-white'>
+            You must be checked in to bid or play.
+          </p>
+        </div>
+      )}
 
       {/* Fixed bottom navigation */}
       <BottomTabNav

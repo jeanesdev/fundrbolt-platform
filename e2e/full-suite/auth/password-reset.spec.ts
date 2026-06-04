@@ -44,7 +44,7 @@ test('confirming reset with a valid token changes the password', async ({ page, 
   expect(requestReset.ok(), await requestReset.text()).toBeTruthy()
 
   const message = await mailpit.waitForMessage({ to: email, subjectContains: 'Reset' })
-  const resetLink = mailpit.extractLink(message, /https?:\/\/[^\s"'>]+/)
+  const resetLink = mailpit.extractLink(message, /https?:\/\/[^\s"'>]*[?&]token=[^\s"'>]*/)
   const token = new URL(resetLink).searchParams.get('token')
   expect(token).toBeTruthy()
   if (!token) {

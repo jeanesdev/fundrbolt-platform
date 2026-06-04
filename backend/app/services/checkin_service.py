@@ -52,7 +52,7 @@ class CheckInService:
         )
 
         result = await db.execute(query)
-        return result.scalars().first()
+        return result.unique().scalars().first()
 
     @staticmethod
     async def get_registration_by_email(
@@ -84,7 +84,7 @@ class CheckInService:
             query = query.where(EventRegistration.event_id == event_id)
 
         result = await db.execute(query)
-        return list(result.scalars().all())
+        return list(result.unique().scalars().all())
 
     @staticmethod
     async def get_next_available_table(db: AsyncSession, event_id: UUID) -> int | None:

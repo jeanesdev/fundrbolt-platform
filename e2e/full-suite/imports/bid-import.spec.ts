@@ -4,6 +4,7 @@ import { provisionEvent } from '../../helpers/provision'
 import { expect, test } from '../../fixtures/base-fixtures'
 
 test('admin can reach the bid import flow from the admin app and submit a file', async ({ page, adminApi }) => {
+  test.skip(!!process.env.CI, 'Requires frontend dev server')
   await storeSeedAuth(page, 'npo_admin', 'admin')
   await page.goto(ADMIN_APP_URL, { waitUntil: 'domcontentloaded' })
   await expect(page).toHaveURL(/localhost|127\.0\.0\.1|fundrbolt/i)

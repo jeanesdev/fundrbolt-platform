@@ -7,6 +7,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.schemas.donor_label import DonorLabelWithAssignmentInfo
+from app.schemas.survey import SurveyResponseSummary
+
 # --- Leaderboard ---
 
 
@@ -25,6 +28,9 @@ class DonorLeaderboardEntry(BaseModel):
     silent_auction_total: float = Field(default=0)
     live_auction_total: float = Field(default=0)
     buy_now_total: float = Field(default=0)
+    survey_completed: bool = False
+    donor_labels: list[DonorLabelWithAssignmentInfo] = Field(default_factory=list)
+    survey_answers: dict[str, str] = Field(default_factory=dict)
 
 
 class DonorLeaderboardResponse(BaseModel):
@@ -119,6 +125,9 @@ class DonorProfileResponse(BaseModel):
     ticket_history: list[TicketRecord] = Field(default_factory=list)
     category_interests: list[CategoryInterest] = Field(default_factory=list)
     outbid_summary: OutbidSummary = Field(default_factory=OutbidSummary)
+    donor_labels: list[DonorLabelWithAssignmentInfo] = Field(default_factory=list)
+    survey_completed: bool = False
+    survey_response: SurveyResponseSummary | None = None
 
 
 # --- Outbid Leaders ---

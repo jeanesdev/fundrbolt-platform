@@ -1,3 +1,28 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
+import {
+  ArrowLeft,
+  CalendarPlus,
+  Home,
+  ImageOff,
+  Loader2,
+  Ticket,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import { type EventContextOption } from '@/stores/event-context-store'
+import { getEventBySlug, type EventMediaUsageTag } from '@/lib/api/events'
+import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
+import { getDonorSurveyStatus, markSurveyDonateBack, submitDonorSurvey } from '@/lib/api/survey'
+import { getMyInventory } from '@/lib/api/ticket-purchases'
+import apiClient from '@/lib/axios'
+import { hasValidRefreshToken } from '@/lib/storage/tokens'
+import { useEventBranding } from '@/hooks/use-event-branding'
+import { useEventContext } from '@/hooks/use-event-context'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CountdownTimer } from '@/components/event-home/CountdownTimer'
 import { EventDetails } from '@/components/event-home/EventDetails'
 import {
@@ -7,30 +32,9 @@ import {
 } from '@/components/event-home/EventHeroSection'
 import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
 import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EventHomePage } from '@/features/events/EventHomePage'
-import { useEventBranding } from '@/hooks/use-event-branding'
-import { useEventContext } from '@/hooks/use-event-context'
-import { getEventBySlug, type EventMediaUsageTag } from '@/lib/api/events'
-import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
-import { getMyInventory } from '@/lib/api/ticket-purchases'
-import apiClient from '@/lib/axios'
-import { hasValidRefreshToken } from '@/lib/storage/tokens'
-import { useAuthStore } from '@/stores/auth-store'
-import { type EventContextOption } from '@/stores/event-context-store'
-import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
-import { useQuery } from '@tanstack/react-query'
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import {
-  ArrowLeft,
-  CalendarPlus,
-  Home,
-  ImageOff,
-  Loader2,
-  Ticket,
-} from 'lucide-react'
-import { useCallback, useEffect } from 'react'
+import { AttendeeSurveyModal } from '@/features/survey/AttendeeSurveyModal'
+import { SurveyThankYouPopup } from '@/features/survey/SurveyThankYouPopup'
 
 interface PublicAuctionPreviewItem {
   id: string
@@ -103,6 +107,83 @@ function RouteComponent() {
       staleTime: 5 * 60 * 1000,
       enabled: isAuthenticated && !isRestoringAuth,
     })
+
+  const queryClient = useQueryClient()
+  const isRegisteredInContext = availableEvents.some(
+    (eventOption) => eventOption.slug === slug && eventOption.is_registered
+  )
+  const npoName =
+    availableEvents.find((e) => e.slug === slug)?.npo_name ?? null
+  const isRegisteredFromQuery =
+    registrationsData?.events?.some(
+      (registeredEvent) => registeredEvent.slug === slug
+    ) ?? false
+  const hasTicketAccessFromQuery =
+    ticketInventoryData?.events?.some(
+      (inventoryEvent) => inventoryEvent.event_slug === slug
+    ) ?? false
+  const isRegistered = isRegisteredInContext || isRegisteredFromQuery
+
+  const surveyStatusQuery = useQuery({
+    queryKey: ['donor-survey-status', event?.id],
+    queryFn: () => getDonorSurveyStatus(event!.id),
+    enabled: isAuthenticated && isRegistered && Boolean(event?.id),
+    staleTime: 60_000,
+  })
+  // Use slug (available synchronously from route params) so the initial state
+  // is correct on first render — avoids a race where cached `should_show:true`
+  // triggers the overlay before the async event.id is known.
+  const [surveyDismissed, setSurveyDismissed] = useState(
+    () => localStorage.getItem(`survey_dismissed_${slug}`) === 'true'
+  )
+  // surveyModalOpen is set to true the first time the query resolves with
+  // should_show=true, and is only ever cleared by explicit user action (exit /
+  // skip / complete). This prevents query refetches from closing the modal
+  // while the user is interacting with it.
+  const [surveyModalOpen, setSurveyModalOpen] = useState(false)
+  const surveyModalOpenedRef = useRef(false)
+  useEffect(() => {
+    if (
+      surveyStatusQuery.data?.should_show &&
+      surveyStatusQuery.data.survey &&
+      !surveyDismissed &&
+      !surveyModalOpenedRef.current
+    ) {
+      surveyModalOpenedRef.current = true
+      setSurveyModalOpen(true)
+    }
+  }, [surveyStatusQuery.data, surveyDismissed])
+
+  const [surveyThankYou, setSurveyThankYou] = useState<{
+    discountCents: number
+  } | null>(null)
+
+  const dismissSurvey = () => {
+    localStorage.setItem(`survey_dismissed_${slug}`, 'true')
+    setSurveyDismissed(true)
+    setSurveyModalOpen(false)
+  }
+
+  const submitSurveyMutation = useMutation({
+    mutationFn: (payload: Parameters<typeof submitDonorSurvey>[1]) =>
+      submitDonorSurvey(event!.id, payload),
+    onSuccess: async (response) => {
+      await queryClient.invalidateQueries({
+        queryKey: ['donor-survey-status', event?.id],
+      })
+      dismissSurvey()
+      if (response.status === 'completed' && response.discount_cents_applied > 0) {
+        setSurveyThankYou({ discountCents: response.discount_cents_applied })
+      } else if (response.status === 'completed') {
+        toast.success('Thanks for sharing your preferences!')
+      } else {
+        toast.success('You can complete the survey later from this event page.')
+      }
+    },
+    onError: () => {
+      toast.error('Unable to save your survey response. Please try again.')
+    },
+  })
 
   const { data: auctionPreviewItems } = useQuery({
     queryKey: ['event', event?.id, 'auction-preview'],
@@ -287,18 +368,6 @@ function RouteComponent() {
   // Only registered donors should enter the immersive donor event experience.
   // Ticket holders who have not completed registration should remain on the
   // public event page so the page is still reachable without protected-event access.
-  const isRegisteredInContext = availableEvents.some(
-    (eventOption) => eventOption.slug === slug && eventOption.is_registered
-  )
-  const isRegisteredFromQuery =
-    registrationsData?.events?.some(
-      (registeredEvent) => registeredEvent.slug === slug
-    ) ?? false
-  const hasTicketAccessFromQuery =
-    ticketInventoryData?.events?.some(
-      (inventoryEvent) => inventoryEvent.event_slug === slug
-    ) ?? false
-
   if (isAuthenticated) {
     if (eventsLoading || isLoadingRegistrations || isLoadingTicketInventory) {
       return (
@@ -308,10 +377,34 @@ function RouteComponent() {
       )
     }
 
-    const isRegistered = isRegisteredInContext || isRegisteredFromQuery
-
     if (isRegistered) {
-      return <EventHomePage />
+      return (
+        <>
+          <EventHomePage />
+          {surveyModalOpen && surveyStatusQuery.data?.survey ? (
+            <AttendeeSurveyModal
+              open
+              survey={surveyStatusQuery.data.survey}
+              isSubmitting={submitSurveyMutation.isPending}
+              onClose={() => dismissSurvey()}
+              onSkip={() => submitSurveyMutation.mutate({ action: 'skip' })}
+              onComplete={(answers) =>
+                submitSurveyMutation.mutate({ action: 'complete', answers })
+              }
+            />
+          ) : null}
+          <SurveyThankYouPopup
+            key={surveyThankYou !== null ? 'popup-open' : 'popup-closed'}
+            open={surveyThankYou !== null}
+            discountCents={surveyThankYou?.discountCents ?? 0}
+            npoName={npoName}
+            onDonateBack={() => {
+              if (event?.id) markSurveyDonateBack(event.id).catch(() => null)
+            }}
+            onApply={() => setSurveyThankYou(null)}
+          />
+        </>
+      )
     }
     // Fall through to render the public event page for authenticated but
     // unregistered donors, including ticket holders coming from My Tickets.

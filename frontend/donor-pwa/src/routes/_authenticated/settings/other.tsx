@@ -31,10 +31,13 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { ContentSection } from '@/features/settings/components/content-section'
+import { getDonorSurveyStatus } from '@/lib/api/survey'
 import { useAuthStore } from '@/stores/auth-store'
+import { useEventContextStore } from '@/stores/event-context-store'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { createFileRoute } from '@tanstack/react-router'
-import { ChevronDown, LifeBuoy, Mail, Send, Shield } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { CheckCircle, ChevronDown, ClipboardList, LifeBuoy, Mail, Send, Shield, Tag } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -178,9 +181,98 @@ function SupportForm() {
   )
 }
 
+function SurveyStatusSection() {
+  const selectedEventId = useEventContextStore((s) => s.selectedEventId)
+  const selectedEventSlug = useEventContextStore((s) => s.selectedEventSlug)
+  const selectedEventName = useEventContextStore((s) => s.selectedEventName)
+
+  const surveyQuery = useQuery({
+    queryKey: ['donor-survey-status', selectedEventId],
+    queryFn: () => getDonorSurveyStatus(selectedEventId!),
+    enabled: Boolean(selectedEventId),
+    staleTime: 60_000,
+  })
+
+  const survey = surveyQuery.data
+
+  // No active survey for this event or no event selected
+  if (!selectedEventId || !selectedEventSlug || !survey?.survey) {
+    return (
+      <Card>
+        <CardContent className='py-4'>
+          <p className='text-muted-foreground text-sm'>
+            {selectedEventId
+              ? 'No survey is currently active for this event.'
+              : 'Select an event to see survey status.'}
+          </p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const discountDollars = survey.discount_cents_applied
+    ? (survey.discount_cents_applied / 100).toFixed(2)
+    : null
+
+  return (
+    <Card>
+      <CardHeader className='pb-3'>
+        <CardTitle className='text-base'>{selectedEventName}</CardTitle>
+      </CardHeader>
+      <CardContent className='space-y-3'>
+        <div className='flex items-center gap-2'>
+          {survey.is_completed ? (
+            <>
+              <CheckCircle className='h-5 w-5 text-green-500' />
+              <span className='text-sm font-medium'>Survey completed</span>
+            </>
+          ) : (
+            <>
+              <ClipboardList className='text-muted-foreground h-5 w-5' />
+              <span className='text-muted-foreground text-sm'>Survey not yet completed</span>
+            </>
+          )}
+        </div>
+
+        {discountDollars && (
+          <div className='flex items-center gap-2'>
+            <Tag className='h-4 w-4 text-green-500' />
+            <span className='text-sm text-green-700 dark:text-green-400'>
+              ${discountDollars} discount earned
+            </span>
+          </div>
+        )}
+
+        <Button asChild variant='outline' size='sm'>
+          <Link to='/events/$slug/survey' params={{ slug: selectedEventSlug }}>
+            {survey.is_completed ? 'Retake survey' : 'Take survey'}
+          </Link>
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
+
+
 function SettingsOther() {
   return (
     <div className='space-y-4'>
+      {/* Survey Section — collapsed by default */}
+      <Collapsible>
+        <CollapsibleTrigger className='flex w-full items-center justify-between rounded-lg border p-4'>
+          <div className='flex items-center gap-2'>
+            <ClipboardList className='h-5 w-5' />
+            <h2 className='text-lg font-semibold'>Event Survey</h2>
+          </div>
+          <ChevronDown className='h-4 w-4 transition-transform duration-200 [[data-state=open]>&]:rotate-180' />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className='pt-4'>
+            <SurveyStatusSection />
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
       {/* Support Section — open by default */}
       <Collapsible defaultOpen>
         <CollapsibleTrigger className='flex w-full items-center justify-between rounded-lg border p-4'>

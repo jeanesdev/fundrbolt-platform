@@ -4,6 +4,7 @@ import { API_URL, DONOR_APP_URL } from '../playwright.config'
 import { expect, test } from '../fixtures/base-fixtures'
 
 test('donor signup sends a verification email', async ({ page, mailpit }) => {
+  test.skip(!!process.env.CI, 'Requires donor app frontend to be running')
   const email = `automation+signup-${randomUUID()}@fundrbolt.com`
   const response = await page.request.post(`${API_URL}/auth/register`, {
     data: {

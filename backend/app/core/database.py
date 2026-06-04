@@ -4,6 +4,7 @@ import asyncio
 from collections.abc import AsyncGenerator
 from typing import Any
 
+from fastapi import HTTPException
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -86,6 +87,9 @@ async def get_db() -> AsyncGenerator[AsyncSession, Any]:
                         "Database error during transaction",
                         extra={"error": str(e), "attempt": attempt + 1},
                     )
+                    raise
+                except HTTPException:
+                    await session.rollback()
                     raise
                 except Exception as e:
                     await session.rollback()

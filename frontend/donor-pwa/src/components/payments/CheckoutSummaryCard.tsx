@@ -96,14 +96,24 @@ export function CheckoutSummaryCard({
   const hasItems = session && session.items.length > 0
   if (session && !hasItems) {
     return (
-      <Card>
-        <CardContent className='flex items-center gap-3 py-4'>
-          <ShoppingBag className='text-muted-foreground h-5 w-5 shrink-0' />
-          <p className='text-muted-foreground text-sm'>
-            You have no items to check out.
-          </p>
-        </CardContent>
-      </Card>
+      <div
+        className='flex items-center gap-3 rounded-xl px-4 py-4'
+        style={{
+          backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.12)',
+          border: '1px solid rgb(var(--event-primary, 59, 130, 246) / 0.25)',
+        }}
+      >
+        <ShoppingBag
+          className='h-5 w-5 shrink-0'
+          style={{ color: 'var(--event-text-on-background, #6B7280)' }}
+        />
+        <p
+          className='text-sm'
+          style={{ color: 'var(--event-text-on-background, #6B7280)' }}
+        >
+          You have no items to check out.
+        </p>
+      </div>
     )
   }
 

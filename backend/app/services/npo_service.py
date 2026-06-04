@@ -15,6 +15,7 @@ from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.models.donor_label import DonorLabel
 from app.models.npo import NPO, NPOStatus
 from app.models.npo_member import MemberRole, MemberStatus, NPOMember
 from app.models.user import User
@@ -22,6 +23,13 @@ from app.schemas.npo import NPOCreateRequest, NPOListRequest, NPOUpdateRequest
 from app.services.npo_permission_service import NPOPermissionService
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_DONOR_LABELS: list[tuple[str, str]] = [
+    ("Impact Driven", "#2563EB"),
+    ("Heart Driven", "#DC2626"),
+    ("Community Driven", "#16A34A"),
+    ("Participation Driven", "#D97706"),
+]
 
 
 class NPOService:
@@ -114,6 +122,16 @@ class NPOService:
 
         db.add(npo)
         await db.flush()  # Get npo.id
+
+        for label_name, color in DEFAULT_DONOR_LABELS:
+            db.add(
+                DonorLabel(
+                    npo_id=npo.id,
+                    name=label_name,
+                    color=color,
+                    is_system_default=True,
+                )
+            )
 
         # Add creator as admin member
         member = NPOMember(

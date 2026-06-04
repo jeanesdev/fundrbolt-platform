@@ -18,7 +18,7 @@ import {
   Outlet,
   useRouterState,
 } from '@tanstack/react-router'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
@@ -33,6 +33,7 @@ function RootComponent() {
   const { needRefresh, updateServiceWorker, dismissUpdate } = useServiceWorker()
   const isOnline = useOnlineStatus()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
+  const [cookieConsentShowing, setCookieConsentShowing] = useState(false)
 
   // Reset scroll on route change — prevents iOS standalone PWA phantom offset
   useEffect(() => {
@@ -45,16 +46,16 @@ function RootComponent() {
       <NavigationProgress />
       <PullToRefresh />
       <SessionExpirationWarning />
-      <CookieConsentWrapper />
+      <CookieConsentWrapper onOpenChange={setCookieConsentShowing} />
       <UpdateNotification
         needRefresh={!import.meta.env.DEV && needRefresh}
         onRefresh={updateServiceWorker}
         onDismiss={dismissUpdate}
       />
       <Outlet />
-      <Toaster duration={5000} position='top-center' offset='calc(env(safe-area-inset-top, 0px) + 8px)' mobileOffset='calc(env(safe-area-inset-top, 0px) + 8px)' />
+      <Toaster closeButton position='top-center' offset='calc(env(safe-area-inset-top, 0px) + 8px)' mobileOffset='calc(env(safe-area-inset-top, 0px) + 8px)' toastOptions={{ duration: 5000 }} />
       <NotificationToastOverlay />
-      {isMobile && <InstallPromptBanner appId='donor' />}
+      {isMobile && <InstallPromptBanner appId='donor' hidden={cookieConsentShowing} />}
     </>
   )
 }

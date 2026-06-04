@@ -80,6 +80,7 @@ class Settings(BaseSettings):
     # Rate Limiting
     rate_limit_login_attempts: int = 5
     rate_limit_login_window_minutes: int = 15
+    rate_limit_enabled: bool = True
 
     # NPO Onboarding — Cloudflare Turnstile
     # Test secret: 1x0000000000000000000000000000000AA (always succeeds)

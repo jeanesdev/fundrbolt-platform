@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from app.models.event import Event
     from app.models.meal_selection import MealSelection
     from app.models.registration_guest import RegistrationGuest
+    from app.models.survey_response import SurveyResponse
     from app.models.ticket_management import TicketPurchase
     from app.models.user import User
 
@@ -99,6 +100,12 @@ class EventRegistration(Base, UUIDMixin, TimestampMixin):
         "MealSelection",
         back_populates="registration",
         cascade="all, delete-orphan",
+    )
+    survey_response: Mapped["SurveyResponse | None"] = relationship(
+        "SurveyResponse",
+        back_populates="registration",
+        cascade="all, delete-orphan",
+        uselist=False,
     )
 
     # Unique Constraints

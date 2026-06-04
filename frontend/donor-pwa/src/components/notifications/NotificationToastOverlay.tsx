@@ -221,8 +221,9 @@ function addToast(notification: NotificationData) {
   btn.appendChild(dismiss)
   card.appendChild(btn)
 
-  // Timer bar
-  if (!prefersReduced) {
+  // Timer bar — skip for persistent notifications like survey_invitation
+  const isPersistent = notification.notification_type === 'survey_invitation'
+  if (!prefersReduced && !isPersistent) {
     const timerWrap = document.createElement('div')
     timerWrap.style.cssText =
       'position:absolute;bottom:0;left:0;right:0;height:3px;overflow:hidden;'
@@ -256,10 +257,12 @@ function addToast(notification: NotificationData) {
     triggerCelebrationConfetti()
   }
 
-  // Auto-dismiss
-  const timer = setTimeout(() => {
-    dismissToast(notification.id)
-  }, TOAST_DURATION)
+  // Auto-dismiss — survey_invitation stays until user dismisses or takes survey
+  const timer = isPersistent
+    ? (null as unknown as ReturnType<typeof setTimeout>)
+    : setTimeout(() => {
+        dismissToast(notification.id)
+      }, TOAST_DURATION)
 
   activeToasts.set(notification.id, { el: wrapper, timer })
   enforceMaxVisible()

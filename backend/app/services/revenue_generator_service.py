@@ -545,9 +545,9 @@ class RevenueGeneratorService:
         guest_result = await db.execute(guest_stmt)
         guest = guest_result.scalar_one_or_none()
         if not guest:
-            raise ValueError("You must complete registration before purchasing entries")
+            raise ValueError("You must register for this event before purchasing entries")
         if guest.bidder_number is None:
-            raise ValueError("Your bidder profile is incomplete. Please contact event staff")
+            raise ValueError("You must be checked in before purchasing entries")
 
         last_entry: RevenueGeneratorEntry | None = None
         for _ in range(quantity):

@@ -29,7 +29,7 @@ test('npo admin cannot access a super-admin-only endpoint', async ({ page }) => 
 })
 
 test('unauthenticated requests to protected endpoints return 401', async ({ page, seedRefs }) => {
-  const response = await page.request.get(`${API_URL}/notifications?event_id=${seedRefs.liveEventSlug}`)
+  const response = await page.request.get(`${API_URL}/notifications?event_id=${seedRefs.liveEventId}`)
 
   expect(response.status()).toBe(401)
 })

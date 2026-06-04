@@ -4,14 +4,14 @@ import { provisionAuctionItem, provisionEvent } from '../../helpers/provision'
 import { expect, test } from '../../fixtures/base-fixtures'
 
 test('donor can list silent auction items for the seeded live event', async ({ donorApi, seedRefs }) => {
-  const items = await donorApi.get<Record<string, unknown>>(`/events/${seedRefs.liveEventSlug}/auction-items?auction_type=silent`)
+  const items = await donorApi.get<Record<string, unknown>>(`/events/${seedRefs.liveEventId}/auction-items?auction_type=silent`)
   const rows = Array.isArray(items.items) ? (items.items as Array<Record<string, unknown>>) : []
 
   expect(Array.isArray(rows)).toBe(true)
 })
 
 test('donor can list live auction items for the seeded live event', async ({ donorApi, seedRefs }) => {
-  const items = await donorApi.get<Record<string, unknown>>(`/events/${seedRefs.liveEventSlug}/auction-items?auction_type=live`)
+  const items = await donorApi.get<Record<string, unknown>>(`/events/${seedRefs.liveEventId}/auction-items?auction_type=live`)
   const rows = Array.isArray(items.items) ? (items.items as Array<Record<string, unknown>>) : []
 
   expect(Array.isArray(rows)).toBe(true)

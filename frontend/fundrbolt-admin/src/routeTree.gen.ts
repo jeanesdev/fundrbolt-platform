@@ -58,6 +58,7 @@ import { Route as AuthenticatedEventsEventIdIndexRouteImport } from './routes/_a
 import { Route as AuthenticatedNposNpoIdPaymentSettingsRouteImport } from './routes/_authenticated/npos/$npoId/payment-settings'
 import { Route as AuthenticatedNposNpoIdEditRouteImport } from './routes/_authenticated/npos/$npoId/edit'
 import { Route as AuthenticatedEventsEventIdTicketsRouteImport } from './routes/_authenticated/events/$eventId/tickets'
+import { Route as AuthenticatedEventsEventIdSurveyRouteImport } from './routes/_authenticated/events/$eventId/survey'
 import { Route as AuthenticatedEventsEventIdSponsorsRouteImport } from './routes/_authenticated/events/$eventId/sponsors'
 import { Route as AuthenticatedEventsEventIdSeatingRouteImport } from './routes/_authenticated/events/$eventId/seating'
 import { Route as AuthenticatedEventsEventIdRunOfShowRouteImport } from './routes/_authenticated/events/$eventId/run-of-show'
@@ -360,6 +361,12 @@ const AuthenticatedEventsEventIdTicketsRoute =
   AuthenticatedEventsEventIdTicketsRouteImport.update({
     id: '/tickets',
     path: '/tickets',
+    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+  } as any)
+const AuthenticatedEventsEventIdSurveyRoute =
+  AuthenticatedEventsEventIdSurveyRouteImport.update({
+    id: '/survey',
+    path: '/survey',
     getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
   } as any)
 const AuthenticatedEventsEventIdSponsorsRoute =
@@ -671,6 +678,7 @@ export interface FileRoutesByFullPath {
   '/events/$eventId/run-of-show': typeof AuthenticatedEventsEventIdRunOfShowRoute
   '/events/$eventId/seating': typeof AuthenticatedEventsEventIdSeatingRoute
   '/events/$eventId/sponsors': typeof AuthenticatedEventsEventIdSponsorsRoute
+  '/events/$eventId/survey': typeof AuthenticatedEventsEventIdSurveyRoute
   '/events/$eventId/tickets': typeof AuthenticatedEventsEventIdTicketsRouteWithChildren
   '/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
   '/npos/$npoId/payment-settings': typeof AuthenticatedNposNpoIdPaymentSettingsRoute
@@ -756,6 +764,7 @@ export interface FileRoutesByTo {
   '/events/$eventId/run-of-show': typeof AuthenticatedEventsEventIdRunOfShowRoute
   '/events/$eventId/seating': typeof AuthenticatedEventsEventIdSeatingRoute
   '/events/$eventId/sponsors': typeof AuthenticatedEventsEventIdSponsorsRoute
+  '/events/$eventId/survey': typeof AuthenticatedEventsEventIdSurveyRoute
   '/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
   '/npos/$npoId/payment-settings': typeof AuthenticatedNposNpoIdPaymentSettingsRoute
   '/events/$eventId': typeof AuthenticatedEventsEventIdIndexRoute
@@ -848,6 +857,7 @@ export interface FileRoutesById {
   '/_authenticated/events/$eventId/run-of-show': typeof AuthenticatedEventsEventIdRunOfShowRoute
   '/_authenticated/events/$eventId/seating': typeof AuthenticatedEventsEventIdSeatingRoute
   '/_authenticated/events/$eventId/sponsors': typeof AuthenticatedEventsEventIdSponsorsRoute
+  '/_authenticated/events/$eventId/survey': typeof AuthenticatedEventsEventIdSurveyRoute
   '/_authenticated/events/$eventId/tickets': typeof AuthenticatedEventsEventIdTicketsRouteWithChildren
   '/_authenticated/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
   '/_authenticated/npos/$npoId/payment-settings': typeof AuthenticatedNposNpoIdPaymentSettingsRoute
@@ -939,6 +949,7 @@ export interface FileRouteTypes {
     | '/events/$eventId/run-of-show'
     | '/events/$eventId/seating'
     | '/events/$eventId/sponsors'
+    | '/events/$eventId/survey'
     | '/events/$eventId/tickets'
     | '/npos/$npoId/edit'
     | '/npos/$npoId/payment-settings'
@@ -1024,6 +1035,7 @@ export interface FileRouteTypes {
     | '/events/$eventId/run-of-show'
     | '/events/$eventId/seating'
     | '/events/$eventId/sponsors'
+    | '/events/$eventId/survey'
     | '/npos/$npoId/edit'
     | '/npos/$npoId/payment-settings'
     | '/events/$eventId'
@@ -1115,6 +1127,7 @@ export interface FileRouteTypes {
     | '/_authenticated/events/$eventId/run-of-show'
     | '/_authenticated/events/$eventId/seating'
     | '/_authenticated/events/$eventId/sponsors'
+    | '/_authenticated/events/$eventId/survey'
     | '/_authenticated/events/$eventId/tickets'
     | '/_authenticated/npos/$npoId/edit'
     | '/_authenticated/npos/$npoId/payment-settings'
@@ -1513,6 +1526,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsEventIdTicketsRouteImport
       parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
     }
+    '/_authenticated/events/$eventId/survey': {
+      id: '/_authenticated/events/$eventId/survey'
+      path: '/survey'
+      fullPath: '/events/$eventId/survey'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdSurveyRouteImport
+      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+    }
     '/_authenticated/events/$eventId/sponsors': {
       id: '/_authenticated/events/$eventId/sponsors'
       path: '/sponsors'
@@ -1879,6 +1899,7 @@ interface AuthenticatedEventsEventIdRouteRouteChildren {
   AuthenticatedEventsEventIdRunOfShowRoute: typeof AuthenticatedEventsEventIdRunOfShowRoute
   AuthenticatedEventsEventIdSeatingRoute: typeof AuthenticatedEventsEventIdSeatingRoute
   AuthenticatedEventsEventIdSponsorsRoute: typeof AuthenticatedEventsEventIdSponsorsRoute
+  AuthenticatedEventsEventIdSurveyRoute: typeof AuthenticatedEventsEventIdSurveyRoute
   AuthenticatedEventsEventIdTicketsRoute: typeof AuthenticatedEventsEventIdTicketsRouteWithChildren
   AuthenticatedEventsEventIdIndexRoute: typeof AuthenticatedEventsEventIdIndexRoute
   AuthenticatedEventsEventIdAuctioneerLiveRoute: typeof AuthenticatedEventsEventIdAuctioneerLiveRoute
@@ -1927,6 +1948,8 @@ const AuthenticatedEventsEventIdRouteRouteChildren: AuthenticatedEventsEventIdRo
       AuthenticatedEventsEventIdSeatingRoute,
     AuthenticatedEventsEventIdSponsorsRoute:
       AuthenticatedEventsEventIdSponsorsRoute,
+    AuthenticatedEventsEventIdSurveyRoute:
+      AuthenticatedEventsEventIdSurveyRoute,
     AuthenticatedEventsEventIdTicketsRoute:
       AuthenticatedEventsEventIdTicketsRouteWithChildren,
     AuthenticatedEventsEventIdIndexRoute: AuthenticatedEventsEventIdIndexRoute,

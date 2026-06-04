@@ -657,7 +657,14 @@ async def get_checkout_session(
         event_id=event_id,
     )
     await db.commit()
-    await db.refresh(session)
+    # Reload with items eager-loaded to avoid lazy-load error in async context
+    # (especially for new sessions where items were added via db.add, not the ORM collection).
+    result = await db.execute(
+        select(CheckoutSession)
+        .where(CheckoutSession.id == session.id)
+        .options(selectinload(CheckoutSession.items))
+    )
+    session = result.scalar_one()
     return CheckoutSessionResponse.model_validate(session)
 
 

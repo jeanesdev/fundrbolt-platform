@@ -5,7 +5,7 @@ test('donor can validate a scoped registration cart', async ({ donorApi, seedRef
   expect(tickets.length).toBeGreaterThan(0)
   const firstTicket = tickets[0]
   const validation = await donorApi.post<{ total: string; items: Array<{ package_id: string }> }>(
-    `/events/${seedRefs.futureEventSlug}/tickets/validate-cart`,
+    `/events/${seedRefs.futureEventId}/tickets/validate-cart`,
     {
       items: [{ package_id: firstTicket.id, quantity: 1 }],
     }

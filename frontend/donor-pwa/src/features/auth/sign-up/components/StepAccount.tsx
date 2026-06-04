@@ -1,8 +1,5 @@
-import { useState } from 'react'
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Link } from '@tanstack/react-router'
+import { TermsOfServiceModal } from '@/components/legal/terms-of-service-modal'
+import { PasswordInput } from '@/components/password-input'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -14,8 +11,11 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { TermsOfServiceModal } from '@/components/legal/terms-of-service-modal'
-import { PasswordInput } from '@/components/password-input'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Link } from '@tanstack/react-router'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 
 const formSchema = z
   .object({
@@ -185,8 +185,8 @@ export function StepAccount({ onNext, redirectTo }: StepAccountProps) {
                   />
                 </FormControl>
                 <div className='space-y-1 leading-none'>
-                  <FormLabel className='text-sm font-normal'>
-                    I accept the{' '}
+                  <FormLabel className='flex flex-wrap items-center gap-1 text-sm font-normal'>
+                    <span>I accept the</span>
                     <Button
                       type='button'
                       variant='link'

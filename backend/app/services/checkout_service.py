@@ -33,12 +33,15 @@ from app.models.checkout_session import (
     CheckoutStatusEnum,
 )
 from app.models.event import Event
+from app.models.event_registration import EventRegistration
+from app.models.npo import NPO
 from app.models.payment_transaction import PaymentTransaction, TransactionStatus
 from app.models.quick_entry_bid import QuickEntryBid, QuickEntryBidStatus
 from app.models.quick_entry_buy_now_bid import QuickEntryBuyNowBid
 from app.models.quick_entry_donation import QuickEntryDonation
 from app.models.registration_guest import RegistrationGuest
 from app.models.revenue_generator_entry import RevenueGeneratorEntry
+from app.models.survey_response import SurveyResponse
 from app.models.ticket_management import PaymentStatus, TicketPurchase
 from app.schemas.checkout import AdminAddCheckoutItemRequest, CheckoutConfirmRequest
 from app.schemas.payment import (
@@ -400,6 +403,23 @@ class CheckoutService:
             # were populated (e.g. sessions created with generic fallbacks).
             await self._refresh_item_names(session)
 
+            # Sync survey discount — handles the case where the donor completed
+            # the survey after the session was already created.
+            positive_subtotal_cents = sum(
+                item.original_amount_cents
+                for item in session.items
+                if item.original_amount_cents > 0
+                and item.source_type
+                not in (
+                    CheckoutItemSourceTypeEnum.SURVEY_DISCOUNT,
+                    CheckoutItemSourceTypeEnum.SURVEY_DONATE_BACK,
+                )
+            )
+            next_display_order = max((item.display_order for item in session.items), default=-1) + 1
+            await self._sync_survey_discount(session, positive_subtotal_cents, next_display_order)
+            await self.db.flush()
+            await self.recalculate_totals(session)
+
         return session
 
     async def update_session(
@@ -439,6 +459,7 @@ class CheckoutService:
         event_id = session.event_id
         user_id = session.user_id
         display_order = 0
+        positive_subtotal_cents = 0  # running total of positive items, used to cap discount
 
         # ── Winning auction bids ──────────────────────────────────────────────
         bid_result = await self.db.execute(
@@ -467,6 +488,7 @@ class CheckoutService:
                 display_order=display_order,
             )
             self.db.add(item)
+            positive_subtotal_cents += amount_cents
             display_order += 1
 
         # ── Quick-entry paddle-raise donations ────────────────────────────────
@@ -487,6 +509,7 @@ class CheckoutService:
                 display_order=display_order,
             )
             self.db.add(item)
+            positive_subtotal_cents += amount_cents
             display_order += 1
 
         # ── Quick-entry live bids ─────────────────────────────────────────────
@@ -511,6 +534,7 @@ class CheckoutService:
                 display_order=display_order,
             )
             self.db.add(item)
+            positive_subtotal_cents += amount_cents
             display_order += 1
 
         # ── Unpaid ticket purchases ───────────────────────────────────────────
@@ -535,6 +559,7 @@ class CheckoutService:
                 display_order=display_order,
             )
             self.db.add(item)
+            positive_subtotal_cents += amount_cents
             display_order += 1
 
         # ── Revenue generator entries ─────────────────────────────────────────
@@ -562,9 +587,91 @@ class CheckoutService:
                 display_order=display_order,
             )
             self.db.add(item)
+            positive_subtotal_cents += amount_cents
             display_order += 1
 
+        await self._sync_survey_discount(session, positive_subtotal_cents, display_order)
+
         await self.db.flush()
+
+    async def _sync_survey_discount(
+        self, session: CheckoutSession, positive_subtotal_cents: int, next_display_order: int
+    ) -> None:
+        """Add, update, or remove the survey discount (and optional donate-back) items.
+
+        Safe to call on both new and existing sessions. Removes any stale
+        SURVEY_DISCOUNT / SURVEY_DONATE_BACK items before re-adding based on the
+        current survey state so that completing the survey after a session exists
+        still applies the discount.
+        """
+        event_id = session.event_id
+        user_id = session.user_id
+
+        # Remove stale survey discount / donate-back items using a direct DB
+        # query to avoid lazy-loading session.items (unsafe in async context
+        # when the session object was just created and items never eager-loaded).
+        stale_result = await self.db.execute(
+            select(CheckoutItem).where(
+                CheckoutItem.session_id == session.id,
+                CheckoutItem.source_type.in_(
+                    [
+                        CheckoutItemSourceTypeEnum.SURVEY_DISCOUNT,
+                        CheckoutItemSourceTypeEnum.SURVEY_DONATE_BACK,
+                    ]
+                ),
+            )
+        )
+        for item in stale_result.scalars().all():
+            await self.db.delete(item)
+
+        survey_response_result = await self.db.execute(
+            select(SurveyResponse)
+            .join(EventRegistration, SurveyResponse.registration_id == EventRegistration.id)
+            .where(
+                EventRegistration.user_id == user_id,
+                EventRegistration.event_id == event_id,
+                SurveyResponse.status == "completed",
+                SurveyResponse.discount_cents_applied > 0,
+            )
+            .order_by(
+                SurveyResponse.completed_at.desc().nullslast(), SurveyResponse.created_at.desc()
+            )
+            .limit(1)
+        )
+        survey_response = survey_response_result.scalar_one_or_none()
+        if survey_response is None:
+            return
+
+        # Cap discount so it never exceeds the positive items
+        discount_to_apply = min(survey_response.discount_cents_applied, positive_subtotal_cents)
+        if discount_to_apply <= 0:
+            return
+
+        discount_item = CheckoutItem(
+            session_id=session.id,
+            name="Survey Discount",
+            original_amount_cents=-discount_to_apply,
+            source_type=CheckoutItemSourceTypeEnum.SURVEY_DISCOUNT,
+            source_id=survey_response.id,
+            display_order=next_display_order,
+        )
+        self.db.add(discount_item)
+        next_display_order += 1
+
+        if survey_response.donate_back:
+            npo = await self.db.scalar(
+                select(NPO).join(Event, Event.npo_id == NPO.id).where(Event.id == event_id)
+            )
+            npo_name = npo.name if npo else "the organization"
+            donate_item = CheckoutItem(
+                session_id=session.id,
+                name=f"Donation to {npo_name}",
+                original_amount_cents=discount_to_apply,
+                source_type=CheckoutItemSourceTypeEnum.SURVEY_DONATE_BACK,
+                source_id=survey_response.id,
+                display_order=next_display_order,
+            )
+            self.db.add(donate_item)
 
     async def _refresh_item_names(self, session: CheckoutSession) -> None:
         """Update item names from their source records.
@@ -577,7 +684,11 @@ class CheckoutService:
         # Gather items by source type that can be looked up
         items_by_source: dict[CheckoutItemSourceTypeEnum, list[CheckoutItem]] = {}
         for item in session.items:
-            if item.source_id is None or item.source_type in (CheckoutItemSourceTypeEnum.MANUAL,):
+            if item.source_id is None or item.source_type in (
+                CheckoutItemSourceTypeEnum.MANUAL,
+                CheckoutItemSourceTypeEnum.SURVEY_DISCOUNT,
+                CheckoutItemSourceTypeEnum.SURVEY_DONATE_BACK,
+            ):
                 continue
             items_by_source.setdefault(item.source_type, []).append(item)
 
@@ -655,7 +766,7 @@ class CheckoutService:
         )
         active_items = list(result.scalars().all())
 
-        subtotal = sum(i.effective_amount_cents for i in active_items)
+        subtotal = max(sum(i.effective_amount_cents for i in active_items), 0)
         session.subtotal_cents = subtotal
 
         # Compute processing fee from checkout configuration

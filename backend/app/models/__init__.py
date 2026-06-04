@@ -40,6 +40,7 @@ from app.models.donor_label import DonorLabel
 from app.models.donor_label_assignment import DonorLabelAssignment
 from app.models.event import Event, EventLink, EventMedia, FoodOption
 from app.models.event_registration import EventRegistration, RegistrationStatus
+from app.models.event_survey_config import EventSurveyConfig
 from app.models.event_table import EventTable
 from app.models.invitation import Invitation
 from app.models.item_promotion import ItemPromotion
@@ -109,6 +110,10 @@ from app.models.social_auth_challenge import (
 from app.models.social_identity_link import SocialIdentityLink
 from app.models.sponsor import Sponsor
 from app.models.support_wall_entry import SupportWallEntry
+from app.models.survey_answer import SurveyAnswer
+from app.models.survey_question import SurveyQuestion
+from app.models.survey_question_option import SurveyQuestionOption
+from app.models.survey_response import SurveyResponse
 from app.models.ticket_management import (
     AssignedTicket,
     AssignmentStatus,
@@ -180,6 +185,7 @@ __all__ = [
     "Event",
     "EventLink",
     "EventMedia",
+    "EventSurveyConfig",
     "EventRegistration",
     "EventTable",
     "FoodOption",
@@ -245,6 +251,10 @@ __all__ = [
     "EmailVerificationChallenge",
     "AdminStepUpChallenge",
     "Sponsor",
+    "SurveyAnswer",
+    "SurveyQuestion",
+    "SurveyQuestionOption",
+    "SurveyResponse",
     "TicketAuditLog",
     "TicketAssignment",
     "TicketInvitation",
