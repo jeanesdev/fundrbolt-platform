@@ -18,39 +18,59 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import npoService from '@/services/npo-service'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useQuery } from '@tanstack/react-query'
 import { MailPlus, Send } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { roles } from '../data/data'
 import { useCreateUser } from '../hooks/use-users'
 
-const formSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
-  phone: z
-    .string()
-    .optional()
-    .refine(
-      (val) => {
-        if (!val || val === '') return true
-        const digits = val.replace(/\D/g, '')
-        return digits.length >= 10 && digits.length <= 11
-      },
-      { message: 'Phone must be 10 or 11 digits' }
-    )
-    .refine(
-      (val) => {
-        if (!val || val === '') return true
-        const digits = val.replace(/\D/g, '')
-        if (digits.length === 11) return digits.startsWith('1')
-        return true
-      },
-      { message: '11-digit phone must start with 1' }
-    ),
-  role: z.string().min(1, 'Role is required'),
-})
+const NPO_SCOPED_ROLES = ['npo_admin', 'event_coordinator', 'staff', 'auctioneer'] as const
+
+const formSchema = z
+  .object({
+    email: z.string().email('Please enter a valid email address'),
+    first_name: z.string().min(1, 'First name is required'),
+    last_name: z.string().min(1, 'Last name is required'),
+    phone: z
+      .string()
+      .optional()
+      .refine(
+        (val) => {
+          if (!val || val === '') return true
+          const digits = val.replace(/\D/g, '')
+          return digits.length >= 10 && digits.length <= 11
+        },
+        { message: 'Phone must be 10 or 11 digits' }
+      )
+      .refine(
+        (val) => {
+          if (!val || val === '') return true
+          const digits = val.replace(/\D/g, '')
+          if (digits.length === 11) return digits.startsWith('1')
+          return true
+        },
+        { message: '11-digit phone must start with 1' }
+      ),
+    role: z.string().min(1, 'Role is required'),
+    npo_id: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (
+      NPO_SCOPED_ROLES.includes(
+        data.role as (typeof NPO_SCOPED_ROLES)[number]
+      ) &&
+      !data.npo_id
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'NPO is required for this role',
+        path: ['npo_id'],
+      })
+    }
+  })
 
 type UserInviteForm = z.infer<typeof formSchema>
 
@@ -85,6 +105,11 @@ export function UsersInviteDialog({
 }: UserInviteDialogProps) {
   const createUserMutation = useCreateUser()
 
+  const { data: npoList } = useQuery({
+    queryKey: ['npos'],
+    queryFn: () => npoService.listNPOs({ page_size: 200 }),
+  })
+
   const form = useForm<UserInviteForm>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -93,8 +118,14 @@ export function UsersInviteDialog({
       last_name: '',
       phone: '',
       role: '',
+      npo_id: '',
     },
   })
+
+  const selectedRole = form.watch('role')
+  const requiresNpo = NPO_SCOPED_ROLES.includes(
+    selectedRole as (typeof NPO_SCOPED_ROLES)[number]
+  )
 
   const onSubmit = async (values: UserInviteForm) => {
     try {
@@ -104,6 +135,7 @@ export function UsersInviteDialog({
         last_name: values.last_name,
         phone: values.phone || undefined,
         role: values.role,
+        npo_id: values.npo_id || undefined,
       })
 
       // Close dialog and reset form on success
@@ -219,7 +251,13 @@ export function UsersInviteDialog({
                   <FormLabel>Role</FormLabel>
                   <SelectDropdown
                     defaultValue={field.value}
-                    onValueChange={field.onChange}
+                    onValueChange={(value) => {
+                      field.onChange(value)
+                      // Clear npo_id when switching to a non-NPO-scoped role
+                      if (!NPO_SCOPED_ROLES.includes(value as (typeof NPO_SCOPED_ROLES)[number])) {
+                        form.setValue('npo_id', '')
+                      }
+                    }}
                     placeholder='Select a role'
                     items={roles.map(({ label, value }) => ({
                       label,
@@ -230,6 +268,27 @@ export function UsersInviteDialog({
                 </FormItem>
               )}
             />
+            {requiresNpo && (
+              <FormField
+                control={form.control}
+                name='npo_id'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>NPO</FormLabel>
+                    <SelectDropdown
+                      defaultValue={field.value}
+                      onValueChange={field.onChange}
+                      placeholder='Select an NPO'
+                      items={(npoList?.items ?? []).map((npo) => ({
+                        label: npo.name,
+                        value: npo.id,
+                      }))}
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <p className='text-muted-foreground text-xs'>
               The user will receive an email to set up their own password and
               activate their account.

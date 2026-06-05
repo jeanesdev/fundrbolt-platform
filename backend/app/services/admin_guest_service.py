@@ -4,7 +4,10 @@ import csv
 import io
 import logging
 import secrets
+import uuid as _uuid_module
+from decimal import Decimal
 from typing import Any
+from urllib.parse import quote
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -19,9 +22,16 @@ from app.models.donor_label_assignment import DonorLabelAssignment
 from app.models.event import Event, FoodOption
 from app.models.event_registration import EventRegistration
 from app.models.meal_selection import MealSelection
+from app.models.npo_branding import NPOBranding
 from app.models.payment_profile import PaymentProfile
 from app.models.registration_guest import RegistrationGuest
 from app.models.role import Role
+from app.models.ticket_management import (
+    AssignedTicket,
+    PaymentStatus,
+    TicketPackage,
+    TicketPurchase,
+)
 from app.models.user import User
 from app.services.bidder_number_service import BidderNumberService
 from app.services.email_service import EmailService, _create_email_html_template
@@ -41,17 +51,19 @@ class AdminGuestService:
         guest_email: str | None,
         guest_name: str | None,
         redirect_path: str,
-    ) -> str:
-        """Ensure a donor account exists for the guest and return a setup URL.
+    ) -> tuple[str, UUID | None]:
+        """Ensure a donor account exists for the guest and return a setup URL plus user ID.
 
         If the email has no account, creates an inactive donor account.
         If the account is already active, returns the sign-in URL with a redirect.
         Returns the event URL directly when no email is provided.
-        """
-        from urllib.parse import quote
 
+        Returns:
+            (cta_url, user_id) — user_id is None when no email was provided or
+            when the account already exists and is active.
+        """
         if not guest_email:
-            return f"{settings.frontend_donor_url}{redirect_path}"
+            return f"{settings.frontend_donor_url}{redirect_path}", None
 
         existing_result = await db.execute(select(User).where(User.email == guest_email.lower()))
         user = existing_result.scalar_one_or_none()
@@ -87,13 +99,13 @@ class AdminGuestService:
             encoded_redirect = quote(redirect_path, safe="")
             return (
                 f"{settings.frontend_donor_url}/password-reset-confirm"
-                f"?token={setup_token}&redirect={encoded_redirect}"
+                f"?token={setup_token}&redirect={encoded_redirect}",
+                user.id,
             )
 
         # Account already exists and is active — send to sign-in with redirect
         encoded_redirect = quote(redirect_path, safe="")
-        return f"{settings.frontend_donor_url}/sign-in?redirect={encoded_redirect}"
-        return f"{settings.frontend_donor_url}/sign-in?redirect={encoded_redirect}"
+        return f"{settings.frontend_donor_url}/sign-in?redirect={encoded_redirect}", None
 
     @staticmethod
     async def get_event_attendees(
@@ -559,12 +571,14 @@ class AdminGuestService:
         Raises:
             HTTPException: If guest not found or email fails
         """
-        # Get guest with registration and event details
+        # Get guest with registration and event details (including event media for logo)
         guest_result = await db.execute(
             select(RegistrationGuest)
             .where(RegistrationGuest.id == guest_id)
             .options(
-                selectinload(RegistrationGuest.registration).selectinload(EventRegistration.event),
+                selectinload(RegistrationGuest.registration)
+                .selectinload(EventRegistration.event)
+                .selectinload(Event.media),
                 selectinload(RegistrationGuest.registration).selectinload(EventRegistration.user),
             )
         )
@@ -584,10 +598,21 @@ class AdminGuestService:
 
         event = guest.registration.event
 
-        # Generate the setup/registration URL for the email CTA
-        registration_redirect = f"/events/{event.slug or event.id}/register?guest={guest.id}"
-        cta_url = await AdminGuestService._ensure_guest_account_and_setup_url(
-            db, guest.email, guest.name, registration_redirect
+        # Resolve logo: event logo → NPO branding → (template fallback)
+        from app.api.v1.event_media_urls import resolve_event_logo_url  # noqa: PLC0415
+
+        event_logo_url: str | None = resolve_event_logo_url(event)
+        npo_branding_result = await db.execute(
+            select(NPOBranding.logo_url).where(NPOBranding.npo_id == event.npo_id)
+        )
+        npo_logo_url: str | None = npo_branding_result.scalar_one_or_none()
+        header_logo_url = event_logo_url or npo_logo_url
+
+        # Route through profile completion first, then event page
+        after_profile_path = f"/events/{event.slug or event.id}"
+        profile_redirect = f"/complete-profile?redirect={quote(after_profile_path, safe='')}"
+        cta_url, _ = await AdminGuestService._ensure_guest_account_and_setup_url(
+            db, guest.email, guest.name, profile_redirect
         )
         event_url = f"{settings.frontend_donor_url}/events/{event.slug or event.id}"
 
@@ -637,6 +662,7 @@ class AdminGuestService:
                     "This invitation is specifically for you. Please complete your registration to confirm your attendance. "
                     f'<a href="{event_url}" style="color: #2563eb;">View event details</a>'
                 ),
+                logo_url=header_logo_url,
             )
 
             await email_service._send_email_with_retry(
@@ -669,11 +695,13 @@ class AdminGuestService:
         Invite a new guest to an event (admin-initiated).
 
         Creates an admin registration if needed, adds the guest, and sends invitation.
+        When ticket_package_id + is_comped are provided, creates a $0 ticket purchase.
 
         Args:
             db: Database session
             event_id: Event UUID
-            guest_data: Guest information (name, email, phone)
+            guest_data: Guest information (name, email, phone, ticket_package_id,
+                        ticket_quantity, is_comped, custom_message)
             invited_by_user: Admin user creating the invitation
             email_service: Email service instance
 
@@ -683,8 +711,12 @@ class AdminGuestService:
         Raises:
             HTTPException: If event not found or guest creation fails
         """
-        # Verify event exists
-        event_result = await db.execute(select(Event).where(Event.id == event_id))
+        from app.api.v1.event_media_urls import resolve_event_logo_url  # noqa: PLC0415
+
+        # Verify event exists — load media for logo resolution
+        event_result = await db.execute(
+            select(Event).where(Event.id == event_id).options(selectinload(Event.media))
+        )
         event = event_result.scalar_one_or_none()
 
         if not event:
@@ -692,6 +724,20 @@ class AdminGuestService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Event with ID {event_id} not found",
             )
+
+        # Resolve logo: event logo → NPO branding → (template fallback)
+        event_logo_url: str | None = resolve_event_logo_url(event)
+        npo_branding_result = await db.execute(
+            select(NPOBranding.logo_url).where(NPOBranding.npo_id == event.npo_id)
+        )
+        npo_logo_url: str | None = npo_branding_result.scalar_one_or_none()
+        header_logo_url = event_logo_url or npo_logo_url
+
+        # Extract ticket invitation data
+        raw_pkg_id: str | None = guest_data.get("ticket_package_id")
+        ticket_package_id: UUID | None = UUID(raw_pkg_id) if raw_pkg_id else None
+        ticket_quantity: int = max(1, int(guest_data.get("ticket_quantity") or 1))
+        is_comped: bool = bool(guest_data.get("is_comped", False))
 
         # Find or create an admin registration for this event
         # Look for an existing admin-created registration
@@ -745,17 +791,78 @@ class AdminGuestService:
         # Send invitation email
         email_sent = False
         try:
-            # Generate the setup URL — creates an account if needed
-            registration_redirect = f"/events/{event.slug or event.id}/register?guest={guest.id}"
-            cta_url = await AdminGuestService._ensure_guest_account_and_setup_url(
-                db, guest.email, guest.name, registration_redirect
+            # Determine where to send the user after completing their profile
+            if ticket_package_id and is_comped:
+                after_profile_path = "/tickets"
+            elif ticket_package_id:
+                after_profile_path = f"/events/{event.slug or event.id}/tickets"
+            else:
+                after_profile_path = f"/events/{event.slug or event.id}"
+
+            profile_redirect = f"/complete-profile?redirect={quote(after_profile_path, safe='')}"
+            cta_url, new_user_id = await AdminGuestService._ensure_guest_account_and_setup_url(
+                db, guest.email, guest.name, profile_redirect
             )
             event_url = f"{settings.frontend_donor_url}/events/{event.slug or event.id}"
+
+            # Create comped ticket purchase for the pre-created user
+            if ticket_package_id and is_comped and new_user_id:
+                pkg_result = await db.execute(
+                    select(TicketPackage).where(TicketPackage.id == ticket_package_id)
+                )
+                package = pkg_result.scalar_one_or_none()
+                if package:
+                    purchase = TicketPurchase(
+                        event_id=event_id,
+                        ticket_package_id=package.id,
+                        user_id=new_user_id,
+                        quantity=ticket_quantity,
+                        total_price=Decimal("0.00"),
+                        payment_status=PaymentStatus.COMPLETED,
+                    )
+                    db.add(purchase)
+                    await db.flush()
+                    total_seats = ticket_quantity * package.seats_per_package
+                    for i in range(total_seats):
+                        qr = f"{purchase.id}-{i + 1}-{_uuid_module.uuid4().hex[:8]}"
+                        db.add(
+                            AssignedTicket(
+                                ticket_purchase_id=purchase.id,
+                                ticket_number=i + 1,
+                                qr_code=qr,
+                                assignment_status="unassigned",
+                            )
+                        )
+                    package.sold_count += ticket_quantity
+                    logger.info(
+                        "Created comped ticket purchase",
+                        extra={
+                            "user_id": str(new_user_id),
+                            "package_id": str(ticket_package_id),
+                            "quantity": ticket_quantity,
+                        },
+                    )
 
             subject = f"You're Invited to {event.name}"
 
             # Get custom message if provided
             custom_message = guest_data.get("custom_message", "").strip()
+
+            # Build ticket blurb for body
+            ticket_blurb: str | None = None
+            if ticket_package_id and is_comped and package is not None:
+                seat_count = ticket_quantity * package.seats_per_package
+                ticket_blurb = (
+                    f"You have been granted <strong>{seat_count} complimentary "
+                    f"{'seat' if seat_count == 1 else 'seats'}</strong> "
+                    f"({package.name}). Your tickets will be waiting in your account."
+                )
+            elif ticket_package_id:
+                ticket_blurb = (
+                    f"You are invited to purchase <strong>{ticket_quantity} "
+                    f"ticket {'package' if ticket_quantity == 1 else 'packages'}</strong> "
+                    f"for this event."
+                )
 
             # Build body paragraphs
             body_paragraphs = [
@@ -766,6 +873,9 @@ class AdminGuestService:
             # Add custom message if provided
             if custom_message:
                 body_paragraphs.append(custom_message)
+
+            if ticket_blurb:
+                body_paragraphs.append(ticket_blurb)
 
             # Add event details
             body_paragraphs.extend(
@@ -817,6 +927,7 @@ class AdminGuestService:
                     "This invitation is specifically for you. Please complete your registration to confirm your attendance. "
                     f'<a href="{event_url}" style="color: #2563eb;">View event details</a>'
                 ),
+                logo_url=header_logo_url,
             )
 
             logger.info(

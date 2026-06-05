@@ -972,6 +972,113 @@ async def confirm_password_reset(
         ) from e
 
 
+@router.post("/setup-account", status_code=status.HTTP_200_OK, response_model=LoginResponse)
+async def setup_account(
+    request: Request,
+    confirm_data: PasswordResetConfirm,
+    db: AsyncSession = Depends(get_db),
+) -> LoginResponse:
+    """Set password for a pre-created invited account and return JWT tokens.
+
+    Used when an invited guest clicks the account-setup link from their invitation
+    email.  Unlike the regular password-reset flow this endpoint creates a session
+    and returns tokens so the frontend can log the user in immediately.
+
+    Flow:
+    1. Validates token + password (Pydantic)
+    2. Looks up user by hashed token in Redis (one-time use)
+    3. Sets password, activates account, clears must_change_password
+    4. Creates a new JWT session
+    5. Returns LoginResponse so the frontend can store tokens
+
+    Raises:
+        HTTPException 400: Invalid or expired token
+    """
+    from app.core.security import create_access_token, create_refresh_token  # noqa: PLC0415
+    from app.services.auth_service import AuthService  # noqa: PLC0415
+    from app.services.session_service import SessionService  # noqa: PLC0415
+
+    try:
+        user = await PasswordService.confirm_reset(
+            confirm_data.token, confirm_data.new_password, db
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "INVALID_TOKEN",
+                "message": str(e) or "Invalid or expired setup token",
+            },
+        ) from e
+
+    # Issue JWT tokens so the caller can log the user in immediately
+    await db.refresh(user, ["role"])
+    token_data = {
+        "sub": str(user.id),
+        "email": user.email,
+        "role": str(user.role_id),
+    }
+    access_token = create_access_token(data=token_data)
+    refresh_token = create_refresh_token(data=token_data)
+    refresh_payload = decode_token(refresh_token)
+    refresh_jti = refresh_payload["jti"]
+
+    ip_address = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
+    await SessionService.create_session(
+        db=db,
+        user_id=user.id,
+        refresh_token_jti=refresh_jti,
+        device_info=user_agent,
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
+
+    from datetime import datetime  # noqa: PLC0415
+
+    user.last_login_at = datetime.utcnow()
+    await db.commit()
+    await db.refresh(user, ["role"])
+
+    npo_memberships = await AuthService.get_active_npo_memberships(db, user.id)
+    primary_npo_id = npo_memberships[0].npo_id if len(npo_memberships) == 1 else None
+    user_public = UserPublic(
+        id=user.id,
+        email=user.email,
+        has_local_password=user.has_local_password,
+        communications_email=user.communications_email,
+        communications_email_verified=user.communications_email_verified,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        phone=user.phone,
+        organization_name=user.organization_name,
+        address_line1=user.address_line1,
+        address_line2=user.address_line2,
+        city=user.city,
+        state=user.state,
+        postal_code=user.postal_code,
+        country=user.country,
+        profile_picture_url=user.profile_picture_url,
+        email_verified=user.email_verified,
+        must_change_password=user.must_change_password,
+        is_active=user.is_active,
+        role=user.role.name,
+        npo_id=primary_npo_id,
+        npo_memberships=npo_memberships,
+        created_at=user.created_at,
+    )
+
+    AuditService.log_password_reset_complete(user.id, user.email, ip_address)
+
+    return LoginResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer",
+        expires_in=900,
+        user=user_public,
+    )
+
+
 @router.post("/password/change", status_code=status.HTTP_200_OK, response_model=MessageResponse)
 async def change_password(
     change_data: PasswordChangeRequest,

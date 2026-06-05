@@ -90,6 +90,11 @@ interface AuthState {
   getUser: () => AuthUser | null
   updateUser: (userData: Partial<AuthUser>) => void
   getProfilePictureUrl: () => string | null
+  loginWithTokens: (
+    accessToken: string,
+    refreshToken: string,
+    user: AuthUser
+  ) => void
   initializeFromStorage: () => void
   restoreUserFromRefreshToken: () => Promise<boolean>
   handleSocialAuthSuccess: (data: {
@@ -184,6 +189,16 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
 
   // API methods
+  loginWithTokens: (
+    accessToken: string,
+    refreshToken: string,
+    user: AuthUser
+  ) => {
+    get().setRefreshToken(refreshToken)
+    cacheUser(user)
+    set({ accessToken, user, isAuthenticated: true })
+  },
+
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
     set({ isLoading: true, error: null })
 

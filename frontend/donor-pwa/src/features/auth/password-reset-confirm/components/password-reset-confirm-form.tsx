@@ -11,6 +11,7 @@ import {
 import { Input } from '@/components/ui/input'
 import apiClient from '@/lib/axios'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth-store'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from '@tanstack/react-router'
 import { ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react'
@@ -35,16 +36,37 @@ const formSchema = z
     path: ['confirm_password'],
   })
 
-interface PasswordResetConfirmFormProps extends React.HTMLAttributes<HTMLFormElement> {
+interface LoginResponse {
+  access_token: string
+  refresh_token: string
+  user: {
+    id: string
+    email: string
+    first_name: string
+    last_name: string
+    role: string
+    npo_id: string | null
+    has_local_password?: boolean
+    phone?: string | null
+    profile_picture_url?: string | null
+    email_verified?: boolean
+  }
+}
+
+interface PasswordResetConfirmFormProps
+  extends React.HTMLAttributes<HTMLFormElement> {
   token?: string
+  redirect?: string
 }
 
 export function PasswordResetConfirmForm({
   token = '',
+  redirect,
   className,
   ...props
 }: PasswordResetConfirmFormProps) {
   const navigate = useNavigate()
+  const loginWithTokens = useAuthStore((s) => s.loginWithTokens)
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -62,17 +84,38 @@ export function PasswordResetConfirmForm({
     setIsLoading(true)
 
     try {
-      await apiClient.post('/auth/password/reset/confirm', {
-        token: data.token,
-        new_password: data.new_password,
-      })
-
-      toast.success('Password reset successful', {
-        description: 'You can now sign in with your new password.',
-      })
-
-      form.reset()
-      navigate({ to: '/sign-in' })
+      if (redirect) {
+        // Account setup flow — set password AND log the user in immediately
+        const response = await apiClient.post<LoginResponse>(
+          '/auth/setup-account',
+          {
+            token: data.token,
+            new_password: data.new_password,
+          }
+        )
+        const { access_token, refresh_token, user } = response.data
+        loginWithTokens(access_token, refresh_token, {
+          ...user,
+          first_name: user.first_name,
+          last_name: user.last_name,
+        })
+        toast.success('Account ready!', {
+          description: "You're signed in. Let's finish setting up your profile.",
+        })
+        form.reset()
+        navigate({ to: redirect as string })
+      } else {
+        // Regular password reset — just confirm, no auto-login
+        await apiClient.post('/auth/password/reset/confirm', {
+          token: data.token,
+          new_password: data.new_password,
+        })
+        toast.success('Password set successfully', {
+          description: 'You can now sign in with your new password.',
+        })
+        form.reset()
+        navigate({ to: '/sign-in' })
+      }
     } catch (error) {
       const err = error as {
         response?: {
@@ -195,7 +238,7 @@ export function PasswordResetConfirmForm({
         />
 
         <Button className='mt-2' disabled={isLoading}>
-          Reset password
+          {redirect ? 'Create password & continue' : 'Reset password'}
           {isLoading ? <Loader2 className='animate-spin' /> : <ArrowRight />}
         </Button>
       </form>

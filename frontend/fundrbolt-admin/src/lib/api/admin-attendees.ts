@@ -157,6 +157,9 @@ export const inviteGuestToEvent = async (
     email: string
     phone?: string
     custom_message?: string
+    ticket_package_id?: string
+    ticket_quantity?: number
+    is_comped?: boolean
   }
 ): Promise<{
   guest_id: string
@@ -173,6 +176,22 @@ export const inviteGuestToEvent = async (
     message: string
   }>(`/admin/events/${eventId}/invite-guest`, guestData)
 
+  return response.data
+}
+
+export const getEventTicketPackages = async (
+  eventId: string
+): Promise<
+  Array<{
+    id: string
+    name: string
+    price: number
+    seats_per_package: number
+    quantity_limit: number | null
+    is_sold_out: boolean
+  }>
+> => {
+  const response = await apiClient.get(`/admin/events/${eventId}/packages`)
   return response.data
 }
 

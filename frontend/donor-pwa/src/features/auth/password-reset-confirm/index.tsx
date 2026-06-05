@@ -12,9 +12,10 @@ import { PasswordResetConfirmForm } from './components/password-reset-confirm-fo
 
 interface PasswordResetConfirmProps {
   token?: string
+  redirect?: string
 }
 
-export function PasswordResetConfirm({ token }: PasswordResetConfirmProps) {
+export function PasswordResetConfirm({ token, redirect }: PasswordResetConfirmProps) {
   return (
     <AuthLayout>
       <Card className='gap-4'>
@@ -28,7 +29,7 @@ export function PasswordResetConfirm({ token }: PasswordResetConfirmProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <PasswordResetConfirmForm token={token} />
+          <PasswordResetConfirmForm token={token} redirect={redirect} />
         </CardContent>
         <CardFooter>
           <p className='text-muted-foreground mx-auto px-8 text-center text-sm text-balance'>
