@@ -737,7 +737,6 @@ class AdminGuestService:
         raw_pkg_id: str | None = guest_data.get("ticket_package_id")
         ticket_package_id: UUID | None = UUID(raw_pkg_id) if raw_pkg_id else None
         ticket_quantity: int = max(1, int(guest_data.get("ticket_quantity") or 1))
-        is_comped: bool = bool(guest_data.get("is_comped", False))
 
         # Find or create an admin registration for this event
         # Look for an existing admin-created registration
@@ -791,13 +790,13 @@ class AdminGuestService:
         # Send invitation email
         email_sent = False
         try:
-            # Determine where to send the user after completing their profile
-            if ticket_package_id and is_comped:
+            # Determine where to send the user after completing their profile.
+            # With a comped package: straight to ticket management (/tickets).
+            # Without a package: ticket purchase page for the event.
+            if ticket_package_id:
                 after_profile_path = "/tickets"
-            elif ticket_package_id:
-                after_profile_path = f"/events/{event.slug or event.id}/tickets"
             else:
-                after_profile_path = f"/events/{event.slug or event.id}"
+                after_profile_path = f"/events/{event.slug or event.id}/tickets"
 
             profile_redirect = f"/complete-profile?redirect={quote(after_profile_path, safe='')}"
             cta_url, new_user_id = await AdminGuestService._ensure_guest_account_and_setup_url(
@@ -806,7 +805,7 @@ class AdminGuestService:
             event_url = f"{settings.frontend_donor_url}/events/{event.slug or event.id}"
 
             # Create comped ticket purchase for the pre-created user
-            if ticket_package_id and is_comped and new_user_id:
+            if ticket_package_id and new_user_id:
                 pkg_result = await db.execute(
                     select(TicketPackage).where(TicketPackage.id == ticket_package_id)
                 )
@@ -850,7 +849,7 @@ class AdminGuestService:
 
             # Build ticket blurb for body
             ticket_blurb: str | None = None
-            if ticket_package_id and is_comped and package is not None:
+            if ticket_package_id and package is not None:
                 seat_count = ticket_quantity * package.seats_per_package
                 ticket_blurb = (
                     f"You have been granted <strong>{seat_count} complimentary "
@@ -858,11 +857,7 @@ class AdminGuestService:
                     f"({package.name}). Your tickets will be waiting in your account."
                 )
             elif ticket_package_id:
-                ticket_blurb = (
-                    f"You are invited to purchase <strong>{ticket_quantity} "
-                    f"ticket {'package' if ticket_quantity == 1 else 'packages'}</strong> "
-                    f"for this event."
-                )
+                ticket_blurb = "You are invited to purchase tickets for this event."
 
             # Build body paragraphs
             body_paragraphs = [

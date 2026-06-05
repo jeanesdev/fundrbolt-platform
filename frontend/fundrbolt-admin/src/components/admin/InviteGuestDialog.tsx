@@ -72,7 +72,6 @@ export function InviteGuestDialog({
   const [ticketPackages, setTicketPackages] = useState<TicketPackage[]>([])
   const [ticketPackageId, setTicketPackageId] = useState<string>('')
   const [ticketQuantity, setTicketQuantity] = useState(1)
-  const [isComped, setIsComped] = useState(false)
   const [loadingPackages, setLoadingPackages] = useState(false)
 
   useEffect(() => {
@@ -109,7 +108,6 @@ export function InviteGuestDialog({
         ...(includeTickets && {
           ticket_package_id: ticketPackageId,
           ticket_quantity: ticketQuantity,
-          is_comped: isComped,
         }),
       })
 
@@ -142,7 +140,6 @@ export function InviteGuestDialog({
     setIncludeTickets(false)
     setTicketPackageId('')
     setTicketQuantity(1)
-    setIsComped(false)
     setTicketPackages([])
   }
 
@@ -307,30 +304,10 @@ export function InviteGuestDialog({
                     )}
                   </div>
 
-                  <div className='flex items-center gap-2'>
-                    <Checkbox
-                      id='is_comped'
-                      checked={isComped}
-                      onCheckedChange={(v) => setIsComped(!!v)}
-                      disabled={isSubmitting}
-                    />
-                    <Label htmlFor='is_comped' className='cursor-pointer'>
-                      Complimentary (free) tickets
-                    </Label>
-                  </div>
-                  {isComped && (
-                    <p className='text-muted-foreground text-xs'>
-                      Tickets will be issued immediately at no charge. The guest
-                      will be taken to ticket management after completing their
-                      account.
-                    </p>
-                  )}
-                  {!isComped && ticketPackageId && (
-                    <p className='text-muted-foreground text-xs'>
-                      The guest will be taken to the ticket purchase page after
-                      completing their account.
-                    </p>
-                  )}
+                  <p className='text-muted-foreground text-xs'>
+                    Tickets will be issued as complimentary. The guest will be
+                    taken to ticket management after completing their account.
+                  </p>
                 </div>
               )}
             </div>

@@ -159,7 +159,6 @@ export const inviteGuestToEvent = async (
     custom_message?: string
     ticket_package_id?: string
     ticket_quantity?: number
-    is_comped?: boolean
   }
 ): Promise<{
   guest_id: string
