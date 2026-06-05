@@ -103,7 +103,15 @@ export function PasswordResetConfirmForm({
           description: "You're signed in. Let's finish setting up your profile.",
         })
         form.reset()
-        navigate({ to: redirect as string })
+        // Parse the redirect so TanStack Router gets path + search separately
+        const redirectUrl = new URL(redirect, window.location.origin)
+        navigate({
+          to: redirectUrl.pathname,
+          search: Object.fromEntries(redirectUrl.searchParams) as Record<
+            string,
+            string
+          >,
+        })
       } else {
         // Regular password reset — just confirm, no auto-login
         await apiClient.post('/auth/password/reset/confirm', {
