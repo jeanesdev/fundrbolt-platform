@@ -562,7 +562,7 @@ This invitation will expire in 7 days.
 If you don't have a FundrBolt account yet, you'll be able to create one when you accept the invitation.
 
 Best regards,
-The FundrBolt Team
+{f"The {npo_name} Team" if npo_name else "The FundrBolt Team"}
         """.strip()
 
         # Logo priority: event logo > NPO logo > FundrBolt default
@@ -591,6 +591,7 @@ The FundrBolt Team
             ),
             logo_url=header_logo_url,
             logo_alt=logo_alt,
+            npo_name=npo_name,
         )
 
         return await self._send_email_with_retry(
@@ -645,7 +646,7 @@ The FundrBolt Team
                 invitation_url,
                 "",
                 "Best regards,",
-                "The FundrBolt Team",
+                f"The {npo_name} Team" if npo_name else "The FundrBolt Team",
             ]
         )
         body = "\n".join(body_lines)
@@ -739,7 +740,7 @@ The FundrBolt Team
                 "If you believe this was done in error, please contact the person listed above.",
                 "",
                 "Best regards,",
-                "The FundrBolt Team",
+                f"The {npo_name} Team" if npo_name else "The FundrBolt Team",
             ]
         )
         body = "\n".join(body_lines)
@@ -1689,7 +1690,7 @@ If you have any questions about this decision, please contact us by replying to 
             "Please find your receipt attached to this email. "
             "You can also access your receipt any time from your account.\n\n"
             "Thank you for your support!\n\n"
-            "— The FundrBolt Team"
+            f"— {f'The {npo_name} Team' if npo_name else 'The FundrBolt Team'}"
         )
 
         header_logo_url = event_logo_url or self._get_logo_url("dark")

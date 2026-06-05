@@ -22,6 +22,7 @@ from app.models.donor_label_assignment import DonorLabelAssignment
 from app.models.event import Event, FoodOption
 from app.models.event_registration import EventRegistration
 from app.models.meal_selection import MealSelection
+from app.models.npo import NPO
 from app.models.npo_branding import NPOBranding
 from app.models.payment_profile import PaymentProfile
 from app.models.registration_guest import RegistrationGuest
@@ -620,6 +621,11 @@ class AdminGuestService:
         npo_logo_url: str | None = npo_branding_result.scalar_one_or_none()
         header_logo_url = event_logo_url or npo_logo_url
 
+        # Fetch NPO name for email sign-off
+        npo_name_result = await db.execute(select(NPO.name).where(NPO.id == event.npo_id))
+        npo_name: str | None = npo_name_result.scalar_one_or_none()
+        team_name = f"The {npo_name} Team" if npo_name else "The FundrBolt Team"
+
         # Route through profile completion first, then event page
         after_profile_path = f"/events/{event.slug or event.id}"
         profile_redirect = f"/complete-profile?redirect={quote(after_profile_path, safe='')}"
@@ -659,7 +665,7 @@ class AdminGuestService:
                 "This invitation is specifically for you. Please complete your registration to confirm your attendance.",
                 "",
                 "Best regards,",
-                "The FundrBolt Team",
+                team_name,
             ]
 
             body = "\n".join(plain_body_parts)
@@ -675,6 +681,7 @@ class AdminGuestService:
                     f'<a href="{event_url}" style="color: #2563eb;">View event details</a>'
                 ),
                 logo_url=header_logo_url,
+                npo_name=npo_name,
             )
 
             await email_service._send_email_with_retry(
@@ -744,6 +751,11 @@ class AdminGuestService:
         )
         npo_logo_url: str | None = npo_branding_result.scalar_one_or_none()
         header_logo_url = event_logo_url or npo_logo_url
+
+        # Fetch NPO name for email sign-off
+        npo_name_result = await db.execute(select(NPO.name).where(NPO.id == event.npo_id))
+        npo_name: str | None = npo_name_result.scalar_one_or_none()
+        team_name = f"The {npo_name} Team" if npo_name else "The FundrBolt Team"
 
         # Extract ticket invitation data
         raw_pkg_id: str | None = guest_data.get("ticket_package_id")
@@ -918,7 +930,7 @@ class AdminGuestService:
                     "This invitation is specifically for you. Please complete your registration to confirm your attendance.",
                     "",
                     "Best regards,",
-                    "The FundrBolt Team",
+                    team_name,
                 ]
             )
 
@@ -935,6 +947,7 @@ class AdminGuestService:
                     f'<a href="{event_url}" style="color: #2563eb;">View event details</a>'
                 ),
                 logo_url=header_logo_url,
+                npo_name=npo_name,
             )
 
             logger.info(
