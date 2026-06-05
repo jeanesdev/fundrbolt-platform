@@ -46,6 +46,9 @@ export interface CartValidationResponse {
   subtotal: number
   discount: number
   promo_code_applied: string | null
+  survey_discount: number
+  survey_donate_back: boolean
+  npo_name: string | null
   total: number
   warnings: string[]
   per_donor_limit: number | null

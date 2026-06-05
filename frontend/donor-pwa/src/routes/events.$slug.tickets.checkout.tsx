@@ -121,9 +121,19 @@ function TicketsCheckoutPage() {
       }
     },
     onError: () => {
-      toast.error('Invalid or expired promo code')
+      if (promoCode.trim()) {
+        toast.error('Invalid or expired promo code')
+      }
     },
   })
+
+  // Auto-validate on mount to surface survey discount without requiring a promo code
+  useEffect(() => {
+    if (eventId && cartItems.length > 0) {
+      validateMutation.mutate()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId])
 
   const checkoutMutation = useMutation({
     mutationFn: () => {
@@ -183,6 +193,11 @@ function TicketsCheckoutPage() {
   const displayDiscount = validationResult
     ? Math.round(validationResult.discount * 100)
     : 0
+  const displaySurveyDiscount = validationResult
+    ? Math.round(validationResult.survey_discount * 100)
+    : 0
+  const displaySurveyDonateBack = validationResult?.survey_donate_back ?? false
+  const displayNpoName = validationResult?.npo_name ?? null
   const displayTotal = validationResult
     ? Math.round(validationResult.total * 100)
     : displaySubtotal
@@ -338,8 +353,20 @@ function TicketsCheckoutPage() {
               </div>
               {displayDiscount > 0 && (
                 <div className='flex justify-between text-sm text-green-600'>
-                  <span>Discount</span>
+                  <span>Promo discount</span>
                   <span>−{fmtCurrency(displayDiscount)}</span>
+                </div>
+              )}
+              {displaySurveyDiscount > 0 && (
+                <div className='flex justify-between text-sm text-green-600'>
+                  <span>Survey discount</span>
+                  <span>−{fmtCurrency(displaySurveyDiscount)}</span>
+                </div>
+              )}
+              {displaySurveyDiscount > 0 && displaySurveyDonateBack && displayNpoName && (
+                <div className='flex justify-between text-sm text-rose-600'>
+                  <span>Donation to {displayNpoName}</span>
+                  <span>+{fmtCurrency(displaySurveyDiscount)}</span>
                 </div>
               )}
               <div className='flex justify-between text-lg font-bold'>
@@ -404,8 +431,20 @@ function TicketsCheckoutPage() {
               ))}
               {displayDiscount > 0 && (
                 <div className='flex justify-between text-sm text-green-600'>
-                  <span>Discount</span>
+                  <span>Promo discount</span>
                   <span>−{fmtCurrency(displayDiscount)}</span>
+                </div>
+              )}
+              {displaySurveyDiscount > 0 && (
+                <div className='flex justify-between text-sm text-green-600'>
+                  <span>Survey discount</span>
+                  <span>−{fmtCurrency(displaySurveyDiscount)}</span>
+                </div>
+              )}
+              {displaySurveyDiscount > 0 && displaySurveyDonateBack && displayNpoName && (
+                <div className='flex justify-between text-sm text-rose-600'>
+                  <span>Donation to {displayNpoName}</span>
+                  <span>+{fmtCurrency(displaySurveyDiscount)}</span>
                 </div>
               )}
               <div className='flex justify-between border-t pt-2 font-bold'>
@@ -515,10 +554,10 @@ function TicketsCheckoutPage() {
 
             <div className='flex flex-col gap-2 pt-2'>
               <Button asChild size='lg' className='w-full'>
-                <Link to='/_authenticated/tickets'>Register Now</Link>
+                <Link to='/tickets'>Register Now</Link>
               </Button>
               <Button asChild variant='ghost' size='sm' className='w-full text-muted-foreground'>
-                <Link to='/_authenticated/tickets'>
+                <Link to='/tickets'>
                   Assign ticket to someone else
                 </Link>
               </Button>

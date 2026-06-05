@@ -67,6 +67,9 @@ class CartValidationResponse(BaseModel):
     subtotal: Decimal
     discount: Decimal = Decimal("0")
     promo_code_applied: str | None = None
+    survey_discount: Decimal = Decimal("0")
+    survey_donate_back: bool = False
+    npo_name: str | None = None
     total: Decimal
     warnings: list[str] = Field(default_factory=list)
     per_donor_limit: int | None = None

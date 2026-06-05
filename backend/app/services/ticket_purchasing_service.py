@@ -13,7 +13,10 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.event import Event
+from app.models.event_registration import EventRegistration
+from app.models.npo import NPO
 from app.models.sponsor import Sponsor
+from app.models.survey_response import SurveyResponse
 from app.models.ticket_management import (
     AssignedTicket,
     DiscountType,
@@ -84,7 +87,38 @@ class TicketPurchasingService:
             discount = self._calculate_discount(promo, subtotal)
             promo_code_applied = promo.code
 
-        total = max(subtotal - discount, Decimal("0"))
+        # Survey discount — look up any earned discount for this donor/event
+        survey_discount = Decimal("0")
+        survey_donate_back = False
+        npo_name: str | None = None
+
+        survey_result = await self.db.execute(
+            select(SurveyResponse, NPO.name)
+            .join(EventRegistration, SurveyResponse.registration_id == EventRegistration.id)
+            .join(Event, EventRegistration.event_id == Event.id)
+            .join(NPO, Event.npo_id == NPO.id)
+            .where(
+                EventRegistration.user_id == user_id,
+                EventRegistration.event_id == event_id,
+                SurveyResponse.status == "completed",
+                SurveyResponse.discount_cents_applied > 0,
+            )
+            .order_by(
+                SurveyResponse.completed_at.desc().nullslast(),
+                SurveyResponse.created_at.desc(),
+            )
+            .limit(1)
+        )
+        row = survey_result.first()
+        if row is not None:
+            survey_resp, npo_name = row
+            survey_discount = min(
+                Decimal(survey_resp.discount_cents_applied) / Decimal("100"),
+                subtotal - discount,
+            )
+            survey_donate_back = bool(survey_resp.donate_back)
+
+        total = max(subtotal - discount - survey_discount, Decimal("0"))
 
         # Per-donor limit
         existing_count = await self._get_donor_ticket_count(event_id, user_id)
@@ -105,6 +139,9 @@ class TicketPurchasingService:
             subtotal=subtotal,
             discount=discount,
             promo_code_applied=promo_code_applied,
+            survey_discount=survey_discount,
+            survey_donate_back=survey_donate_back,
+            npo_name=npo_name,
             total=total,
             warnings=warnings,
             per_donor_limit=limit,
