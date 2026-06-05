@@ -41,15 +41,22 @@ export const test = base.extend<{
     const live = find('seed-live-event')
     const future = find('seed-future-event')
     const past = find('seed-past-event')
+
+    const nonprofitId = live?.npo_id ?? future?.npo_id ?? past?.npo_id
+    if (!nonprofitId) throw new Error('seedRefs: no seed events found — has the DB been seeded?')
+    if (!live?.id) throw new Error('seedRefs: seed-live-event not found — has the DB been seeded?')
+    if (!future?.id) throw new Error('seedRefs: seed-future-event not found — has the DB been seeded?')
+    if (!past?.id) throw new Error('seedRefs: seed-past-event not found — has the DB been seeded?')
+
     await use({
       nonprofitSlug: 'seed-nonprofit',
       futureEventSlug: 'seed-future-event',
       liveEventSlug: 'seed-live-event',
       pastEventSlug: 'seed-past-event',
-      nonprofitId: live?.npo_id ?? future?.npo_id ?? past?.npo_id ?? '',
-      liveEventId: live?.id ?? '',
-      futureEventId: future?.id ?? '',
-      pastEventId: past?.id ?? '',
+      nonprofitId,
+      liveEventId: live.id,
+      futureEventId: future.id,
+      pastEventId: past.id,
     })
   },
   mailpit: async ({}, use) => {

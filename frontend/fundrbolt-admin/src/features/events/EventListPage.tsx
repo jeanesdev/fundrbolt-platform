@@ -167,7 +167,7 @@ export function EventListPage() {
           )}
         </div>
 
-        <div className='mt-4 flex gap-2'>
+        <div className='mt-4 flex flex-wrap gap-2'>
           <Button
             variant='outline'
             size='sm'
@@ -255,12 +255,12 @@ export function EventListPage() {
       </div>
 
       {/* Filters */}
-      <div className='flex gap-4'>
+      <div className='flex flex-wrap gap-2'>
         <Select
           value={statusFilter}
           onValueChange={(v) => setStatusFilter(v as EventStatus | 'all')}
         >
-          <SelectTrigger className='w-[200px]'>
+          <SelectTrigger className='w-full sm:w-[200px]'>
             <SelectValue placeholder='Filter by status' />
           </SelectTrigger>
           <SelectContent>
@@ -274,16 +274,20 @@ export function EventListPage() {
 
       {/* Tabs View */}
       <Tabs defaultValue='all' className='space-y-4'>
-        <TabsList>
-          <TabsTrigger value='all'>All ({events.length})</TabsTrigger>
-          <TabsTrigger value='draft'>Draft ({draftEvents.length})</TabsTrigger>
-          <TabsTrigger value='active'>
-            Active ({activeEvents.length})
-          </TabsTrigger>
-          <TabsTrigger value='closed'>
-            Closed ({closedEvents.length})
-          </TabsTrigger>
-        </TabsList>
+        <div className='overflow-x-auto'>
+          <TabsList className='w-max'>
+            <TabsTrigger value='all'>All ({events.length})</TabsTrigger>
+            <TabsTrigger value='draft'>
+              Draft ({draftEvents.length})
+            </TabsTrigger>
+            <TabsTrigger value='active'>
+              Active ({activeEvents.length})
+            </TabsTrigger>
+            <TabsTrigger value='closed'>
+              Closed ({closedEvents.length})
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value='all' className='space-y-4'>
           {filteredEvents.length === 0 ? (

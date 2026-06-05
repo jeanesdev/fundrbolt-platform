@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
-import { useParams } from '@tanstack/react-router'
-import { useEventContext } from '@/hooks/use-event-context'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useEventContext } from '@/hooks/use-event-context'
+import { useParams } from '@tanstack/react-router'
+import { useMemo, useState } from 'react'
 import { BidWarsTab } from './components/BidWarsTab'
 import { DonorLeaderboard } from './components/DonorLeaderboard'
 import { DonorProfilePanel } from './components/DonorProfilePanel'
@@ -34,7 +34,7 @@ export function DonorDashboardPage() {
   // If a donor is selected, show the profile panel
   if (selectedDonorId) {
     return (
-      <div className='container space-y-4 py-6'>
+      <div className='space-y-4 py-4 sm:py-6'>
         <DonorProfilePanel
           userId={selectedDonorId}
           eventId={eventId}
@@ -45,29 +45,42 @@ export function DonorDashboardPage() {
   }
 
   return (
-    <div className='container space-y-6 py-6'>
-      <div className='flex items-center justify-between'>
-        <div>
-          <h1 className='text-2xl font-bold tracking-tight'>Donor Dashboard</h1>
-          <p className='text-muted-foreground text-sm'>
-            Analyze donor giving behavior and engagement.
-          </p>
+    <div className='space-y-6 py-4 sm:py-6'>
+      <div className='space-y-2 sm:space-y-0'>
+        <div className='flex items-start justify-between gap-3 sm:items-center'>
+          <div>
+            <h1 className='text-xl font-bold tracking-tight sm:text-2xl'>Donor Dashboard</h1>
+            <p className='text-muted-foreground text-sm'>
+              Analyze donor giving behavior and engagement.
+            </p>
+          </div>
+          <div className='hidden sm:block'>
+            <ScopeToggle
+              value={scope}
+              onChange={setScopePreference}
+              hasEvent={!!effectiveEventId}
+            />
+          </div>
         </div>
-        <ScopeToggle
-          value={scope}
-          onChange={setScopePreference}
-          hasEvent={!!effectiveEventId}
-        />
+        <div className='sm:hidden'>
+          <ScopeToggle
+            value={scope}
+            onChange={setScopePreference}
+            hasEvent={!!effectiveEventId}
+          />
+        </div>
       </div>
 
       <Tabs defaultValue='leaderboard' className='space-y-4'>
-        <TabsList>
-          <TabsTrigger value='leaderboard'>Leaderboard</TabsTrigger>
-          <TabsTrigger value='outbid'>Outbid Leaders</TabsTrigger>
-          <TabsTrigger value='bidwars'>Bid Wars</TabsTrigger>
-          <TabsTrigger value='categories'>Categories</TabsTrigger>
-          <TabsTrigger value='survey-answers'>Survey Answers</TabsTrigger>
-        </TabsList>
+        <div className='overflow-x-auto'>
+          <TabsList className='w-max'>
+            <TabsTrigger value='leaderboard'>Leaderboard</TabsTrigger>
+            <TabsTrigger value='outbid'>Outbid Leaders</TabsTrigger>
+            <TabsTrigger value='bidwars'>Bid Wars</TabsTrigger>
+            <TabsTrigger value='categories'>Categories</TabsTrigger>
+            <TabsTrigger value='survey-answers'>Survey Answers</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value='leaderboard' className='space-y-4'>
           <DonorLeaderboard

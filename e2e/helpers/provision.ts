@@ -9,6 +9,7 @@ export async function provisionEvent(apiClient: ApiClient, payload: Record<strin
   if (!npoId) {
     const eventsRes = await apiClient.get<{ items: Array<{ npo_id: string }> }>('/events')
     npoId = eventsRes.items?.[0]?.npo_id
+    if (!npoId) throw new Error('provisionEvent: could not resolve npo_id — no existing events found and none supplied in payload')
   }
   return apiClient.post('/events', {
     name: `Automation Event ${suffix}`,

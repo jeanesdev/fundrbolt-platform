@@ -159,7 +159,7 @@ export function AuctionItemsTable({
   return (
     <Card>
       <CardHeader className='space-y-3'>
-        <div className='flex items-center justify-between'>
+        <div className='flex flex-wrap items-center justify-between gap-2'>
           <CardTitle>Auction Items</CardTitle>
           <div className='flex items-center gap-2'>
             <DataTableViewToggle value={viewMode} onChange={setViewMode} />

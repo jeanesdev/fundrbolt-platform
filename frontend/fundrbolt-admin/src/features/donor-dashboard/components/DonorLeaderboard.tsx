@@ -1,17 +1,4 @@
-import { useMemo, useState } from 'react'
-import {
-  ArrowDown,
-  ArrowUp,
-  Bell,
-  ChevronRight,
-  ChevronsUpDown,
-  Download,
-  Filter,
-  Search,
-  X,
-} from 'lucide-react'
-import apiClient from '@/lib/axios'
-import { useViewPreference } from '@/hooks/use-view-preference'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -34,8 +21,21 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { useDonorLabels } from '@/features/users/hooks/use-donor-labels'
+import { useViewPreference } from '@/hooks/use-view-preference'
+import apiClient from '@/lib/axios'
+import {
+  ArrowDown,
+  ArrowUp,
+  Bell,
+  ChevronRight,
+  ChevronsUpDown,
+  Download,
+  Filter,
+  Search,
+  X,
+} from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { useDonorLeaderboard } from '../hooks/useDonorDashboard'
 import { SendNotificationDialog } from './SendNotificationDialog'
 
@@ -45,10 +45,10 @@ const fmt = (n: number) =>
 const getLabelStyle = (color: string | null) =>
   color
     ? {
-        backgroundColor: `${color}20`,
-        borderColor: `${color}60`,
-        color,
-      }
+      backgroundColor: `${color}20`,
+      borderColor: `${color}60`,
+      color,
+    }
     : {}
 
 interface DonorLeaderboardProps {
@@ -559,8 +559,8 @@ export function DonorLeaderboard({
   return (
     <>
       <Card>
-        <CardHeader className='flex flex-row items-center justify-between gap-4'>
-          <div className='flex items-center gap-3'>
+        <CardHeader className='flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between sm:gap-4'>
+          <div className='flex flex-wrap items-center gap-3'>
             <CardTitle>Donor Leaderboard</CardTitle>
             {activeFilter && (
               <Badge
@@ -579,9 +579,9 @@ export function DonorLeaderboard({
               </Badge>
             )}
           </div>
-          <div className='flex items-center gap-2'>
+          <div className='flex flex-wrap items-center gap-2'>
             <DataTableViewToggle value={viewMode} onChange={setViewMode} />
-            <div className='relative'>
+            <div className='relative min-w-0 flex-1 sm:flex-none'>
               <Search className='text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4' />
               <Input
                 placeholder='Search donors...'
@@ -590,7 +590,7 @@ export function DonorLeaderboard({
                   setSearch(e.target.value)
                   setPage(1)
                 }}
-                className='w-[200px] pl-8'
+                className='w-full pl-8 sm:w-[200px]'
               />
             </div>
             {npoId && donorLabelsData?.items?.length ? (
@@ -781,11 +781,10 @@ export function DonorLeaderboard({
                 {filteredItems.map((donor, i) => (
                   <div
                     key={donor.user_id}
-                    className={`hover:bg-muted/50 space-y-2 rounded-md border p-3 ${
-                      selectedIds.has(donor.user_id)
+                    className={`hover:bg-muted/50 space-y-2 rounded-md border p-3 ${selectedIds.has(donor.user_id)
                         ? 'border-primary bg-primary/5'
                         : ''
-                    }`}
+                      }`}
                   >
                     <div className='flex items-start gap-2'>
                       <Checkbox
@@ -1042,9 +1041,8 @@ export function DonorLeaderboard({
                     filteredItems.map((donor, i) => (
                       <TableRow
                         key={donor.user_id}
-                        className={`hover:bg-muted/50 cursor-pointer ${
-                          selectedIds.has(donor.user_id) ? 'bg-primary/5' : ''
-                        }`}
+                        className={`hover:bg-muted/50 cursor-pointer ${selectedIds.has(donor.user_id) ? 'bg-primary/5' : ''
+                          }`}
                         onClick={() => onSelectDonor(donor.user_id)}
                       >
                         <TableCell

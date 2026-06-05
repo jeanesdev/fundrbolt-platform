@@ -1,6 +1,4 @@
-import { useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, Filter, X } from 'lucide-react'
-import { useViewPreference } from '@/hooks/use-view-preference'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,7 +11,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useViewPreference } from '@/hooks/use-view-preference'
+import { ChevronLeft, ChevronRight, Filter, X } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { useOutbidLeaders } from '../hooks/useDonorDashboard'
 
 const fmt = (n: number) =>
@@ -137,7 +137,7 @@ export function OutbidLeadersTab({
 
   return (
     <Card>
-      <CardHeader className='flex flex-row items-center justify-between gap-4'>
+      <CardHeader className='flex flex-row items-center justify-between gap-4 space-y-0'>
         <CardTitle className='text-base'>Outbid Leaders</CardTitle>
         <DataTableViewToggle value={viewMode} onChange={setViewMode} />
       </CardHeader>
