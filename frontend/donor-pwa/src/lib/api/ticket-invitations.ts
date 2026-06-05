@@ -28,6 +28,19 @@ export interface InvitationValidateResponse {
   guest_name: string | null
   guest_email: string | null
   assignment_id: string | null
+  /** True when the guest has a pre-created account that needs password setup. */
+  needs_account_setup: boolean
+  /** One-time setup token used with the setup-and-register endpoint. */
+  setup_token: string | null
+}
+
+export interface InvitationSetupAndRegisterResponse {
+  registration_id: string
+  event_id: string
+  event_slug: string
+  status: string
+  access_token: string
+  refresh_token: string
 }
 
 export interface InvitationRegisterResponse {
@@ -88,6 +101,27 @@ export async function registerViaInvitation(
 ) {
   const response = await apiClient.post<InvitationRegisterResponse>(
     `/invitations/${token}/register`,
+    data
+  )
+  return response.data
+}
+
+/**
+ * Activate a pre-created donor account and complete registration in one step.
+ * Used when validate returns needs_account_setup=true.
+ */
+export async function setupAndRegister(
+  token: string,
+  data: {
+    setup_token: string
+    password: string
+    phone?: string
+    meal_selection_id?: string
+    custom_responses?: Record<string, string>
+  }
+) {
+  const response = await apiClient.post<InvitationSetupAndRegisterResponse>(
+    `/invitations/${token}/setup-and-register`,
     data
   )
   return response.data

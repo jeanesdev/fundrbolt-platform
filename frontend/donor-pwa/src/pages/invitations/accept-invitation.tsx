@@ -24,6 +24,7 @@ import {
 } from '@/lib/api/events'
 import {
   registerViaInvitation,
+  setupAndRegister,
   validateInvitationToken,
 } from '@/lib/api/ticket-invitations'
 import { Badge } from '@/components/ui/badge'
@@ -72,11 +73,15 @@ function phoneDisplayToE164(display: string): string {
 export default function AcceptInvitationPage() {
   const navigate = useNavigate()
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const setAccessToken = useAuthStore((s) => s.setAccessToken)
+  const setRefreshToken = useAuthStore((s) => s.setRefreshToken)
+  const setUser = useAuthStore((s) => s.setUser)
   const availableEvents = useEventContextStore((s) => s.availableEvents)
   const setAvailableEvents = useEventContextStore((s) => s.setAvailableEvents)
   const setSelectedEvent = useEventContextStore((s) => s.setSelectedEvent)
 
   const [phone, setPhone] = useState('')
+  const [password, setPassword] = useState('')
   const [mealSelectionId, setMealSelectionId] = useState('')
   const [registered, setRegistered] = useState(false)
   const [customResponses, setCustomResponses] = useState<
@@ -179,6 +184,68 @@ export default function AcceptInvitationPage() {
     },
     onError: (err: unknown) => {
       const msg = err instanceof Error ? err.message : 'Registration failed'
+      toast.error(msg)
+    },
+  })
+
+  const setupAndRegisterMutation = useMutation({
+    mutationFn: () =>
+      setupAndRegister(token, {
+        setup_token: validation?.setup_token ?? '',
+        password,
+        phone: phoneDisplayToE164(phone),
+        meal_selection_id: mealSelectionId || undefined,
+        custom_responses: buildCustomResponsePayload(),
+      }),
+    onSuccess: (response) => {
+      // Auto-log in with the returned JWT tokens
+      setRefreshToken(response.refresh_token)
+      setAccessToken(response.access_token)
+      setUser({
+        id: '',
+        email: validation?.guest_email ?? '',
+        first_name: validation?.guest_name?.split(' ')[0] ?? '',
+        last_name: validation?.guest_name?.split(' ').slice(1).join(' ') ?? '',
+        role: 'donor',
+        npo_id: null,
+        email_verified: true,
+        has_local_password: true,
+      })
+
+      if (validation?.event_slug && validation.event_name) {
+        const mergedEvents = [...availableEvents]
+        const existingIndex = mergedEvents.findIndex(
+          (e) => e.slug === validation.event_slug
+        )
+        const registeredEvent = {
+          id: response.event_id,
+          name: validation.event_name,
+          slug: response.event_slug,
+          event_date: validation.event_date,
+          is_registered: true,
+          has_ticket_access: false,
+        }
+        if (existingIndex >= 0) {
+          mergedEvents[existingIndex] = {
+            ...mergedEvents[existingIndex],
+            ...registeredEvent,
+          }
+        } else {
+          mergedEvents.unshift(registeredEvent)
+        }
+        setAvailableEvents(mergedEvents)
+        setSelectedEvent(
+          response.event_id,
+          validation.event_name,
+          response.event_slug
+        )
+      }
+
+      setRegistered(true)
+      toast.success('Account created and registration complete!')
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : 'Setup failed'
       toast.error(msg)
     },
   })
@@ -324,8 +391,267 @@ export default function AcceptInvitationPage() {
     )
   }
 
-  // Not authenticated — prompt to sign in
+  // Not authenticated — either show account setup form or sign-in wall
   if (!isAuthenticated) {
+    // Guest has a pre-created account: show a password form to complete setup
+    if (validation?.needs_account_setup) {
+      const isPending = setupAndRegisterMutation.isPending
+      return (
+        <div className='container mx-auto flex min-h-[60vh] items-center justify-center py-12'>
+          <Card className='flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden'>
+            <CardHeader className='shrink-0 text-center'>
+              <div className='mx-auto mb-4 rounded-full bg-blue-100 p-3 dark:bg-blue-900/30'>
+                <Ticket className='h-8 w-8 text-blue-600 dark:text-blue-400' />
+              </div>
+              <CardTitle className='text-2xl'>You&apos;re Invited!</CardTitle>
+              <CardDescription>
+                Create a password to finish setting up your account and complete
+                your registration.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className='flex min-h-0 flex-1 flex-col overflow-hidden p-0'>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  setupAndRegisterMutation.mutate()
+                }}
+                className='flex min-h-0 flex-1 flex-col'
+              >
+                <div className='flex-1 overflow-y-auto px-6'>
+                  <div className='space-y-5 pt-1 pb-6'>
+                    <div className='bg-muted/50 space-y-2 rounded-lg border p-4'>
+                      {validation.event_name && (
+                        <div>
+                          <p className='text-muted-foreground text-sm'>Event</p>
+                          <p className='font-semibold'>{validation.event_name}</p>
+                        </div>
+                      )}
+                      {validation.event_date && (
+                        <div className='text-muted-foreground flex items-center gap-1 text-sm'>
+                          <CalendarDays className='h-4 w-4' />
+                          {new Date(validation.event_date).toLocaleDateString(
+                            'en-US',
+                            { month: 'long', day: 'numeric', year: 'numeric' }
+                          )}
+                        </div>
+                      )}
+                      {validation.guest_name && (
+                        <div>
+                          <p className='text-muted-foreground text-sm'>
+                            Invited as
+                          </p>
+                          <p className='text-sm'>{validation.guest_name}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className='space-y-2'>
+                      <Label htmlFor='setup-email'>Email</Label>
+                      <Input
+                        id='setup-email'
+                        type='email'
+                        value={validation.guest_email ?? ''}
+                        disabled
+                        className='bg-muted'
+                      />
+                    </div>
+
+                    <div className='space-y-2'>
+                      <Label htmlFor='setup-password'>Choose a Password</Label>
+                      <Input
+                        id='setup-password'
+                        type='password'
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder='At least 8 characters'
+                        required
+                        minLength={8}
+                        autoComplete='new-password'
+                      />
+                    </div>
+
+                    <div className='space-y-2'>
+                      <Label htmlFor='setup-phone'>
+                        Cell Number (optional)
+                      </Label>
+                      <Input
+                        id='setup-phone'
+                        type='tel'
+                        value={phone}
+                        onChange={(e) =>
+                          setPhone(formatPhoneDisplay(e.target.value))
+                        }
+                        placeholder='(555) 123-4567'
+                      />
+                    </div>
+
+                    {(eventDetail?.food_options ?? []).length > 0 && (
+                      <div className='space-y-2'>
+                        <Label htmlFor='setup-meal'>Meal Selection</Label>
+                        <Select
+                          value={mealSelectionId}
+                          onValueChange={setMealSelectionId}
+                        >
+                          <SelectTrigger id='setup-meal'>
+                            <SelectValue placeholder='Select a meal option' />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(eventDetail?.food_options ?? []).map((opt) => (
+                              <SelectItem key={opt.id} value={opt.id}>
+                                {opt.name}
+                                {opt.description ? ` — ${opt.description}` : ''}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {universalOptions.length > 0 && (
+                      <div className='space-y-3'>
+                        <p className='text-sm font-medium'>
+                          Registration questions
+                        </p>
+                        {universalOptions.map(
+                          (option: PublicTicketCustomOption) => {
+                            if (option.type === 'boolean') {
+                              return (
+                                <div
+                                  key={option.id}
+                                  className='space-y-2 rounded-lg border p-3'
+                                >
+                                  <div className='flex items-start gap-3'>
+                                    <Checkbox
+                                      id={`setup-option-${option.id}`}
+                                      checked={
+                                        customResponses[option.id] === true
+                                      }
+                                      onCheckedChange={(checked) =>
+                                        setCustomResponses((c) => ({
+                                          ...c,
+                                          [option.id]: checked === true,
+                                        }))
+                                      }
+                                    />
+                                    <Label
+                                      htmlFor={`setup-option-${option.id}`}
+                                      className='leading-5'
+                                    >
+                                      {option.label}
+                                      {option.is_required ? ' *' : ''}
+                                    </Label>
+                                  </div>
+                                </div>
+                              )
+                            }
+                            if (option.type === 'multi_select') {
+                              const selected = Array.isArray(
+                                customResponses[option.id]
+                              )
+                                ? (customResponses[option.id] as string[])
+                                : []
+                              return (
+                                <div
+                                  key={option.id}
+                                  className='space-y-2 rounded-lg border p-3'
+                                >
+                                  <p className='text-sm font-medium'>
+                                    {option.label}
+                                    {option.is_required ? ' *' : ''}
+                                  </p>
+                                  <div className='space-y-2'>
+                                    {(option.choices ?? []).map((choice) => (
+                                      <label
+                                        key={choice}
+                                        className='flex items-center gap-2 text-sm'
+                                      >
+                                        <Checkbox
+                                          checked={selected.includes(choice)}
+                                          onCheckedChange={(checked) => {
+                                            setCustomResponses((c) => {
+                                              const prev = Array.isArray(
+                                                c[option.id]
+                                              )
+                                                ? (c[option.id] as string[])
+                                                : []
+                                              return {
+                                                ...c,
+                                                [option.id]: checked
+                                                  ? [...prev, choice]
+                                                  : prev.filter(
+                                                      (v) => v !== choice
+                                                    ),
+                                              }
+                                            })
+                                          }}
+                                        />
+                                        <span>{choice}</span>
+                                      </label>
+                                    ))}
+                                  </div>
+                                </div>
+                              )
+                            }
+                            const textVal =
+                              typeof customResponses[option.id] === 'string'
+                                ? (customResponses[option.id] as string)
+                                : ''
+                            return (
+                              <div
+                                key={option.id}
+                                className='space-y-2 rounded-lg border p-3'
+                              >
+                                <Label htmlFor={`setup-option-${option.id}`}>
+                                  {option.label}
+                                  {option.is_required ? ' *' : ''}
+                                </Label>
+                                <Textarea
+                                  id={`setup-option-${option.id}`}
+                                  value={textVal}
+                                  onChange={(e) =>
+                                    setCustomResponses((c) => ({
+                                      ...c,
+                                      [option.id]: e.target.value,
+                                    }))
+                                  }
+                                  placeholder='Enter your response'
+                                />
+                              </div>
+                            )
+                          }
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className='shrink-0 border-t px-6 py-4'>
+                  <Button
+                    type='submit'
+                    className='w-full'
+                    disabled={isPending || !password}
+                  >
+                    {isPending ? (
+                      <>
+                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                        Setting up account…
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className='mr-2 h-4 w-4' />
+                        Create Account &amp; Register
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )
+    }
+
+    // No pre-created account — show original sign-in wall
     const encodedToken = encodeURIComponent(token)
     const redirectPath = `/invitations/accept?token=${encodedToken}`
     const signUpHref = `/sign-up?intent=donor&redirect=${encodeURIComponent(redirectPath)}`

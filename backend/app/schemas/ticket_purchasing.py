@@ -251,11 +251,31 @@ class InvitationValidateResponse(BaseModel):
     guest_name: str | None = None
     guest_email: str | None = None
     assignment_id: uuid.UUID | None = None
+    # Set when the invited email has no account yet — the frontend should show
+    # a password-setup form and submit to POST /invitations/{token}/setup-and-register
+    # instead of requiring the user to sign in first.
+    needs_account_setup: bool = False
+    setup_token: str | None = None
 
 
 class InvitationRegisterRequest(BaseModel):
     """Request body for POST /invitations/{token}/register — guest completes registration."""
 
+    phone: str | None = Field(default=None, max_length=20)
+    meal_selection_id: uuid.UUID | None = None
+    custom_responses: dict[str, str] = Field(default_factory=dict)
+
+
+class InvitationSetupAndRegisterRequest(BaseModel):
+    """Request body for POST /invitations/{token}/setup-and-register.
+
+    Used when the invited guest has no existing account.  The backend will
+    set the password, activate the account, register the guest, and return
+    JWT tokens so the frontend can log the user in immediately.
+    """
+
+    setup_token: str
+    password: str = Field(min_length=8)
     phone: str | None = Field(default=None, max_length=20)
     meal_selection_id: uuid.UUID | None = None
     custom_responses: dict[str, str] = Field(default_factory=dict)
@@ -270,6 +290,17 @@ class InvitationRegisterResponse(BaseModel):
     status: str
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class InvitationSetupAndRegisterResponse(BaseModel):
+    """Response for POST /invitations/{token}/setup-and-register."""
+
+    registration_id: uuid.UUID
+    event_id: uuid.UUID
+    event_slug: str
+    status: str
+    access_token: str
+    refresh_token: str
 
 
 # ===== Purchase History Schemas =====

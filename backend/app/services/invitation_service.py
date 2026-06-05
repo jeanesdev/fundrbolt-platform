@@ -8,6 +8,7 @@ Handles invitation lifecycle:
 - Automatic expiry handling
 """
 
+import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -15,17 +16,32 @@ import jwt
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
+from app.api.v1.event_media_urls import resolve_event_logo_url
 from app.core.logging import get_logger
 from app.core.security import create_invitation_token, decode_token, hash_password
+from app.models.base import Base
+from app.models.event import Event
 from app.models.invitation import Invitation, InvitationStatus
 from app.models.npo import NPO
+from app.models.npo_branding import NPOBranding
 from app.models.npo_member import MemberRole, MemberStatus, NPOMember
 from app.models.user import User
 from app.services.audit_service import AuditService
 from app.services.email_service import EmailSendError, get_email_service
+from app.services.password_service import PasswordService
+from app.services.redis_service import RedisService
 
 logger = get_logger(__name__)
+
+# Maps NPO member role (used in invitations) to user system role
+_SYSTEM_ROLE_BY_MEMBER_ROLE: dict[str, str] = {
+    "admin": "npo_admin",
+    "co_admin": "npo_admin",
+    "staff": "event_coordinator",
+    "auctioneer": "auctioneer",
+}
 
 
 class InvitationService:
@@ -46,15 +62,23 @@ class InvitationService:
         """
         Create a new invitation.
 
+        For users with no existing account the account is created immediately,
+        added to the NPO, and an account-setup email is sent so they can set
+        their password.  The invitation is marked ACCEPTED right away.
+
+        For users who already have an account the traditional invitation email
+        is sent and they accept it via the link.
+
         Args:
             db: Database session
             npo_id: NPO UUID
             email: Email address to invite
-            role: Role to assign (admin, co_admin, staff)
+            role: Role to assign (admin, co_admin, staff, auctioneer)
             invited_by_user_id: User creating the invitation
             first_name: Optional first name to pre-fill registration
             last_name: Optional last name to pre-fill registration
             message: Optional custom message
+            event_id: Optional event UUID for event-scoped invitations
 
         Returns:
             Created Invitation
@@ -83,7 +107,7 @@ class InvitationService:
                     detail=f"User with email {email} is already a member of this organization",
                 )
 
-        # Check for pending invitation
+        # Check for pending invitation (only relevant for existing-user flow)
         pending_stmt = select(Invitation).where(
             Invitation.npo_id == npo_id,
             Invitation.email == email.lower(),
@@ -98,7 +122,36 @@ class InvitationService:
                 detail=f"An invitation is already pending for {email}",
             )
 
-        # Create invitation (without token yet)
+        # Get NPO and inviter details
+        npo_stmt = select(NPO).where(NPO.id == npo_id)
+        npo_result = await db.execute(npo_stmt)
+        npo = npo_result.scalar_one()
+
+        inviter_stmt = select(User).where(User.id == invited_by_user_id)
+        inviter_result = await db.execute(inviter_stmt)
+        inviter = inviter_result.scalar_one()
+
+        inviter_name = f"{inviter.first_name} {inviter.last_name}" if inviter.first_name else None
+
+        # Resolve logos for the email header: event logo > NPO logo > FundrBolt default
+        event_logo_url: str | None = None
+        event_name: str | None = None
+        if event_id:
+            event_result = await db.execute(
+                select(Event).options(selectinload(Event.media)).where(Event.id == event_id)
+            )
+            event_obj = event_result.scalar_one_or_none()
+            if event_obj:
+                event_logo_url = resolve_event_logo_url(event_obj)
+                event_name = event_obj.name
+
+        npo_logo_url: str | None = None
+        branding_result = await db.execute(
+            select(NPOBranding.logo_url).where(NPOBranding.npo_id == npo_id)
+        )
+        npo_logo_url = branding_result.scalar_one_or_none()
+
+        # Create invitation record
         invitation = Invitation(
             npo_id=npo_id,
             email=email.lower(),
@@ -112,21 +165,9 @@ class InvitationService:
             event_id=event_id,
         )
         db.add(invitation)
-        await db.commit()
-        await db.refresh(invitation)
+        await db.flush()
 
-        # Get NPO and inviter details for token and email
-        npo_stmt = select(NPO).where(NPO.id == npo_id)
-        npo_result = await db.execute(npo_stmt)
-        npo = npo_result.scalar_one()
-
-        inviter_stmt = select(User).where(User.id == invited_by_user_id)
-        inviter_result = await db.execute(inviter_stmt)
-        inviter = inviter_result.scalar_one()
-
-        inviter_name = f"{inviter.first_name} {inviter.last_name}" if inviter.first_name else None
-
-        # Generate JWT token and hash it
+        # Generate JWT token and hash it (needed for the invitation record regardless of path)
         token = create_invitation_token(
             invitation_id=str(invitation.id),
             npo_id=str(npo_id),
@@ -139,31 +180,129 @@ class InvitationService:
             event_id=str(event_id) if event_id else None,
         )
         invitation.token_hash = hash_password(token)
-        await db.commit()
 
         # Store token on invitation object for API response (not persisted)
         invitation.token = token  # type: ignore[attr-defined]
 
-        # Send invitation email
         email_service = get_email_service()
-        try:
-            await email_service.send_npo_member_invitation_email(
-                to_email=email,
-                invitation_token=token,
-                npo_name=npo.name,
-                role=role,
-                invited_by_name=inviter_name,
-            )
-        except EmailSendError as e:
-            # Log error but don't fail the invitation creation
-            # The invitation still exists and can be resent manually
-            import logging
 
-            logger = logging.getLogger(__name__)
-            logger.error(
-                f"Failed to send invitation email to {email}: {e}",
-                extra={"npo_id": str(npo_id), "invitation_id": str(invitation.id)},
+        if not existing_user:
+            # ----------------------------------------------------------------
+            # New user: create account + NPO membership immediately, then
+            # send an account-setup email so they can set their password.
+            # ----------------------------------------------------------------
+
+            # Derive names from invitation data or email address
+            email_local = email.split("@")[0]
+            parts = email_local.replace(".", " ").replace("_", " ").split()
+            derived_first = parts[0].capitalize() if parts else email_local
+            derived_last = parts[1].capitalize() if len(parts) > 1 else ""
+
+            user_first_name = first_name or derived_first
+            user_last_name = last_name or derived_last
+
+            # Map NPO member role → user system role
+            system_role = _SYSTEM_ROLE_BY_MEMBER_ROLE.get(role, "event_coordinator")
+
+            # Get system role ID
+            roles_table = Base.metadata.tables["roles"]
+            role_id_result = await db.execute(
+                select(roles_table.c.id).where(roles_table.c.name == system_role)
             )
+            role_id = role_id_result.scalar_one_or_none()
+            if not role_id:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"System role '{system_role}' not found",
+                )
+
+            # Create the user account (inactive until they complete setup)
+            new_user = User(
+                email=email.lower(),
+                first_name=user_first_name,
+                last_name=user_last_name,
+                password_hash=hash_password(f"Tmp{secrets.token_urlsafe(10)}1"),
+                role_id=role_id,
+                must_change_password=True,
+                email_verified=False,
+                is_active=False,
+            )
+            db.add(new_user)
+            await db.flush()
+
+            # Add NPO membership with the exact invited role
+            db.add(
+                NPOMember(
+                    npo_id=npo_id,
+                    user_id=new_user.id,
+                    role=MemberRole(role),
+                    status=MemberStatus.ACTIVE,
+                )
+            )
+
+            # Accept the invitation immediately
+            invitation.invited_user_id = new_user.id
+            invitation.status = InvitationStatus.ACCEPTED
+            invitation.accepted_at = datetime.now(UTC)
+
+            await db.commit()
+            await db.refresh(invitation)
+
+            # Generate and store account-setup token (reuses password-reset infrastructure)
+            setup_token = PasswordService.generate_reset_token()
+            token_hash = PasswordService.hash_token(setup_token)
+            await RedisService.store_password_reset_token(token_hash, new_user.id)
+
+            # Send account-setup email
+            try:
+                await email_service.send_account_setup_email(
+                    to_email=email,
+                    setup_token=setup_token,
+                    user_name=user_first_name,
+                    role=system_role,
+                    event_logo_url=event_logo_url,
+                    npo_logo_url=npo_logo_url,
+                    event_name=event_name,
+                    npo_name=npo.name,
+                    inviter_name=inviter_name,
+                )
+            except EmailSendError as e:
+                logger.error(
+                    "Failed to send account setup email for new invited user",
+                    extra={
+                        "npo_id": str(npo_id),
+                        "invitation_id": str(invitation.id),
+                        "error": str(e),
+                    },
+                )
+        else:
+            # ----------------------------------------------------------------
+            # Existing user: send the traditional invitation email so they
+            # can click through and accept (joining the NPO).
+            # ----------------------------------------------------------------
+            await db.commit()
+            await db.refresh(invitation)
+
+            try:
+                await email_service.send_npo_member_invitation_email(
+                    to_email=email,
+                    invitation_token=token,
+                    npo_name=npo.name,
+                    role=role,
+                    invited_by_name=inviter_name,
+                    event_logo_url=event_logo_url,
+                    npo_logo_url=npo_logo_url,
+                    event_name=event_name,
+                )
+            except EmailSendError as e:
+                logger.error(
+                    "Failed to send invitation email",
+                    extra={
+                        "npo_id": str(npo_id),
+                        "invitation_id": str(invitation.id),
+                        "error": str(e),
+                    },
+                )
 
         return invitation
 
@@ -275,6 +414,26 @@ class InvitationService:
         # Store token on invitation object for API response (not persisted)
         invitation.token = token  # type: ignore[attr-defined]
 
+        # Resolve logos for the email header: event logo > NPO logo > FundrBolt default
+        event_logo_url: str | None = None
+        event_name: str | None = None
+        if invitation.event_id:
+            event_result = await db.execute(
+                select(Event)
+                .options(selectinload(Event.media))
+                .where(Event.id == invitation.event_id)
+            )
+            event_obj = event_result.scalar_one_or_none()
+            if event_obj:
+                event_logo_url = resolve_event_logo_url(event_obj)
+                event_name = event_obj.name
+
+        npo_logo_url: str | None = None
+        branding_result = await db.execute(
+            select(NPOBranding.logo_url).where(NPOBranding.npo_id == npo_id)
+        )
+        npo_logo_url = branding_result.scalar_one_or_none()
+
         # Send invitation email
         email_service = get_email_service()
         try:
@@ -284,6 +443,9 @@ class InvitationService:
                 npo_name=npo.name,
                 role=invitation.role,
                 invited_by_name=resender_name,
+                event_logo_url=event_logo_url,
+                npo_logo_url=npo_logo_url,
+                event_name=event_name,
             )
         except EmailSendError as e:
             logger.error(

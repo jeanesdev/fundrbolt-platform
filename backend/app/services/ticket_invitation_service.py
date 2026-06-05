@@ -8,6 +8,7 @@ import hashlib
 import hmac
 import json
 import os
+import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -18,9 +19,11 @@ from sqlalchemy.orm import selectinload
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.core.security import hash_password
 from app.models.event import Event
 from app.models.event_registration import EventRegistration
 from app.models.registration_guest import RegistrationGuest
+from app.models.role import Role
 from app.models.ticket_management import (
     AssignedTicket,
     AssignmentStatus,
@@ -34,9 +37,13 @@ from app.schemas.ticket_purchasing import (
     InvitationRegisterRequest,
     InvitationRegisterResponse,
     InvitationSendResponse,
+    InvitationSetupAndRegisterRequest,
+    InvitationSetupAndRegisterResponse,
     InvitationValidateResponse,
 )
 from app.services.email_service import get_email_service
+from app.services.password_service import PasswordService
+from app.services.redis_service import RedisService
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -201,6 +208,35 @@ class TicketInvitationService:
         assignment.status = AssignmentStatus.INVITED.value
         assignment.invitation_sent_at = now
         assignment.invitation_count = assignment.invitation_count + 1
+
+        # Pre-create a donor account for first-time invitees so they can go
+        # straight to completing registration (no sign-in/sign-up wall).
+        existing_user_result = await db.execute(
+            select(User).where(User.email == assignment.guest_email.lower())
+        )
+        if existing_user_result.scalar_one_or_none() is None:
+            donor_role_result = await db.execute(select(Role).where(Role.name == "donor"))
+            donor_role = donor_role_result.scalar_one_or_none()
+            if donor_role:
+                # Derive first/last from guest_name (e.g. "John Doe" → "John", "Doe")
+                name_parts = (assignment.guest_name or "").strip().split(None, 1)
+                pre_first = name_parts[0] if name_parts else assignment.guest_email.split("@")[0]
+                pre_last = name_parts[1] if len(name_parts) > 1 else ""
+                new_guest_user = User(
+                    email=assignment.guest_email.lower(),
+                    first_name=pre_first,
+                    last_name=pre_last,
+                    password_hash=hash_password(f"Tmp{secrets.token_urlsafe(10)}1"),
+                    role_id=donor_role.id,
+                    must_change_password=True,
+                    email_verified=False,
+                    is_active=False,
+                )
+                db.add(new_guest_user)
+                logger.info(
+                    "Pre-created donor account for ticket invitation",
+                    extra={"email": assignment.guest_email, "assignment_id": str(assignment_id)},
+                )
 
         await db.flush()
         await db.refresh(invitation)
@@ -383,6 +419,20 @@ class TicketInvitationService:
         if assignment.status == AssignmentStatus.CANCELLED.value:
             return InvitationValidateResponse(valid=False)
 
+        # Check if the guest email has a pre-created (inactive) account that needs
+        # password setup, so the frontend can skip the sign-in/sign-up wall.
+        needs_account_setup = False
+        setup_token: str | None = None
+        guest_user_result = await db.execute(
+            select(User).where(User.email == assignment.guest_email.lower())
+        )
+        guest_user = guest_user_result.scalar_one_or_none()
+        if guest_user is not None and not guest_user.is_active and guest_user.must_change_password:
+            needs_account_setup = True
+            setup_token = PasswordService.generate_reset_token()
+            token_hash = PasswordService.hash_token(setup_token)
+            await RedisService.store_password_reset_token(token_hash, guest_user.id)
+
         return InvitationValidateResponse(
             valid=True,
             event_name=event.name,
@@ -391,6 +441,8 @@ class TicketInvitationService:
             guest_name=assignment.guest_name,
             guest_email=assignment.guest_email,
             assignment_id=assignment.id,
+            needs_account_setup=needs_account_setup,
+            setup_token=setup_token,
         )
 
     @staticmethod
@@ -580,4 +632,196 @@ class TicketInvitationService:
             event_id=event.id,
             event_slug=event.slug,
             status="registered",
+        )
+
+    @staticmethod
+    async def setup_and_register(
+        db: AsyncSession,
+        token: str,
+        request: InvitationSetupAndRegisterRequest,
+    ) -> InvitationSetupAndRegisterResponse:
+        """Activate account + complete registration in one step for first-time guests.
+
+        Used when the invited guest has no pre-existing account.  The frontend
+        skips the sign-in/sign-up wall and submits the setup token (from the
+        validate response) together with their chosen password and registration
+        details.
+
+        Args:
+            db: Async database session.
+            token: HMAC-signed invitation token.
+            request: Setup token, password, and registration details.
+
+        Returns:
+            InvitationSetupAndRegisterResponse with registration info and JWT tokens.
+
+        Raises:
+            HTTPException 400: Invalid/expired invitation or setup token.
+        """
+        from app.core.security import create_access_token, create_refresh_token, decode_token
+        from app.services.session_service import SessionService
+
+        # Validate the invitation token
+        validation = await TicketInvitationService.validate_token(db, token)
+
+        if not validation.valid:
+            if validation.expired:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invitation token has expired",
+                )
+            if validation.already_registered:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="This invitation has already been registered",
+                )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid invitation token",
+            )
+
+        # Consume the setup token to identify and activate the user
+        token_hash = PasswordService.hash_token(request.setup_token)
+        user_id = await RedisService.get_password_reset_user(token_hash)
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired account setup token",
+            )
+
+        user_result = await db.execute(select(User).where(User.id == user_id))
+        user = user_result.scalar_one_or_none()
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User not found",
+            )
+
+        # Email must match the invitation
+        if user.email.lower() != (validation.guest_email or "").lower():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Setup token does not match the invitation",
+            )
+
+        # Activate the account and set the chosen password
+        user.set_password(request.password)
+        user.email_verified = True
+        user.is_active = True
+        user.must_change_password = False
+
+        # Load assignment + event for registration
+        assignment_id = validation.assignment_id
+        assert assignment_id is not None  # noqa: S101
+
+        stmt = (
+            select(TicketAssignment)
+            .where(TicketAssignment.id == assignment_id)
+            .options(
+                selectinload(TicketAssignment.event),
+                selectinload(TicketAssignment.assigned_ticket),
+            )
+        )
+        result = await db.execute(stmt)
+        assignment = result.scalar_one_or_none()
+        if assignment is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Assignment no longer exists",
+            )
+
+        event: Event = assignment.event
+
+        # Create EventRegistration
+        registration = EventRegistration(
+            user_id=user.id,
+            event_id=event.id,
+            ticket_purchase_id=assignment.ticket_purchase_id,
+            number_of_guests=1,
+        )
+        db.add(registration)
+        await db.flush()
+
+        # Create RegistrationGuest
+        guest = RegistrationGuest(
+            registration_id=registration.id,
+            user_id=user.id,
+            name=assignment.guest_name,
+            email=assignment.guest_email,
+            phone=request.phone,
+            is_primary=True,
+            status="confirmed",
+        )
+        db.add(guest)
+
+        for option_id_str, response_value in request.custom_responses.items():
+            try:
+                option_uuid = uuid.UUID(option_id_str)
+            except ValueError:
+                continue
+            db.add(
+                OptionResponse(
+                    ticket_purchase_id=assignment.ticket_purchase_id,
+                    custom_option_id=option_uuid,
+                    response_value=response_value,
+                )
+            )
+
+        now = datetime.now(UTC)
+        assignment.status = AssignmentStatus.REGISTERED.value
+        assignment.registered_at = now
+        assignment.assignee_user_id = user.id
+        assignment.registration_id = registration.id
+        assignment.assigned_ticket.assignment_status = "registered"
+
+        # Mark latest TicketInvitation as registered
+        inv_stmt = (
+            select(TicketInvitation)
+            .where(TicketInvitation.assignment_id == assignment_id)
+            .order_by(TicketInvitation.sent_at.desc())
+            .limit(1)
+        )
+        inv_result = await db.execute(inv_stmt)
+        latest_invitation = inv_result.scalar_one_or_none()
+        if latest_invitation is not None:
+            latest_invitation.registered_at = now
+
+        await db.flush()
+
+        # Issue JWT tokens so the frontend can log the user in immediately
+        await db.refresh(user, ["role"])
+        token_data = {
+            "sub": str(user.id),
+            "email": user.email,
+            "role": str(user.role_id),
+        }
+        access_token = create_access_token(data=token_data)
+        refresh_token = create_refresh_token(data=token_data)
+        refresh_payload = decode_token(refresh_token)
+        refresh_jti = refresh_payload["jti"]
+        await SessionService.create_session(
+            db=db,
+            user_id=user.id,
+            refresh_token_jti=refresh_jti,
+        )
+        user.last_login_at = now
+
+        await db.commit()
+
+        logger.info(
+            "Guest account activated and registered via invitation",
+            extra={
+                "assignment_id": str(assignment_id),
+                "user_id": str(user.id),
+                "registration_id": str(registration.id),
+            },
+        )
+
+        return InvitationSetupAndRegisterResponse(
+            registration_id=registration.id,
+            event_id=event.id,
+            event_slug=event.slug,
+            status="registered",
+            access_token=access_token,
+            refresh_token=refresh_token,
         )

@@ -17,6 +17,8 @@ from app.models.user import User
 from app.schemas.ticket_purchasing import (
     InvitationRegisterRequest,
     InvitationRegisterResponse,
+    InvitationSetupAndRegisterRequest,
+    InvitationSetupAndRegisterResponse,
     InvitationValidateResponse,
 )
 from app.services.ticket_invitation_service import TicketInvitationService
@@ -64,3 +66,26 @@ async def register_via_invitation(
     )
     await db.commit()
     return response
+
+
+@router.post(
+    "/invitations/{token}/setup-and-register",
+    response_model=InvitationSetupAndRegisterResponse,
+)
+async def setup_and_register_via_invitation(
+    token: str,
+    body: InvitationSetupAndRegisterRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> InvitationSetupAndRegisterResponse:
+    """Activate account and register in one step for first-time guests (public).
+
+    Used when the invitation response indicated ``needs_account_setup=True``.
+    The guest submits their chosen password alongside the setup token; this
+    endpoint activates their pre-created account, completes registration, and
+    returns JWT tokens so the frontend can log them in immediately.
+    """
+    return await TicketInvitationService.setup_and_register(
+        db=db,
+        token=token,
+        request=body,
+    )

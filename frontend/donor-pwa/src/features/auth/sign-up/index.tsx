@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -8,16 +9,22 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
+import {
   buildAdminPortalNpoOnboardingUrl,
   buildAdminPortalSignUpUrl,
 } from '@/lib/admin-portal'
 import { Link, useSearch } from '@tanstack/react-router'
-import { Building2, HandCoins, Users } from 'lucide-react'
+import { Building2, ChevronDown, HandCoins, Users } from 'lucide-react'
 import { AuthLayout } from '../auth-layout'
 import { DonorSignUpWizard } from './components/DonorSignUpWizard'
 
 export function SignUp() {
   const { intent, redirect } = useSearch({ from: '/(auth)/sign-up' })
+  const [staffOrgOpen, setStaffOrgOpen] = useState(false)
 
   if (intent !== 'donor') {
     return (
@@ -35,47 +42,6 @@ export function SignUp() {
             <div className='min-w-0 rounded-xl border p-5'>
               <div className='mb-4 flex items-start gap-3'>
                 <div className='bg-primary/10 text-primary rounded-lg p-2 shrink-0'>
-                  <Building2 className='h-5 w-5' />
-                </div>
-                <div className='min-w-0 flex-1'>
-                  <h3 className='font-semibold'>Organization Administrator</h3>
-                  <p className='text-muted-foreground text-sm'>
-                    Start the staged onboarding flow in the admin app: create
-                    your account, verify your email, then enter your
-                    organization and first event details.
-                  </p>
-                </div>
-              </div>
-              <Button asChild className='h-auto w-full whitespace-normal py-2.5'>
-                <a href={buildAdminPortalNpoOnboardingUrl()}>
-                  Continue as Organization Administrator
-                </a>
-              </Button>
-            </div>
-
-            <div className='min-w-0 rounded-xl border p-5'>
-              <div className='mb-4 flex items-start gap-3'>
-                <div className='bg-primary/10 text-primary rounded-lg p-2 shrink-0'>
-                  <Users className='h-5 w-5' />
-                </div>
-                <div className='min-w-0 flex-1'>
-                  <h3 className='font-semibold'>Event Staff or Team Member</h3>
-                  <p className='text-muted-foreground text-sm'>
-                    Create your account in the admin app if you were invited by
-                    an NPO or need access to the admin experience.
-                  </p>
-                </div>
-              </div>
-              <Button asChild variant='outline' className='w-full'>
-                <a href={buildAdminPortalSignUpUrl('staff')}>
-                  Continue as Event Staff
-                </a>
-              </Button>
-            </div>
-
-            <div className='min-w-0 rounded-xl border p-5'>
-              <div className='mb-4 flex items-start gap-3'>
-                <div className='bg-primary/10 text-primary rounded-lg p-2 shrink-0'>
                   <HandCoins className='h-5 w-5' />
                 </div>
                 <div className='min-w-0 flex-1'>
@@ -86,12 +52,75 @@ export function SignUp() {
                   </p>
                 </div>
               </div>
-              <Button asChild variant='outline' className='w-full'>
+              <Button asChild className='w-full'>
                 <Link to='/sign-up' search={{ intent: 'donor', redirect }}>
                   Create attendee account
                 </Link>
               </Button>
             </div>
+
+            <Collapsible open={staffOrgOpen} onOpenChange={setStaffOrgOpen}>
+              <CollapsibleTrigger asChild>
+                <button className='flex w-full items-center justify-between rounded-xl border px-5 py-4 text-left text-sm font-medium transition-colors hover:bg-muted/50'>
+                  <span className='text-muted-foreground'>
+                    Staff or organization account
+                  </span>
+                  <ChevronDown
+                    className={`text-muted-foreground h-4 w-4 shrink-0 transition-transform duration-200 ${staffOrgOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className='mt-2 grid gap-3'>
+                <div className='min-w-0 rounded-xl border p-5'>
+                  <div className='mb-4 flex items-start gap-3'>
+                    <div className='bg-primary/10 text-primary rounded-lg p-2 shrink-0'>
+                      <Building2 className='h-5 w-5' />
+                    </div>
+                    <div className='min-w-0 flex-1'>
+                      <h3 className='font-semibold'>
+                        Organization Administrator
+                      </h3>
+                      <p className='text-muted-foreground text-sm'>
+                        Start the staged onboarding flow in the admin app:
+                        create your account, verify your email, then enter your
+                        organization and first event details.
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    asChild
+                    variant='outline'
+                    className='h-auto w-full whitespace-normal py-2.5'
+                  >
+                    <a href={buildAdminPortalNpoOnboardingUrl()}>
+                      Continue as Organization Administrator
+                    </a>
+                  </Button>
+                </div>
+
+                <div className='min-w-0 rounded-xl border p-5'>
+                  <div className='mb-4 flex items-start gap-3'>
+                    <div className='bg-primary/10 text-primary rounded-lg p-2 shrink-0'>
+                      <Users className='h-5 w-5' />
+                    </div>
+                    <div className='min-w-0 flex-1'>
+                      <h3 className='font-semibold'>
+                        Event Staff or Team Member
+                      </h3>
+                      <p className='text-muted-foreground text-sm'>
+                        Create your account in the admin app if you were invited
+                        by an NPO or need access to the admin experience.
+                      </p>
+                    </div>
+                  </div>
+                  <Button asChild variant='outline' className='w-full'>
+                    <a href={buildAdminPortalSignUpUrl('staff')}>
+                      Continue as Event Staff
+                    </a>
+                  </Button>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </CardContent>
           <CardFooter className='justify-center pt-0'>
             <p className='text-muted-foreground text-center text-sm'>

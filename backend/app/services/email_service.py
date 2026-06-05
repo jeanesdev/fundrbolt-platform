@@ -336,6 +336,11 @@ The FundrBolt Team
         setup_token: str,
         user_name: str | None = None,
         role: str | None = None,
+        event_logo_url: str | None = None,
+        npo_logo_url: str | None = None,
+        event_name: str | None = None,
+        npo_name: str | None = None,
+        inviter_name: str | None = None,
     ) -> bool:
         """
         Send account setup email for admin-invited users.
@@ -349,6 +354,11 @@ The FundrBolt Team
             user_name: Optional user's first name for personalization
             role: User's role — attendees/donors are directed to the donor PWA,
                   all other roles to the admin PWA
+            event_logo_url: Optional event logo URL (highest priority for header)
+            npo_logo_url: Optional NPO logo URL (used if no event logo)
+            event_name: Optional event name for context
+            npo_name: Optional NPO name for context
+            inviter_name: Optional name of the person who sent the invitation
 
         Returns:
             True if email sent successfully, False otherwise
@@ -363,13 +373,27 @@ The FundrBolt Team
             base_url = settings.frontend_admin_url
         setup_url = f"{base_url}/password-reset-confirm?token={setup_token}"
 
+        # Build contextual invitation line
+        if inviter_name and npo_name:
+            invited_line = (
+                f"{inviter_name} from {npo_name} has invited you to join their team on FundrBolt."
+            )
+        elif npo_name:
+            invited_line = f"You've been invited to join {npo_name} on FundrBolt."
+        else:
+            invited_line = "An administrator has created an account for you on FundrBolt."
+
         # Email content
-        subject = "Welcome to FundrBolt - Complete Your Account Setup"
+        subject = (
+            f"You're invited to join {npo_name} - Complete Your Account Setup"
+            if npo_name
+            else "Welcome to FundrBolt - Complete Your Account Setup"
+        )
         greeting = f"Hi {user_name}," if user_name else "Hi,"
         body = f"""
 {greeting}
 
-Welcome to FundrBolt! An administrator has created an account for you.
+{invited_line}
 
 To get started, please click the link below to set your password and activate your account:
 {setup_url}
@@ -382,11 +406,20 @@ Best regards,
 The FundrBolt Team
         """.strip()
 
+        # Logo priority: event logo > NPO logo > FundrBolt default
+        header_logo_url = event_logo_url or npo_logo_url or self._get_logo_url("dark")
+        if event_logo_url and event_name:
+            logo_alt = event_name
+        elif event_logo_url or npo_logo_url:
+            logo_alt = npo_name or "FundrBolt"
+        else:
+            logo_alt = "FundrBolt"
+
         # HTML version with logo
         html_body = _create_email_html_template(
-            heading="Welcome to FundrBolt!",
+            heading=f"You're invited to join {npo_name}!" if npo_name else "Welcome to FundrBolt!",
             body_paragraphs=[
-                f"Welcome to FundrBolt{', ' + user_name if user_name else ''}! An administrator has created an account for you.",
+                invited_line,
                 "To get started, you'll need to set your password and activate your account.",
                 "Click the button below to complete your account setup. This link will expire in 1 hour.",
                 "Once you've set your password, you'll be able to sign in and access all features.",
@@ -394,7 +427,9 @@ The FundrBolt Team
             cta_text="Complete Account Setup",
             cta_url=setup_url,
             footer_text="If you believe you received this email in error, please contact your administrator or ignore this email.",
-            logo_url=self._get_logo_url("dark"),  # White/gold logo on navy background
+            logo_url=header_logo_url,
+            logo_alt=logo_alt,
+            npo_name=npo_name,
         )
 
         # Send with retry logic
@@ -480,6 +515,9 @@ The FundrBolt Team
         npo_name: str,
         role: str,
         invited_by_name: str | None = None,
+        event_logo_url: str | None = None,
+        npo_logo_url: str | None = None,
+        event_name: str | None = None,
     ) -> bool:
         """
         Send NPO member invitation email.
@@ -490,6 +528,9 @@ The FundrBolt Team
             npo_name: Name of the NPO
             role: Role being offered (admin, co_admin, staff)
             invited_by_name: Name of person who sent invitation
+            event_logo_url: Optional event logo URL (highest priority for header)
+            npo_logo_url: Optional NPO logo URL (used if no event logo)
+            event_name: Optional event name (used as logo alt text when event logo is shown)
 
         Returns:
             True if email sent successfully
@@ -524,6 +565,17 @@ Best regards,
 The FundrBolt Team
         """.strip()
 
+        # Logo priority: event logo > NPO logo > FundrBolt default
+        header_logo_url = event_logo_url or npo_logo_url or self._get_logo_url("dark")
+        if event_logo_url and event_name:
+            logo_alt = event_name
+        elif event_logo_url:
+            logo_alt = npo_name
+        elif npo_logo_url:
+            logo_alt = npo_name
+        else:
+            logo_alt = "FundrBolt"
+
         # HTML version with logo
         html_body = _create_email_html_template(
             heading=f"You're Invited to Join {npo_name}!",
@@ -537,7 +589,8 @@ The FundrBolt Team
                 "This invitation will expire in 7 days. "
                 "If you don't have a FundrBolt account yet, you'll be able to create one when you accept the invitation."
             ),
-            logo_url=self._get_logo_url("dark"),  # White/gold logo on navy background
+            logo_url=header_logo_url,
+            logo_alt=logo_alt,
         )
 
         return await self._send_email_with_retry(
