@@ -128,13 +128,13 @@ class TicketInvitationService:
             HTTPException 400: Assignment not in a valid status for inviting.
             HTTPException 429: Rate limit exceeded (max 5 per assignment).
         """
-        # Load assignment with purchase (for ownership check) and event
+        # Load assignment with purchase (for ownership check) and event+media
         stmt = (
             select(TicketAssignment)
             .where(TicketAssignment.id == assignment_id)
             .options(
                 selectinload(TicketAssignment.ticket_purchase),
-                selectinload(TicketAssignment.event),
+                selectinload(TicketAssignment.event).selectinload(Event.media),
             )
         )
         result = await db.execute(stmt)
@@ -248,16 +248,18 @@ class TicketInvitationService:
         if event.timezone:
             event_datetime_text = f"{event_datetime_text} ({event.timezone})"
 
-        # Resolve the event logo URL for the email
-        event_logo_url: str | None = None
+        # Resolve the event logo URL for the email — media is already loaded above
         from app.api.v1.event_media_urls import resolve_event_logo_url
 
-        event_with_media_result = await db.execute(
-            select(Event).options(selectinload(Event.media)).where(Event.id == event.id)
+        event_logo_url: str | None = resolve_event_logo_url(event)
+        logger.info(
+            "Resolved event logo for ticket invitation email",
+            extra={
+                "event_id": str(event.id),
+                "media_count": len(list(getattr(event, "media", []) or [])),
+                "event_logo_url": event_logo_url,
+            },
         )
-        event_with_media = event_with_media_result.scalar_one_or_none()
-        if event_with_media:
-            event_logo_url = resolve_event_logo_url(event_with_media)
 
         # Resolve the NPO branding logo as fallback
         npo_branding_result = await db.execute(
