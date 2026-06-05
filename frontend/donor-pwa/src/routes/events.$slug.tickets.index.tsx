@@ -70,6 +70,8 @@ function TicketListingPage() {
     queryKey: ['event', slug],
     queryFn: () => getEventBySlug(slug),
     enabled: !!slug,
+    retry: 2,
+    staleTime: 0,
   })
 
   const {
@@ -80,6 +82,8 @@ function TicketListingPage() {
     queryKey: ['ticket-packages', slug],
     queryFn: () => getTicketPackages(slug),
     enabled: !!slug,
+    retry: 2,
+    staleTime: 0,
   })
 
   // Sync event to cart store when loaded
