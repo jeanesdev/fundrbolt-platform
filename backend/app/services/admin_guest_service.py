@@ -103,9 +103,21 @@ class AdminGuestService:
                 user.id,
             )
 
-        # Account already exists and is active — send to sign-in with redirect
-        encoded_redirect = quote(redirect_path, safe="")
-        return f"{settings.frontend_donor_url}/sign-in?redirect={encoded_redirect}", None
+        # Account already exists and is active — issue a magic link so the user
+        # can log in from the invitation without needing to know their password.
+        if user is not None:
+            magic_token = PasswordService.generate_reset_token()
+            token_hash = PasswordService.hash_token(magic_token)
+            await RedisService.store_magic_link_token(token_hash, user.id)
+            encoded_redirect = quote(redirect_path, safe="")
+            return (
+                f"{settings.frontend_donor_url}/magic-login"
+                f"?token={magic_token}&redirect={encoded_redirect}",
+                None,
+            )
+
+        # No email or no donor role — fall back to event URL directly
+        return f"{settings.frontend_donor_url}{redirect_path}", None
 
     @staticmethod
     async def get_event_attendees(

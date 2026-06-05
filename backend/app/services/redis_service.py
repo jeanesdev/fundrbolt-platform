@@ -29,6 +29,7 @@ class RedisService:
     ACCESS_TOKEN_TTL = 900  # 15 minutes
     EMAIL_VERIFY_TTL = 86400  # 24 hours
     PASSWORD_RESET_TTL = 3600  # 1 hour
+    MAGIC_LINK_TTL = 3600  # 1 hour
     RATE_LIMIT_TTL = 900  # 15 minutes
 
     @staticmethod
@@ -320,6 +321,35 @@ class RedisService:
         """Delete OTP after successful communications email verification."""
         redis = await get_redis()
         key = f"comms_email_otp:{user_id}"
+        await redis.delete(key)
+
+    @staticmethod
+    async def store_magic_link_token(token: str, user_id: uuid.UUID) -> None:
+        """Store a one-time magic link token (login without password).
+
+        Key: magic_link:{token}
+        Value: user_id (UUID as string)
+        TTL: 1 hour
+        """
+        redis = await get_redis()
+        key = f"magic_link:{token}"
+        await redis.setex(key, RedisService.MAGIC_LINK_TTL, str(user_id))
+
+    @staticmethod
+    async def get_magic_link_user(token: str) -> uuid.UUID | None:
+        """Retrieve user ID from magic link token."""
+        redis = await get_redis()
+        key = f"magic_link:{token}"
+        user_id_str = await redis.get(key)
+        if user_id_str is None:
+            return None
+        return uuid.UUID(user_id_str)
+
+    @staticmethod
+    async def delete_magic_link_token(token: str) -> None:
+        """Delete magic link token after use."""
+        redis = await get_redis()
+        key = f"magic_link:{token}"
         await redis.delete(key)
 
     @staticmethod

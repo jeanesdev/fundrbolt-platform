@@ -6,8 +6,10 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.config import get_settings
 from app.core.database import get_db
@@ -1079,7 +1081,116 @@ async def setup_account(
     )
 
 
-@router.post("/password/change", status_code=status.HTTP_200_OK, response_model=MessageResponse)
+class MagicLinkRequest(BaseModel):
+    """Request body for magic link login."""
+
+    token: str = Field(..., min_length=1)
+
+
+@router.post("/magic-link", status_code=status.HTTP_200_OK, response_model=LoginResponse)
+async def magic_link_login(
+    request: Request,
+    data: MagicLinkRequest,
+    db: AsyncSession = Depends(get_db),
+) -> LoginResponse:
+    """Log in an already-active user via a one-time magic link token.
+
+    Used when an existing user is invited to an event — they should be able to
+    click the link in the invitation email and be logged in immediately without
+    needing to enter their password.
+
+    Flow:
+    1. Validate the one-time token stored in Redis
+    2. Look up the active user
+    3. Create a new JWT session
+    4. Delete the token (one-time use)
+    5. Return LoginResponse so the frontend can store tokens
+    """
+    from app.core.security import create_access_token, create_refresh_token  # noqa: PLC0415
+    from app.services.auth_service import AuthService  # noqa: PLC0415
+    from app.services.session_service import SessionService  # noqa: PLC0415
+
+    token_hash = PasswordService.hash_token(data.token)
+    user_id = await RedisService.get_magic_link_user(token_hash)
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "INVALID_TOKEN", "message": "Invalid or expired magic link."},
+        )
+
+    user_result = await db.execute(
+        select(User).where(User.id == user_id).options(selectinload(User.role))
+    )
+    user = user_result.scalar_one_or_none()
+    if user is None or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "INVALID_TOKEN", "message": "Invalid or expired magic link."},
+        )
+
+    # Consume the token (one-time use)
+    await RedisService.delete_magic_link_token(token_hash)
+
+    token_data = {"sub": str(user.id), "email": user.email, "role": str(user.role_id)}
+    access_token = create_access_token(data=token_data)
+    refresh_token = create_refresh_token(data=token_data)
+    refresh_payload = decode_token(refresh_token)
+    refresh_jti = refresh_payload["jti"]
+
+    ip_address = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
+    await SessionService.create_session(
+        db=db,
+        user_id=user.id,
+        refresh_token_jti=refresh_jti,
+        device_info=user_agent,
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
+
+    from datetime import datetime  # noqa: PLC0415
+
+    user.last_login_at = datetime.utcnow()
+    await db.commit()
+    await db.refresh(user, ["role"])
+
+    npo_memberships = await AuthService.get_active_npo_memberships(db, user.id)
+    primary_npo_id = npo_memberships[0].npo_id if len(npo_memberships) == 1 else None
+    user_public = UserPublic(
+        id=user.id,
+        email=user.email,
+        has_local_password=user.has_local_password,
+        communications_email=user.communications_email,
+        communications_email_verified=user.communications_email_verified,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        phone=user.phone,
+        organization_name=user.organization_name,
+        address_line1=user.address_line1,
+        address_line2=user.address_line2,
+        city=user.city,
+        state=user.state,
+        postal_code=user.postal_code,
+        country=user.country,
+        profile_picture_url=user.profile_picture_url,
+        email_verified=user.email_verified,
+        must_change_password=user.must_change_password,
+        is_active=user.is_active,
+        role=user.role.name,
+        npo_id=primary_npo_id,
+        npo_memberships=npo_memberships,
+        created_at=user.created_at,
+    )
+
+    return LoginResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer",
+        expires_in=900,
+        user=user_public,
+    )
+
+
 async def change_password(
     change_data: PasswordChangeRequest,
     request: Request,
