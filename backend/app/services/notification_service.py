@@ -357,6 +357,31 @@ class NotificationService:
         return count
 
     @staticmethod
+    async def mark_survey_invitation_read(
+        db: AsyncSession,
+        user_id: uuid.UUID,
+        event_id: uuid.UUID,
+    ) -> None:
+        """Mark any unread survey_invitation notification as read.
+
+        Called after the donor submits a survey response so that the
+        invitation toast doesn't re-appear on the next app open.
+        """
+        now = datetime.now(UTC)
+        stmt = (
+            update(Notification)
+            .where(
+                Notification.user_id == user_id,
+                Notification.event_id == event_id,
+                Notification.notification_type == NotificationTypeEnum.SURVEY_INVITATION,
+                Notification.is_read.is_(False),
+            )
+            .values(is_read=True, read_at=now)
+        )
+        await db.execute(stmt)
+        await db.flush()
+
+    @staticmethod
     async def delete_notification(
         db: AsyncSession,
         notification_id: uuid.UUID,

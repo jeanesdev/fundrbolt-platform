@@ -151,6 +151,14 @@ async def submit_donor_survey_response(
         body.action,
         [answer.model_dump() for answer in body.answers],
     )
+    # Mark any unread survey_invitation notification as read so it doesn't
+    # appear as a toast when the user reopens the app after completing the survey.
+    await NotificationService.mark_survey_invitation_read(
+        db=db,
+        user_id=current_user.id,
+        event_id=event_id,
+    )
+    await db.commit()
     return DonorSurveySubmitResponse(
         status=result.status,
         discount_cents_applied=result.discount_cents_applied,
