@@ -660,6 +660,7 @@ class AdminGuestService:
                 f"<strong>Venue:</strong> {event.venue_name}<br>"
                 f"{event.venue_address}",
                 "Click the button below to set up your account and complete your registration.",
+                f'You can also <a href="{event_url}" style="color: #2563eb;">view the event page</a> before signing up.',
             ]
 
             # Plain text version
@@ -675,6 +676,8 @@ class AdminGuestService:
                 "",
                 "Click the link below to set up your account and complete your registration:",
                 cta_url,
+                "",
+                f"View the event page: {event_url}",
                 "",
                 "This invitation is specifically for you. Please complete your registration to confirm your attendance.",
                 "",
@@ -918,6 +921,7 @@ class AdminGuestService:
                     f"<strong>Venue:</strong> {event.venue_name}<br>"
                     f"{event.venue_address}",
                     "Click the button below to set up your account and complete your registration.",
+                    f'You can also <a href="{event_url}" style="color: #2563eb;">view the event page</a> before signing up.',
                 ]
             )
 
@@ -941,6 +945,8 @@ class AdminGuestService:
                     "",
                     "Click the link below to set up your account and complete your registration:",
                     cta_url,
+                    "",
+                    f"View the event page: {event_url}",
                     "",
                     "This invitation is specifically for you. Please complete your registration to confirm your attendance.",
                     "",
