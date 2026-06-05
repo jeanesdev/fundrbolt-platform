@@ -5,11 +5,13 @@ import io
 import logging
 import secrets
 import uuid as _uuid_module
+from datetime import datetime
 from decimal import Decimal
 from typing import Any
 from urllib.parse import quote
 from uuid import UUID
 
+import pytz
 from fastapi import HTTPException, status
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -41,6 +43,16 @@ from app.services.redis_service import RedisService
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
+
+
+def _tz_abbr(event_dt: datetime, timezone_name: str) -> str:
+    """Return the timezone abbreviation (e.g. 'EST', 'EDT') for a given datetime and tz name."""
+    try:
+        tz = pytz.timezone(timezone_name)
+        localized = tz.localize(event_dt.replace(tzinfo=None))
+        return localized.strftime("%Z")
+    except Exception:
+        return timezone_name
 
 
 class AdminGuestService:
@@ -638,11 +650,13 @@ class AdminGuestService:
         try:
             subject = f"You're Invited to {event.name}"
 
+            tz_abbr = _tz_abbr(event.event_datetime, event.timezone)
+
             # Build body paragraphs
             body_paragraphs = [
                 f"Hello {guest.name},",
                 f"You have been invited to attend <strong>{event.name}</strong>.",
-                f"<strong>Date:</strong> {event.event_datetime.strftime('%B %d, %Y at %I:%M %p')} ({event.timezone})<br>"
+                f"<strong>Date:</strong> {event.event_datetime.strftime('%B %d, %Y at %I:%M %p')} ({tz_abbr})<br>"
                 f"<strong>Venue:</strong> {event.venue_name}<br>"
                 f"{event.venue_address}",
                 "Click the button below to set up your account and complete your registration.",
@@ -655,7 +669,7 @@ class AdminGuestService:
                 f"You have been invited to attend {event.name}.",
                 "",
                 f"Event: {event.name}",
-                f"Date: {event.event_datetime.strftime('%B %d, %Y at %I:%M %p')} ({event.timezone})",
+                f"Date: {event.event_datetime.strftime('%B %d, %Y at %I:%M %p')} ({tz_abbr})",
                 f"Venue: {event.venue_name}",
                 f"{event.venue_address}",
                 "",
@@ -884,6 +898,7 @@ class AdminGuestService:
                 ticket_blurb = "You are invited to purchase tickets for this event."
 
             # Build body paragraphs
+            tz_abbr = _tz_abbr(event.event_datetime, event.timezone)
             body_paragraphs = [
                 f"Hello {guest.name},",
                 f"You have been invited to attend <strong>{event.name}</strong>.",
@@ -899,7 +914,7 @@ class AdminGuestService:
             # Add event details
             body_paragraphs.extend(
                 [
-                    f"<strong>Date:</strong> {event.event_datetime.strftime('%B %d, %Y at %I:%M %p')} ({event.timezone})<br>"
+                    f"<strong>Date:</strong> {event.event_datetime.strftime('%B %d, %Y at %I:%M %p')} ({tz_abbr})<br>"
                     f"<strong>Venue:</strong> {event.venue_name}<br>"
                     f"{event.venue_address}",
                     "Click the button below to set up your account and complete your registration.",
@@ -920,7 +935,7 @@ class AdminGuestService:
                 [
                     "",
                     f"Event: {event.name}",
-                    f"Date: {event.event_datetime.strftime('%B %d, %Y at %I:%M %p')} ({event.timezone})",
+                    f"Date: {event.event_datetime.strftime('%B %d, %Y at %I:%M %p')} ({tz_abbr})",
                     f"Venue: {event.venue_name}",
                     f"{event.venue_address}",
                     "",
