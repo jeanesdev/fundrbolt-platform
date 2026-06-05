@@ -331,7 +331,11 @@ The FundrBolt Team
         )
 
     async def send_account_setup_email(
-        self, to_email: str, setup_token: str, user_name: str | None = None
+        self,
+        to_email: str,
+        setup_token: str,
+        user_name: str | None = None,
+        role: str | None = None,
     ) -> bool:
         """
         Send account setup email for admin-invited users.
@@ -343,6 +347,8 @@ The FundrBolt Team
             to_email: Recipient email address
             setup_token: Account setup token (reuses password reset token infrastructure)
             user_name: Optional user's first name for personalization
+            role: User's role — attendees/donors are directed to the donor PWA,
+                  all other roles to the admin PWA
 
         Returns:
             True if email sent successfully, False otherwise
@@ -350,9 +356,12 @@ The FundrBolt Team
         Raises:
             EmailSendError: If email fails to send after all retries
         """
-        # Use password-reset-confirm route for account setup
-        # This will allow user to set password and auto-verify email
-        setup_url = f"{settings.frontend_admin_url}/password-reset-confirm?token={setup_token}"
+        # Attendees/donors complete setup in the donor PWA; all other roles use the admin PWA
+        if role in ("donor", "attendee"):
+            base_url = settings.frontend_donor_url
+        else:
+            base_url = settings.frontend_admin_url
+        setup_url = f"{base_url}/password-reset-confirm?token={setup_token}"
 
         # Email content
         subject = "Welcome to FundrBolt - Complete Your Account Setup"

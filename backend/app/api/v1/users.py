@@ -513,6 +513,7 @@ async def create_user(
                 to_email=user.email,
                 setup_token=setup_token,
                 user_name=user.first_name,
+                role=user_data.role,
             )
             logger.info(f"Account setup email sent to {user.email} (user_id={user.id})")
         except Exception as e:
