@@ -1009,26 +1009,28 @@ export function EventCheckInSection() {
                 table.
               </CardDescription>
             </div>
-            <div className='flex items-center gap-2'>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => setQrCodeDialogOpen(true)}
-                className='gap-1.5'
-              >
-                <QrCode className='h-4 w-4' />
-                QR Codes
-              </Button>
-              <Button
-                variant='default'
-                size='sm'
-                onClick={() => setQuickSaleOpen(true)}
-                className='gap-1.5'
-              >
-                <Plus className='h-4 w-4' />
-                Quick Sale
-              </Button>
-              <DataTableViewToggle value={viewMode} onChange={setViewMode} />
+            <div className='flex flex-col gap-2'>
+              <div className='flex flex-wrap items-center gap-2'>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() => setQrCodeDialogOpen(true)}
+                  className='gap-1.5'
+                >
+                  <QrCode className='h-4 w-4' />
+                  QR Codes
+                </Button>
+                <Button
+                  variant='default'
+                  size='sm'
+                  onClick={() => setQuickSaleOpen(true)}
+                  className='gap-1.5'
+                >
+                  <Plus className='h-4 w-4' />
+                  Quick Sale
+                </Button>
+                <DataTableViewToggle value={viewMode} onChange={setViewMode} />
+              </div>
               <div className='rounded-md border px-3 py-2 text-sm'>
                 <p className='font-medium'>Check-in Progress</p>
                 <p className='text-muted-foreground'>
@@ -1296,12 +1298,12 @@ export function EventCheckInSection() {
                         key={attendee.id}
                         className='space-y-2 rounded-md border p-3'
                       >
-                        <div className='flex items-center justify-between'>
-                          <div className='flex items-center gap-2'>
+                        <div className='flex items-center justify-between gap-2'>
+                          <div className='flex min-w-0 flex-1 items-center gap-2'>
                             <Button
                               size='sm'
                               variant={checkedIn ? 'outline' : 'default'}
-                              className='h-8 w-8 p-0'
+                              className='h-8 w-8 shrink-0 p-0'
                               onClick={() =>
                                 handleToggleCheckIn(attendee, checkedIn)
                               }
@@ -1321,7 +1323,7 @@ export function EventCheckInSection() {
                               )}
                             </Button>
                             {attendee.profile_picture_url && (
-                              <Avatar className='h-6 w-6'>
+                              <Avatar className='h-6 w-6 shrink-0'>
                                 <AvatarImage
                                   src={attendee.profile_picture_url}
                                   alt={attendee.name || ''}
@@ -1336,13 +1338,13 @@ export function EventCheckInSection() {
                                 </AvatarFallback>
                               </Avatar>
                             )}
-                            <span className='font-medium'>
+                            <span className='min-w-0 truncate font-medium'>
                               {attendee.name || '—'}
                             </span>
                             {attendee.is_table_captain && (
                               <Badge
                                 variant='outline'
-                                className='h-5 w-5 justify-center p-0'
+                                className='h-5 w-5 shrink-0 justify-center p-0'
                                 title='Table Captain'
                               >
                                 <Crown className='h-3 w-3' />
@@ -1352,7 +1354,7 @@ export function EventCheckInSection() {
                           <Button
                             size='sm'
                             variant='outline'
-                            className='h-8 w-8 p-0'
+                            className='h-8 w-8 shrink-0 p-0'
                             onClick={() => openManageDialog(attendee)}
                             aria-label='Manage attendee'
                           >
@@ -1377,8 +1379,8 @@ export function EventCheckInSection() {
                           <dd>
                             <span
                               className={`flex items-center gap-1 text-xs ${attendee.has_payment_profile
-                                  ? 'text-green-600'
-                                  : 'text-muted-foreground'
+                                ? 'text-green-600'
+                                : 'text-muted-foreground'
                                 }`}
                             >
                               <CreditCard className='h-3 w-3' />
@@ -1699,8 +1701,8 @@ export function EventCheckInSection() {
                             >
                               <CreditCard
                                 className={`h-4 w-4 ${attendee.has_payment_profile
-                                    ? 'text-green-600'
-                                    : 'text-muted-foreground'
+                                  ? 'text-green-600'
+                                  : 'text-muted-foreground'
                                   }`}
                               />
                             </span>

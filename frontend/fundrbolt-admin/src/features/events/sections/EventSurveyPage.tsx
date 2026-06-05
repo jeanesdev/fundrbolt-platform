@@ -319,8 +319,8 @@ export function EventSurveyPage() {
               Reset defaults
             </Button>
           </div>
-          <div className='flex flex-wrap items-end gap-3 border-t pt-4'>
-            <div className='min-w-64 flex-1 space-y-2'>
+          <div className='flex flex-col gap-3 border-t pt-4 sm:flex-row sm:flex-wrap sm:items-end'>
+            <div className='flex-1 space-y-2'>
               <label className='text-sm font-medium'>
                 Copy survey from another event
               </label>
@@ -391,11 +391,11 @@ export function EventSurveyPage() {
             const draft = getQuestionDraft(question)
             return (
               <Card key={question.id}>
-                <CardHeader className='flex flex-row items-center justify-between gap-4 space-y-0'>
+                <CardHeader className='flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between sm:gap-4'>
                   <CardTitle className='text-base'>
                     Question {question.display_order + 1}
                   </CardTitle>
-                  <div className='flex items-center gap-2'>
+                  <div className='flex flex-wrap items-center gap-2'>
                     <label className='flex items-center gap-2 text-sm'>
                       <Switch
                         checked={draft.is_active ?? true}
@@ -468,27 +468,30 @@ export function EventSurveyPage() {
                     <label className='text-sm font-medium'>Options</label>
                     <div className='space-y-2'>
                       {draft.options.map((option, index) => (
-                        <div key={option.id ?? index} className='flex gap-2'>
-                          <Input
-                            value={option.text}
-                            placeholder={option.is_other ? 'Other (label shown to donor)' : ''}
-                            onChange={(event) => {
-                              const nextOptions = [...draft.options]
-                              nextOptions[index] = {
-                                ...option,
-                                text: event.target.value,
-                              }
-                              setQuestionDraft(question.id, {
-                                ...draft,
-                                options: nextOptions,
-                              })
-                            }}
-                          />
-                          {option.is_other && (
-                            <span className='bg-muted text-muted-foreground self-center rounded px-2 py-1 text-xs font-medium whitespace-nowrap'>
-                              Other
-                            </span>
-                          )}
+                        <div key={option.id ?? index} className='flex flex-wrap gap-2'>
+                          <div className='flex min-w-0 flex-1 items-center gap-2'>
+                            <Input
+                              className='min-w-0'
+                              value={option.text}
+                              placeholder={option.is_other ? 'Other (label shown to donor)' : ''}
+                              onChange={(event) => {
+                                const nextOptions = [...draft.options]
+                                nextOptions[index] = {
+                                  ...option,
+                                  text: event.target.value,
+                                }
+                                setQuestionDraft(question.id, {
+                                  ...draft,
+                                  options: nextOptions,
+                                })
+                              }}
+                            />
+                            {option.is_other && (
+                              <span className='bg-muted text-muted-foreground shrink-0 self-center rounded px-2 py-1 text-xs font-medium whitespace-nowrap'>
+                                Other
+                              </span>
+                            )}
+                          </div>
                           <Button
                             type='button'
                             variant='outline'
@@ -610,24 +613,27 @@ export function EventSurveyPage() {
           <div className='space-y-2'>
             <label className='text-sm font-medium'>Options</label>
             {draftQuestion.options.map((option, index) => (
-              <div key={index} className='flex gap-2'>
-                <Input
-                  value={option.text}
-                  placeholder={option.is_other ? 'Other (label shown to donor)' : ''}
-                  onChange={(event) => {
-                    const nextOptions = [...draftQuestion.options]
-                    nextOptions[index] = { ...option, text: event.target.value }
-                    setDraftQuestion((prev) => ({
-                      ...prev,
-                      options: nextOptions,
-                    }))
-                  }}
-                />
-                {option.is_other && (
-                  <span className='bg-muted text-muted-foreground self-center rounded px-2 py-1 text-xs font-medium whitespace-nowrap'>
-                    Other
-                  </span>
-                )}
+              <div key={index} className='flex flex-wrap gap-2'>
+                <div className='flex min-w-0 flex-1 items-center gap-2'>
+                  <Input
+                    className='min-w-0'
+                    value={option.text}
+                    placeholder={option.is_other ? 'Other (label shown to donor)' : ''}
+                    onChange={(event) => {
+                      const nextOptions = [...draftQuestion.options]
+                      nextOptions[index] = { ...option, text: event.target.value }
+                      setDraftQuestion((prev) => ({
+                        ...prev,
+                        options: nextOptions,
+                      }))
+                    }}
+                  />
+                  {option.is_other && (
+                    <span className='bg-muted text-muted-foreground shrink-0 self-center rounded px-2 py-1 text-xs font-medium whitespace-nowrap'>
+                      Other
+                    </span>
+                  )}
+                </div>
                 <Button
                   type='button'
                   variant='outline'
@@ -725,7 +731,7 @@ export function EventSurveyPage() {
         </CardContent>
       </Card>
 
-      <div className='sticky bottom-0 z-10 border-t bg-background py-3 px-6 flex items-center justify-end gap-4'>
+      <div className='sticky bottom-0 z-10 flex flex-wrap items-center justify-end gap-3 border-t bg-background px-4 py-3 sm:px-6 sm:gap-4'>
         {Object.keys(editingQuestions).length > 0 && (
           <span className='text-muted-foreground text-sm'>
             {Object.keys(editingQuestions).length} question

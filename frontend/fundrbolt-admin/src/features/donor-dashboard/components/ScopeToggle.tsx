@@ -8,14 +8,14 @@ interface ScopeToggleProps {
 
 export function ScopeToggle({ value, onChange, hasEvent }: ScopeToggleProps) {
   return (
-    <div className='inline-flex rounded-md border'>
+    <div className='flex rounded-md border'>
       <Button
         type='button'
         variant={value === 'event' ? 'default' : 'ghost'}
         size='sm'
         onClick={() => onChange('event')}
         disabled={!hasEvent}
-        className='rounded-r-none'
+        className='flex-1 rounded-r-none sm:flex-none'
       >
         This Event
       </Button>
@@ -24,7 +24,7 @@ export function ScopeToggle({ value, onChange, hasEvent }: ScopeToggleProps) {
         variant={value === 'all' ? 'default' : 'ghost'}
         size='sm'
         onClick={() => onChange('all')}
-        className='rounded-l-none'
+        className='flex-1 rounded-l-none sm:flex-none'
       >
         All Events
       </Button>

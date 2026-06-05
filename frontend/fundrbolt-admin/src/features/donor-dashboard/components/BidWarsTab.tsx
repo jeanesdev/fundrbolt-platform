@@ -1,14 +1,4 @@
-import { useMemo, useState } from 'react'
-import type { BidWarEntry } from '@/services/donor-dashboard'
-import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
-  Filter,
-  X,
-} from 'lucide-react'
-import { useViewPreference } from '@/hooks/use-view-preference'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -21,7 +11,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useViewPreference } from '@/hooks/use-view-preference'
+import type { BidWarEntry } from '@/services/donor-dashboard'
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Filter,
+  X,
+} from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { useBidWars } from '../hooks/useDonorDashboard'
 
 const fmt = (n: number) =>
@@ -141,7 +141,7 @@ export function BidWarsTab({ eventId, npoId }: BidWarsTabProps) {
 
   return (
     <Card>
-      <CardHeader className='flex flex-row items-center justify-between gap-4'>
+      <CardHeader className='flex flex-row items-center justify-between gap-4 space-y-0'>
         <CardTitle className='text-base'>Bid Wars</CardTitle>
         <DataTableViewToggle value={viewMode} onChange={setViewMode} />
       </CardHeader>

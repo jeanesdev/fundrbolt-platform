@@ -241,7 +241,7 @@ export function AuctionItemsIndexPage() {
             </p>
           </div>
           {typeFilter !== 'revenue_generators' ? (
-            <div className='flex items-center gap-2'>
+            <div className='flex flex-wrap items-center gap-2'>
               {typeof bidCardGenState === 'object' && (
                 <Button
                   size='sm'
@@ -282,8 +282,7 @@ export function AuctionItemsIndexPage() {
                   onClick={() => void exportLiveSlides()}
                 >
                   <Download className='mr-2 h-4 w-4' />
-                  <span className='hidden sm:inline'>Live PPT</span>
-                  <span className='sm:hidden'>Live PPT</span>
+                  Live PPT
                 </Button>
               )}
               {(typeFilter === 'all' || typeFilter === 'silent') && (
@@ -293,8 +292,7 @@ export function AuctionItemsIndexPage() {
                   onClick={() => void exportSilentSlides()}
                 >
                   <Download className='mr-2 h-4 w-4' />
-                  <span className='hidden sm:inline'>Silent PPT</span>
-                  <span className='sm:hidden'>Silent PPT</span>
+                  Silent PPT
                 </Button>
               )}
               <Button size='sm' onClick={handleAdd}>
