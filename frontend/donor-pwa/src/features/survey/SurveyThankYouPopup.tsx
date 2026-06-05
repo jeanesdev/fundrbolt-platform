@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Heart, X } from 'lucide-react'
 import { triggerCelebrationConfetti } from '@/lib/celebration-confetti'
@@ -24,28 +24,50 @@ export function SurveyThankYouPopup({
   onApply,
 }: SurveyThankYouPopupProps) {
   const [donateClicked, setDonateClicked] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const appliedRef = useRef(false)
+
+  const applyOnce = () => {
+    if (appliedRef.current) return
+    appliedRef.current = true
+    if (timerRef.current) clearTimeout(timerRef.current)
+    onApply()
+  }
+
+  const applyDelayed = () => {
+    if (appliedRef.current) return
+    timerRef.current = setTimeout(() => {
+      appliedRef.current = true
+      onApply()
+    }, 1500)
+  }
 
   useEffect(() => {
     if (open) {
+      appliedRef.current = false
+      timerRef.current = null
       triggerCelebrationConfetti()
+    }
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
     }
   }, [open])
 
   const handleDonateBack = () => {
     setDonateClicked(true)
     onDonateBack()
-    setTimeout(onApply, 1500)
+    applyDelayed()
   }
 
   const handleApply = () => {
-    setTimeout(onApply, 1500)
+    applyDelayed()
   }
 
   return (
     <Dialog.Root
       open={open}
       onOpenChange={(v) => {
-        if (!v) onApply()
+        if (!v) applyOnce()
       }}
     >
       <Dialog.Portal>

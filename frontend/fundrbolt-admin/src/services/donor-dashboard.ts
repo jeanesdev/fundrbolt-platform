@@ -231,7 +231,7 @@ export interface SurveyAnswersResponse {
 }
 
 export interface EventSurveyAnswerParams {
-  eventId?: string
+  eventId: string
   sort_by_question_id?: string
   sort_order?: 'asc' | 'desc'
   filter_question_id?: string

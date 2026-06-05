@@ -259,12 +259,12 @@ function SettingsOther() {
     <div className='space-y-4'>
       {/* Survey Section — collapsed by default */}
       <Collapsible>
-        <CollapsibleTrigger className='flex w-full items-center justify-between rounded-lg border p-4'>
+        <CollapsibleTrigger className='group flex w-full items-center justify-between rounded-lg border p-4'>
           <div className='flex items-center gap-2'>
             <ClipboardList className='h-5 w-5' />
             <h2 className='text-lg font-semibold'>Event Survey</h2>
           </div>
-          <ChevronDown className='h-4 w-4 transition-transform duration-200 [[data-state=open]>&]:rotate-180' />
+          <ChevronDown className='h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180' />
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className='pt-4'>
@@ -275,12 +275,12 @@ function SettingsOther() {
 
       {/* Support Section — open by default */}
       <Collapsible defaultOpen>
-        <CollapsibleTrigger className='flex w-full items-center justify-between rounded-lg border p-4'>
+        <CollapsibleTrigger className='group flex w-full items-center justify-between rounded-lg border p-4'>
           <div className='flex items-center gap-2'>
             <LifeBuoy className='h-5 w-5' />
             <h2 className='text-lg font-semibold'>Contact Support</h2>
           </div>
-          <ChevronDown className='h-4 w-4 transition-transform duration-200 [[data-state=open]>&]:rotate-180' />
+          <ChevronDown className='h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180' />
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className='space-y-4 pt-4'>
@@ -322,12 +322,12 @@ function SettingsOther() {
 
       {/* Privacy Section — collapsed by default */}
       <Collapsible>
-        <CollapsibleTrigger className='flex w-full items-center justify-between rounded-lg border p-4'>
+        <CollapsibleTrigger className='group flex w-full items-center justify-between rounded-lg border p-4'>
           <div className='flex items-center gap-2'>
             <Shield className='h-5 w-5' />
             <h2 className='text-lg font-semibold'>Privacy</h2>
           </div>
-          <ChevronDown className='h-4 w-4 transition-transform duration-200 [[data-state=open]>&]:rotate-180' />
+          <ChevronDown className='h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180' />
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className='space-y-6 pt-4'>

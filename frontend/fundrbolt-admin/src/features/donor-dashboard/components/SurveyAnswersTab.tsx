@@ -31,7 +31,7 @@ export function SurveyAnswersTab({
 
   const params = useMemo(
     () => ({
-      eventId,
+      eventId: eventId ?? '',
       sort_by_question_id: sortByQuestionId || undefined,
       sort_order: sortOrder,
     }),

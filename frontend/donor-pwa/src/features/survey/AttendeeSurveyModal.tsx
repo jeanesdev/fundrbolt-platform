@@ -74,9 +74,10 @@ export function AttendeeSurveyModal({
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose() }}>
       <DialogContent
         className='flex h-[100dvh] w-screen max-w-none flex-col gap-0 rounded-none border-0 p-0 sm:h-[100dvh] sm:max-w-none'
-        // Prevent accidental dismissal via outside-click only; Escape and the
-        // X button are intentional exit paths that navigate back without saving.
+        // Prevent dismissal via outside-click or Escape key; only the explicit
+        // Skip/Submit/X actions should close the modal so responses are recorded.
         onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <DialogHeader className='border-b px-5 py-4 text-left sm:px-8'>
           {survey.discount_cents > 0 && (
