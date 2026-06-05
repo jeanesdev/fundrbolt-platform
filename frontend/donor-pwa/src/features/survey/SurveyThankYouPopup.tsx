@@ -116,10 +116,10 @@ export function SurveyThankYouPopup({
                 <>
                   <div className='text-center text-xs font-medium text-gray-400'>or</div>
                   <Button
-                    className='w-full gap-2'
+                    className='h-auto w-full gap-2 whitespace-normal py-3 leading-snug'
                     onClick={handleDonateBack}
                   >
-                    <Heart className='h-4 w-4' />
+                    <Heart className='h-4 w-4 shrink-0' />
                     Apply this {formatDollars(discountCents)} back to {npoName}
                   </Button>
                 </>

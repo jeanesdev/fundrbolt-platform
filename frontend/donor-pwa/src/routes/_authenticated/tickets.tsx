@@ -244,12 +244,12 @@ function TicketInventoryPage() {
 
   return (
     <div className='container mx-auto max-w-2xl space-y-6 px-4 py-8'>
-      <div className='flex items-center justify-between'>
+      <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
         <h1 className='flex items-center gap-2 text-2xl font-bold'>
           <TicketCheck className='h-6 w-6' />
           My Tickets
         </h1>
-        <div className='flex items-center gap-2'>
+        <div className='flex flex-wrap items-center gap-2'>
           <div className='text-muted-foreground flex gap-2 text-sm'>
             <Badge variant='outline'>{inventory.total_tickets} total</Badge>
             <Badge variant='secondary'>
@@ -334,17 +334,18 @@ function TicketInventoryPage() {
                             </Card>
                           ) : ticket.assignment_status === 'unassigned' ? (
                             <Card>
-                              <CardContent className='flex items-center justify-between p-4'>
+                              <CardContent className='flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between'>
                                 <div className='flex items-center gap-2'>
                                   <span className='text-sm font-medium'>
                                     Ticket #{ticket.ticket_number}
                                   </span>
                                   <Badge variant='outline'>Unassigned</Badge>
                                 </div>
-                                <div className='flex gap-2'>
+                                <div className='flex flex-wrap gap-2'>
                                   <Button
                                     size='sm'
                                     variant='default'
+                                    className='flex-1 sm:flex-none'
                                     onClick={() => {
                                       setSelfRegTicket({
                                         id: ticket.id,
@@ -360,6 +361,7 @@ function TicketInventoryPage() {
                                   <Button
                                     size='sm'
                                     variant='outline'
+                                    className='flex-1 sm:flex-none'
                                     onClick={() => {
                                       if (!user) return
                                       setAssigningTicketId(ticket.id)

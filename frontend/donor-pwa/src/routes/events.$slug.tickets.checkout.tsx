@@ -11,6 +11,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { getEventBySlug } from '@/lib/api/events'
@@ -469,23 +476,26 @@ function TicketsCheckoutPage() {
         </Card>
       )}
 
-      {/* Step 4: Success */}
+      {/* Step 4: Success Dialog */}
       {step === 4 && checkoutResult && (
-        <Card className='text-center'>
-          <CardContent className='space-y-4 py-10'>
-            <CheckCircle className='mx-auto h-16 w-16 text-green-500' />
-            <h2 className='text-2xl font-bold'>Purchase Complete!</h2>
-            <p className='text-muted-foreground'>
-              Your tickets have been confirmed. Check your email for a receipt.
-            </p>
+        <Dialog open>
+          <DialogContent
+            className='max-w-sm'
+            onPointerDownOutside={(e) => e.preventDefault()}
+            onEscapeKeyDown={(e) => e.preventDefault()}
+          >
+            <DialogHeader className='items-center text-center'>
+              <CheckCircle className='mx-auto mb-2 h-14 w-14 text-green-500' />
+              <DialogTitle className='text-2xl'>Purchase Complete!</DialogTitle>
+              <DialogDescription>
+                Your tickets have been confirmed. Check your email for a receipt.
+              </DialogDescription>
+            </DialogHeader>
 
             {checkoutResult.purchases.length > 0 && (
-              <div className='mx-auto max-w-sm space-y-2 text-left'>
+              <div className='space-y-1 rounded-lg bg-muted/50 p-3 text-sm'>
                 {checkoutResult.purchases.map((p) => (
-                  <div
-                    key={p.purchase_id}
-                    className='bg-muted/50 flex justify-between rounded-md px-3 py-2 text-sm'
-                  >
+                  <div key={p.purchase_id} className='flex justify-between'>
                     <span>
                       {p.package_name} × {p.quantity}
                     </span>
@@ -497,26 +507,24 @@ function TicketsCheckoutPage() {
                 <div className='flex justify-between border-t pt-2 font-bold'>
                   <span>Total Charged</span>
                   <span>
-                    {fmtCurrency(
-                      Math.round(checkoutResult.total_charged * 100)
-                    )}
+                    {fmtCurrency(Math.round(checkoutResult.total_charged * 100))}
                   </span>
                 </div>
               </div>
             )}
 
-            <div className='flex justify-center gap-3 pt-4'>
-              <Button asChild variant='outline'>
-                <Link to='/events/$slug' params={{ slug }}>
-                  Back to Event
+            <div className='flex flex-col gap-2 pt-2'>
+              <Button asChild size='lg' className='w-full'>
+                <Link to='/_authenticated/tickets'>Register Now</Link>
+              </Button>
+              <Button asChild variant='ghost' size='sm' className='w-full text-muted-foreground'>
+                <Link to='/_authenticated/tickets'>
+                  Assign ticket to someone else
                 </Link>
               </Button>
-              <Button asChild>
-                <Link to='/tickets'>View My Tickets</Link>
-              </Button>
             </div>
-          </CardContent>
-        </Card>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   )
