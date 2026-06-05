@@ -610,6 +610,7 @@ The FundrBolt Team
         inviter_name: str | None = None,
         inviter_email: str | None = None,
         event_logo_url: str | None = None,
+        npo_logo_url: str | None = None,
         npo_slug: str | None = None,
         primary_color: str | None = None,
         npo_name: str | None = None,
@@ -670,9 +671,14 @@ The FundrBolt Team
             "Click the button below to claim your ticket and complete your registration."
         )
 
-        # Use the event logo in the email header; fall back to FundrBolt logo
-        header_logo_url = event_logo_url or self._get_logo_url("dark")
-        logo_alt = event_name if event_logo_url else "FundrBolt"
+        # Priority: event logo → NPO branding logo → FundrBolt default
+        header_logo_url = event_logo_url or npo_logo_url or self._get_logo_url("dark")
+        if event_logo_url:
+            logo_alt = event_name
+        elif npo_logo_url:
+            logo_alt = npo_name or event_name
+        else:
+            logo_alt = "FundrBolt"
         sender_address, sender_name = self._get_event_sender(npo_slug)
 
         html_body = _create_email_html_template(

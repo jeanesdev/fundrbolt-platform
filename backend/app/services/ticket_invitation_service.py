@@ -22,6 +22,8 @@ from app.core.logging import get_logger
 from app.core.security import hash_password
 from app.models.event import Event
 from app.models.event_registration import EventRegistration
+from app.models.npo import NPO
+from app.models.npo_branding import NPOBranding
 from app.models.registration_guest import RegistrationGuest
 from app.models.role import Role
 from app.models.ticket_management import (
@@ -249,20 +251,23 @@ class TicketInvitationService:
         # Resolve the event logo URL for the email
         event_logo_url: str | None = None
         from app.api.v1.event_media_urls import resolve_event_logo_url
-        from app.models.event import Event as _Event
 
         event_with_media_result = await db.execute(
-            select(_Event).options(selectinload(_Event.media)).where(_Event.id == event.id)
+            select(Event).options(selectinload(Event.media)).where(Event.id == event.id)
         )
         event_with_media = event_with_media_result.scalar_one_or_none()
         if event_with_media:
             event_logo_url = resolve_event_logo_url(event_with_media)
 
+        # Resolve the NPO branding logo as fallback
+        npo_branding_result = await db.execute(
+            select(NPOBranding.logo_url).where(NPOBranding.npo_id == event.npo_id)
+        )
+        npo_logo_url: str | None = npo_branding_result.scalar_one_or_none()
+
         # Resolve the NPO slug and name for the branded sender address / salutation
         npo_slug: str | None = None
         npo_name: str | None = None
-        from app.models.npo import NPO
-
         npo_result = await db.execute(select(NPO.slug, NPO.name).where(NPO.id == event.npo_id))
         npo_row = npo_result.one_or_none()
         if npo_row:
@@ -289,6 +294,7 @@ class TicketInvitationService:
             inviter_name=inviter_name,
             inviter_email=inviter_email,
             event_logo_url=event_logo_url,
+            npo_logo_url=npo_logo_url,
             npo_slug=npo_slug,
             primary_color=event.primary_color,
             npo_name=npo_name,
