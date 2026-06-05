@@ -251,11 +251,12 @@ class SocialAuthService:
         # No existing link – try to match by email
         if provider_email and email_verified:
             candidate = await cls._find_user_by_email(db, provider_email)
-            if candidate:
+            if candidate and candidate.is_active:
                 # Require first-time link confirmation
                 return await cls._require_link_confirmation(
                     db, attempt, candidate, provider.value, provider_subject
                 )
+            # Inactive/deleted user — treat as no match and fall through to provisioning
         elif provider_email and not email_verified:
             # Require in-app email verification
             return await cls._require_email_verification(db, attempt, provider_email)
@@ -394,6 +395,9 @@ class SocialAuthService:
 
         # Now try to match/provision
         user = await cls._find_user_by_email(db, email)
+        # Inactive/deleted users are not eligible for re-linking
+        if user and not user.is_active:
+            user = None
         app_ctx = AppContext(attempt.app_context)
 
         if user:

@@ -4,8 +4,9 @@ This service provides methods for recording, tracking, and managing
 user consent to legal documents.
 """
 
+import logging
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,6 +25,8 @@ from app.schemas.consent import (
     ConsentResponse,
     ConsentStatusResponse,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ConsentService:
@@ -355,6 +358,25 @@ class ConsentService:
         await SocialAuthService.delete_social_links_for_user(db, user.id)
 
         await db.commit()
+
+        # Send confirmation email to user and DPO notification
+        deletion_date = (datetime.now(UTC) + timedelta(days=30)).strftime("%B %-d, %Y")
+        try:
+            from app.services.email_service import get_email_service
+
+            email_service = get_email_service()
+            await email_service.send_account_deletion_confirmation_email(
+                to_email=user.email,
+                user_name=user.first_name,
+                deletion_date=deletion_date,
+            )
+            await email_service.send_dpo_deletion_notification_email(
+                user_email=user.email,
+                user_name=user.first_name,
+                deletion_date=deletion_date,
+            )
+        except Exception:
+            logger.exception("Failed to send account deletion emails for %s", user.email)
 
         # TODO: Schedule deletion job for 30 days from now
         # This would typically use Celery beat or similar for scheduled deletion

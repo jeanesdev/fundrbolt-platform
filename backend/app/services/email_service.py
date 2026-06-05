@@ -1884,6 +1884,125 @@ If you have any questions about this decision, please contact us by replying to 
             from_name=sender_name,
         )
 
+    async def send_account_deletion_confirmation_email(
+        self,
+        to_email: str,
+        user_name: str | None = None,
+        deletion_date: str | None = None,
+    ) -> bool:
+        """Send account deletion confirmation email.
+
+        Notifies the user that their deletion request has been received and
+        their account will be permanently deleted after the 30-day grace period.
+
+        Args:
+            to_email: Recipient email address
+            user_name: Optional user's first name for personalization
+            deletion_date: Human-readable deletion date (e.g. "July 5, 2026")
+
+        Returns:
+            True if email sent successfully, False otherwise
+        """
+        support_url = f"{settings.frontend_admin_url}/support"
+        greeting = f"Hi {user_name}," if user_name else "Hi,"
+        deletion_info = (
+            f"Your account is scheduled for permanent deletion on {deletion_date}."
+            if deletion_date
+            else "Your account is scheduled for permanent deletion in 30 days."
+        )
+
+        subject = "Your FundrBolt account deletion request"
+        body = f"""
+{greeting}
+
+We've received your request to delete your FundrBolt account.
+
+{deletion_info} Your account has been immediately deactivated and you will no longer be able to sign in.
+
+If you change your mind, contact our support team before the deletion date to cancel this request.
+
+{support_url}
+
+After the deletion date, all your personal data will be permanently removed and cannot be recovered.
+
+Best regards,
+The FundrBolt Team
+        """.strip()
+
+        html_body = _create_email_html_template(
+            heading="Account Deletion Requested",
+            body_paragraphs=[
+                f"{'Hi ' + user_name + ',' if user_name else 'Hi,'} we've received your request to delete your FundrBolt account.",
+                deletion_info
+                + " Your account has been immediately deactivated and you will no longer be able to sign in.",
+                "If you change your mind, contact our support team before the deletion date to cancel this request.",
+                "After the deletion date, all your personal data will be permanently removed and cannot be recovered.",
+            ],
+            cta_text="Contact Support",
+            cta_url=support_url,
+            footer_text="If you did not request account deletion, please contact support immediately.",
+            logo_url=self._get_logo_url("dark"),
+        )
+
+        return await self._send_email_with_retry(
+            to_email, subject, body, "account_deletion_confirmation", html_body
+        )
+
+    async def send_dpo_deletion_notification_email(
+        self,
+        user_email: str,
+        user_name: str | None = None,
+        deletion_date: str | None = None,
+    ) -> bool:
+        """Send internal notification to the DPO when a user requests account deletion.
+
+        Args:
+            user_email: Email address of the user requesting deletion
+            user_name: Optional user's name
+            deletion_date: Human-readable scheduled deletion date (e.g. "July 5, 2026")
+
+        Returns:
+            True if email sent successfully, False otherwise
+        """
+        dpo_email = settings.dpo_notification_email
+        display_name = user_name or user_email
+        deletion_info = (
+            f"Scheduled permanent deletion: {deletion_date}"
+            if deletion_date
+            else "Scheduled permanent deletion: 30 days from now"
+        )
+        requested_at = __import__("datetime").datetime.now().strftime("%B %-d, %Y at %I:%M %p")
+
+        subject = f"[GDPR] Account deletion request from {display_name}"
+        body = f"""
+Account Deletion Request — Action Required
+
+A user has submitted an account deletion request under GDPR Article 17 (Right to Erasure).
+
+User Details:
+- Name: {display_name}
+- Email: {user_email}
+- Requested: {requested_at}
+- {deletion_info}
+
+Their account has been immediately deactivated. Permanent deletion will be
+carried out automatically after the grace period unless they contact support
+to cancel.
+
+No manual action is required unless the user contacts support to cancel or
+expedite the deletion.
+
+---
+This is an automated notification from FundrBolt.
+        """.strip()
+
+        return await self._send_email_with_retry(
+            to_email=dpo_email,
+            subject=subject,
+            body=body,
+            email_type="dpo_deletion_notification",
+        )
+
 
 # Singleton instance
 _email_service: EmailService | None = None

@@ -89,6 +89,9 @@ class Settings(BaseSettings):
     # NPO Onboarding — Admin Notification Email
     admin_notification_email: str | None = None
 
+    # GDPR — Data Protection Officer notification email
+    dpo_notification_email: str = "dpo@fundrbolt.com"
+
     # VAPID (Web Push)
     vapid_private_key: str | None = None
     vapid_public_key: str | None = None
