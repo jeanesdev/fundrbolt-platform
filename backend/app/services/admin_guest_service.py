@@ -3,6 +3,7 @@
 import csv
 import io
 import logging
+import secrets
 from typing import Any
 from uuid import UUID
 
@@ -11,6 +12,8 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.config import get_settings
+from app.core.security import hash_password
 from app.models.donor_label import DonorLabel
 from app.models.donor_label_assignment import DonorLabelAssignment
 from app.models.event import Event, FoodOption
@@ -18,15 +21,79 @@ from app.models.event_registration import EventRegistration
 from app.models.meal_selection import MealSelection
 from app.models.payment_profile import PaymentProfile
 from app.models.registration_guest import RegistrationGuest
+from app.models.role import Role
 from app.models.user import User
 from app.services.bidder_number_service import BidderNumberService
 from app.services.email_service import EmailService, _create_email_html_template
+from app.services.password_service import PasswordService
+from app.services.redis_service import RedisService
 
 logger = logging.getLogger(__name__)
+settings = get_settings()
 
 
 class AdminGuestService:
     """Service for admin guest management operations."""
+
+    @staticmethod
+    async def _ensure_guest_account_and_setup_url(
+        db: AsyncSession,
+        guest_email: str | None,
+        guest_name: str | None,
+        redirect_path: str,
+    ) -> str:
+        """Ensure a donor account exists for the guest and return a setup URL.
+
+        If the email has no account, creates an inactive donor account.
+        If the account is already active, returns the sign-in URL with a redirect.
+        Returns the event URL directly when no email is provided.
+        """
+        from urllib.parse import quote
+
+        if not guest_email:
+            return f"{settings.frontend_donor_url}{redirect_path}"
+
+        existing_result = await db.execute(select(User).where(User.email == guest_email.lower()))
+        user = existing_result.scalar_one_or_none()
+
+        if user is None:
+            donor_role_result = await db.execute(select(Role).where(Role.name == "donor"))
+            donor_role = donor_role_result.scalar_one_or_none()
+            if donor_role:
+                name_parts = (guest_name or "").strip().split(None, 1)
+                pre_first = name_parts[0] if name_parts else guest_email.split("@")[0]
+                pre_last = name_parts[1] if len(name_parts) > 1 else ""
+                user = User(
+                    email=guest_email.lower(),
+                    first_name=pre_first,
+                    last_name=pre_last,
+                    password_hash=hash_password(f"Tmp{secrets.token_urlsafe(10)}1"),
+                    role_id=donor_role.id,
+                    must_change_password=True,
+                    email_verified=False,
+                    is_active=False,
+                )
+                db.add(user)
+                await db.flush()
+                logger.info(
+                    "Pre-created donor account for admin guest invitation",
+                    extra={"email": guest_email},
+                )
+
+        if user is not None and not user.is_active and user.must_change_password:
+            setup_token = PasswordService.generate_reset_token()
+            token_hash = PasswordService.hash_token(setup_token)
+            await RedisService.store_password_reset_token(token_hash, user.id)
+            encoded_redirect = quote(redirect_path, safe="")
+            return (
+                f"{settings.frontend_donor_url}/password-reset-confirm"
+                f"?token={setup_token}&redirect={encoded_redirect}"
+            )
+
+        # Account already exists and is active — send to sign-in with redirect
+        encoded_redirect = quote(redirect_path, safe="")
+        return f"{settings.frontend_donor_url}/sign-in?redirect={encoded_redirect}"
+        return f"{settings.frontend_donor_url}/sign-in?redirect={encoded_redirect}"
 
     @staticmethod
     async def get_event_attendees(
@@ -517,11 +584,12 @@ class AdminGuestService:
 
         event = guest.registration.event
 
-        # Generate registration URL for the donor PWA
-        registration_url = (
-            f"http://localhost:5174/events/{event.slug or event.id}/register?guest={guest.id}"
+        # Generate the setup/registration URL for the email CTA
+        registration_redirect = f"/events/{event.slug or event.id}/register?guest={guest.id}"
+        cta_url = await AdminGuestService._ensure_guest_account_and_setup_url(
+            db, guest.email, guest.name, registration_redirect
         )
-        event_url = f"http://localhost:5174/events/{event.slug or event.id}"
+        event_url = f"{settings.frontend_donor_url}/events/{event.slug or event.id}"
 
         # Send invitation email
         try:
@@ -534,9 +602,7 @@ class AdminGuestService:
                 f"<strong>Date:</strong> {event.event_datetime.strftime('%B %d, %Y at %I:%M %p')} ({event.timezone})<br>"
                 f"<strong>Venue:</strong> {event.venue_name}<br>"
                 f"{event.venue_address}",
-                "To confirm your attendance, you'll need to create your FundrBolt account (or log in if you already have one), "
-                "complete your registration, and select your meal preferences.",
-                "Click the button below to get started:",
+                "Click the button below to set up your account and complete your registration.",
             ]
 
             # Plain text version
@@ -550,13 +616,8 @@ class AdminGuestService:
                 f"Venue: {event.venue_name}",
                 f"{event.venue_address}",
                 "",
-                "To confirm your attendance, you'll need to:",
-                "1. Create your FundrBolt account (or log in if you already have one)",
-                "2. Complete your registration and select your meal preferences",
-                "3. RSVP for the event",
-                "",
-                "Click the link below to get started:",
-                registration_url,
+                "Click the link below to set up your account and complete your registration:",
+                cta_url,
                 "",
                 "This invitation is specifically for you. Please complete your registration to confirm your attendance.",
                 "",
@@ -570,8 +631,8 @@ class AdminGuestService:
             html_body = _create_email_html_template(
                 heading=f"You're Invited to {event.name}!",
                 body_paragraphs=body_paragraphs,
-                cta_text="Complete Registration",
-                cta_url=registration_url,
+                cta_text="Complete Account Setup",
+                cta_url=cta_url,
                 footer_text=(
                     "This invitation is specifically for you. Please complete your registration to confirm your attendance. "
                     f'<a href="{event_url}" style="color: #2563eb;">View event details</a>'
@@ -684,11 +745,12 @@ class AdminGuestService:
         # Send invitation email
         email_sent = False
         try:
-            # Generate registration URL for the donor PWA
-            registration_url = (
-                f"http://localhost:5174/events/{event.slug or event.id}/register?guest={guest.id}"
+            # Generate the setup URL — creates an account if needed
+            registration_redirect = f"/events/{event.slug or event.id}/register?guest={guest.id}"
+            cta_url = await AdminGuestService._ensure_guest_account_and_setup_url(
+                db, guest.email, guest.name, registration_redirect
             )
-            event_url = f"http://localhost:5174/events/{event.slug or event.id}"
+            event_url = f"{settings.frontend_donor_url}/events/{event.slug or event.id}"
 
             subject = f"You're Invited to {event.name}"
 
@@ -711,9 +773,7 @@ class AdminGuestService:
                     f"<strong>Date:</strong> {event.event_datetime.strftime('%B %d, %Y at %I:%M %p')} ({event.timezone})<br>"
                     f"<strong>Venue:</strong> {event.venue_name}<br>"
                     f"{event.venue_address}",
-                    "To confirm your attendance, you'll need to create your FundrBolt account (or log in if you already have one), "
-                    "complete your registration, and select your meal preferences.",
-                    "Click the button below to get started:",
+                    "Click the button below to set up your account and complete your registration.",
                 ]
             )
 
@@ -735,13 +795,8 @@ class AdminGuestService:
                     f"Venue: {event.venue_name}",
                     f"{event.venue_address}",
                     "",
-                    "To confirm your attendance, you'll need to:",
-                    "1. Create your FundrBolt account (or log in if you already have one)",
-                    "2. Complete your registration and select your meal preferences",
-                    "3. RSVP for the event",
-                    "",
-                    "Click the link below to get started:",
-                    registration_url,
+                    "Click the link below to set up your account and complete your registration:",
+                    cta_url,
                     "",
                     "This invitation is specifically for you. Please complete your registration to confirm your attendance.",
                     "",
@@ -756,17 +811,18 @@ class AdminGuestService:
             html_body = _create_email_html_template(
                 heading=f"You're Invited to {event.name}!",
                 body_paragraphs=body_paragraphs,
-                cta_text="Complete Registration",
-                cta_url=registration_url,
+                cta_text="Complete Account Setup",
+                cta_url=cta_url,
                 footer_text=(
                     "This invitation is specifically for you. Please complete your registration to confirm your attendance. "
                     f'<a href="{event_url}" style="color: #2563eb;">View event details</a>'
                 ),
             )
 
-            logger.info(f"Attempting to send invitation email to {guest.email}")
-            logger.info(f"Email subject: {subject}")
-            logger.info(f"Registration URL: {registration_url}")
+            logger.info(
+                f"Attempting to send invitation email to {guest.email}",
+                extra={"cta_url": cta_url},
+            )
 
             await email_service._send_email_with_retry(
                 to_email=guest.email,
