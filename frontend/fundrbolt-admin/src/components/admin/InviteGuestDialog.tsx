@@ -162,30 +162,40 @@ export function InviteGuestDialog({
     }
   }
 
-  const handleCopyLink = async () => {
-    const copyText = async (text: string) => {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(text)
-        return
+  const handleCopyLink = () => {
+    // Try navigator.clipboard first; fall back to execCommand
+    const attemptCopy = () => {
+      if (navigator.clipboard) {
+        return navigator.clipboard.writeText(inviteLink)
       }
-      const el = document.createElement('textarea')
-      el.value = text
-      el.style.position = 'fixed'
-      el.style.opacity = '0'
-      document.body.appendChild(el)
-      el.focus()
-      el.select()
-      document.execCommand('copy')
-      document.body.removeChild(el)
+      return Promise.reject(new Error('clipboard unavailable'))
     }
 
-    try {
-      await copyText(inviteLink)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch {
-      // silently fail — user can manually select the text
-    }
+    attemptCopy()
+      .catch(() => {
+        // execCommand fallback
+        const el = document.createElement('textarea')
+        el.value = inviteLink
+        el.setAttribute('readonly', '')
+        el.style.cssText =
+          'position:fixed;top:0;left:0;opacity:0;pointer-events:none'
+        document.body.appendChild(el)
+        el.focus()
+        el.select()
+        const ok = document.execCommand('copy')
+        document.body.removeChild(el)
+        if (!ok) throw new Error('execCommand copy failed')
+      })
+      .then(() => {
+        setCopied(true)
+        toast.success('Link copied to clipboard!')
+        setTimeout(() => setCopied(false), 3000)
+      })
+      .catch(() => {
+        toast.error(
+          'Could not copy automatically — please select and copy the link manually.'
+        )
+      })
   }
 
   const resetForm = () => {
