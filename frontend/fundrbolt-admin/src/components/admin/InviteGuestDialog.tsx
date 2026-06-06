@@ -78,7 +78,7 @@ export function InviteGuestDialog({
   const [createdGuestName, setCreatedGuestName] = useState('')
   const [createdGuestEmail, setCreatedGuestEmail] = useState('')
   const [copied, setCopied] = useState(false)
-  const linkInputRef = useRef<HTMLInputElement>(null)
+  const linkTextareaRef = useRef<HTMLTextAreaElement>(null)
 
   const [formData, setFormData] = useState<GuestFormData>({
     name: '',
@@ -164,13 +164,30 @@ export function InviteGuestDialog({
   }
 
   const handleCopyLink = async () => {
+    // Robust clipboard copy with textarea fallback
+    const copyText = async (text: string) => {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text)
+        return
+      }
+      // Fallback for non-secure contexts or older browsers
+      const el = document.createElement('textarea')
+      el.value = text
+      el.style.position = 'fixed'
+      el.style.opacity = '0'
+      document.body.appendChild(el)
+      el.focus()
+      el.select()
+      document.execCommand('copy')
+      document.body.removeChild(el)
+    }
+
     try {
-      await navigator.clipboard.writeText(inviteLink)
+      await copyText(inviteLink)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      // Fallback: select the input text
-      linkInputRef.current?.select()
+      linkTextareaRef.current?.select()
     }
   }
 
@@ -415,12 +432,13 @@ export function InviteGuestDialog({
               <div className='grid gap-2'>
                 <Label>Invite Link</Label>
                 <div className='flex gap-2'>
-                  <Input
-                    ref={linkInputRef}
+                  <textarea
+                    ref={linkTextareaRef}
                     value={inviteLink}
                     readOnly
-                    className='font-mono text-xs'
-                    onClick={() => linkInputRef.current?.select()}
+                    rows={3}
+                    className='border-input bg-background text-foreground focus-visible:ring-ring flex w-full resize-none rounded-md border px-3 py-2 font-mono text-xs focus-visible:ring-2 focus-visible:outline-none'
+                    onClick={() => linkTextareaRef.current?.select()}
                   />
                   <Button
                     type='button'
@@ -428,6 +446,7 @@ export function InviteGuestDialog({
                     variant='outline'
                     onClick={handleCopyLink}
                     title='Copy link'
+                    className='shrink-0 self-start'
                   >
                     {copied ? (
                       <Check className='h-4 w-4 text-green-600' />
@@ -436,9 +455,9 @@ export function InviteGuestDialog({
                     )}
                   </Button>
                 </div>
-                <p className='text-muted-foreground text-xs'>
-                  Share this link directly or send it via email below.
-                </p>
+                {copied && (
+                  <p className='text-xs text-green-600'>Link copied!</p>
+                )}
               </div>
 
               {!emailSent && (
@@ -474,8 +493,15 @@ export function InviteGuestDialog({
               <Button type='button' variant='outline' onClick={resetForm}>
                 Invite Another
               </Button>
+              <Button
+                type='button'
+                variant='outline'
+                onClick={() => handleOpenChange(false)}
+              >
+                Cancel
+              </Button>
               <Button type='button' onClick={() => handleOpenChange(false)}>
-                Done
+                OK
               </Button>
             </DialogFooter>
           </>
