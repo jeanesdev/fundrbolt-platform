@@ -1191,6 +1191,7 @@ async def magic_link_login(
     )
 
 
+@router.post("/password/change", status_code=status.HTTP_200_OK, response_model=MessageResponse)
 async def change_password(
     change_data: PasswordChangeRequest,
     request: Request,
