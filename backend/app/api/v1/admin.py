@@ -746,12 +746,14 @@ async def invite_guest_to_event(
     await _require_event_admin(db, current_user, event)
 
     email_service = get_email_service()
-    guest, email_sent = await AdminGuestService.invite_guest_to_event(
+    send_email: bool = bool(guest_data.get("send_email", True))
+    guest, email_sent, invite_link = await AdminGuestService.invite_guest_to_event(
         db=db,
         event_id=event_id,
         guest_data=guest_data,
         invited_by_user=current_user,
         email_service=email_service,
+        send_email=send_email,
     )
 
     message = (
@@ -763,6 +765,7 @@ async def invite_guest_to_event(
         "name": guest.name,
         "email": guest.email,
         "email_sent": email_sent,
+        "invite_link": invite_link,
         "message": message,
     }
 

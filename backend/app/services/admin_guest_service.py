@@ -726,23 +726,25 @@ class AdminGuestService:
         guest_data: dict[str, Any],
         invited_by_user: Any,
         email_service: Any,
+        send_email: bool = True,
     ) -> Any:
         """
         Invite a new guest to an event (admin-initiated).
 
-        Creates an admin registration if needed, adds the guest, and sends invitation.
-        When ticket_package_id + is_comped are provided, creates a $0 ticket purchase.
+        Creates an admin registration if needed, adds the guest, and optionally sends invitation.
+        When ticket_package_id is provided, creates a $0 ticket purchase.
 
         Args:
             db: Database session
             event_id: Event UUID
             guest_data: Guest information (name, email, phone, ticket_package_id,
-                        ticket_quantity, is_comped, custom_message)
+                        ticket_quantity, custom_message)
             invited_by_user: Admin user creating the invitation
             email_service: Email service instance
+            send_email: Whether to send the invitation email (default True)
 
         Returns:
-            Created guest record
+            Tuple of (guest, email_sent, invite_link)
 
         Raises:
             HTTPException: If event not found or guest creation fails
@@ -830,6 +832,7 @@ class AdminGuestService:
 
         # Send invitation email
         email_sent = False
+        invite_link: str = ""
         try:
             # Determine where to send the user after completing their profile.
             # With a comped package: straight to ticket management (/tickets).
@@ -843,6 +846,7 @@ class AdminGuestService:
             cta_url, new_user_id = await AdminGuestService._ensure_guest_account_and_setup_url(
                 db, guest.email, guest.name, profile_redirect
             )
+            invite_link = cta_url
             event_url = f"{settings.frontend_donor_url}/events/{event.slug or event.id}"
 
             # Create comped ticket purchase for the pre-created user
@@ -883,114 +887,115 @@ class AdminGuestService:
                         },
                     )
 
-            subject = f"You're Invited to {event.name}"
+            if send_email:
+                subject = f"You're Invited to {event.name}"
 
-            # Get custom message if provided
-            custom_message = guest_data.get("custom_message", "").strip()
+                # Get custom message if provided
+                custom_message = guest_data.get("custom_message", "").strip()
 
-            # Build ticket blurb for body
-            ticket_blurb: str | None = None
-            if ticket_package_id and package is not None:
-                seat_count = ticket_quantity * package.seats_per_package
-                ticket_blurb = (
-                    f"You have been granted <strong>{seat_count} complimentary "
-                    f"{'seat' if seat_count == 1 else 'seats'}</strong> "
-                    f"({package.name}). Your tickets will be waiting in your account."
+                # Build ticket blurb for body
+                ticket_blurb: str | None = None
+                if ticket_package_id and package is not None:
+                    seat_count = ticket_quantity * package.seats_per_package
+                    ticket_blurb = (
+                        f"You have been granted <strong>{seat_count} complimentary "
+                        f"{'seat' if seat_count == 1 else 'seats'}</strong> "
+                        f"({package.name}). Your tickets will be waiting in your account."
+                    )
+                elif ticket_package_id:
+                    ticket_blurb = "You are invited to purchase tickets for this event."
+
+                # Build body paragraphs
+                tz_abbr = _tz_abbr(event.event_datetime, event.timezone)
+                body_paragraphs = [
+                    f"Hello {guest.name},",
+                    f"You have been invited to attend <strong>{event.name}</strong>.",
+                ]
+
+                # Add custom message if provided
+                if custom_message:
+                    body_paragraphs.append(custom_message)
+
+                if ticket_blurb:
+                    body_paragraphs.append(ticket_blurb)
+
+                # Add event details
+                body_paragraphs.extend(
+                    [
+                        f"<strong>Date:</strong> {event.event_datetime.strftime('%B %d, %Y at %I:%M %p')} ({tz_abbr})<br>"
+                        f"<strong>Venue:</strong> {event.venue_name}<br>"
+                        f"{event.venue_address}",
+                        "Click the button below to set up your account and complete your registration.",
+                        f'You can also <a href="{event_url}" style="color: #2563eb;">view the event page</a> before signing up.',
+                    ]
                 )
-            elif ticket_package_id:
-                ticket_blurb = "You are invited to purchase tickets for this event."
 
-            # Build body paragraphs
-            tz_abbr = _tz_abbr(event.event_datetime, event.timezone)
-            body_paragraphs = [
-                f"Hello {guest.name},",
-                f"You have been invited to attend <strong>{event.name}</strong>.",
-            ]
-
-            # Add custom message if provided
-            if custom_message:
-                body_paragraphs.append(custom_message)
-
-            if ticket_blurb:
-                body_paragraphs.append(ticket_blurb)
-
-            # Add event details
-            body_paragraphs.extend(
-                [
-                    f"<strong>Date:</strong> {event.event_datetime.strftime('%B %d, %Y at %I:%M %p')} ({tz_abbr})<br>"
-                    f"<strong>Venue:</strong> {event.venue_name}<br>"
-                    f"{event.venue_address}",
-                    "Click the button below to set up your account and complete your registration.",
-                    f'You can also <a href="{event_url}" style="color: #2563eb;">view the event page</a> before signing up.',
+                # Plain text version
+                plain_body_parts = [
+                    f"Hello {guest.name},",
+                    "",
+                    f"You have been invited to attend {event.name}.",
                 ]
-            )
 
-            # Plain text version
-            plain_body_parts = [
-                f"Hello {guest.name},",
-                "",
-                f"You have been invited to attend {event.name}.",
-            ]
+                if custom_message:
+                    plain_body_parts.extend(["", custom_message])
 
-            if custom_message:
-                plain_body_parts.extend(["", custom_message])
+                plain_body_parts.extend(
+                    [
+                        "",
+                        f"Event: {event.name}",
+                        f"Date: {event.event_datetime.strftime('%B %d, %Y at %I:%M %p')} ({tz_abbr})",
+                        f"Venue: {event.venue_name}",
+                        f"{event.venue_address}",
+                        "",
+                        "Click the link below to set up your account and complete your registration:",
+                        cta_url,
+                        "",
+                        f"View the event page: {event_url}",
+                        "",
+                        "This invitation is specifically for you. Please complete your registration to confirm your attendance.",
+                        "",
+                        "Best regards,",
+                        team_name,
+                    ]
+                )
 
-            plain_body_parts.extend(
-                [
-                    "",
-                    f"Event: {event.name}",
-                    f"Date: {event.event_datetime.strftime('%B %d, %Y at %I:%M %p')} ({tz_abbr})",
-                    f"Venue: {event.venue_name}",
-                    f"{event.venue_address}",
-                    "",
-                    "Click the link below to set up your account and complete your registration:",
-                    cta_url,
-                    "",
-                    f"View the event page: {event_url}",
-                    "",
-                    "This invitation is specifically for you. Please complete your registration to confirm your attendance.",
-                    "",
-                    "Best regards,",
-                    team_name,
-                ]
-            )
+                body = "\n".join(plain_body_parts)
 
-            body = "\n".join(plain_body_parts)
+                # HTML version using professional template
+                html_body = _create_email_html_template(
+                    heading=f"You're Invited to {event.name}!",
+                    body_paragraphs=body_paragraphs,
+                    cta_text="Complete Account Setup",
+                    cta_url=cta_url,
+                    footer_text=(
+                        "This invitation is specifically for you. Please complete your registration to confirm your attendance. "
+                        f'<a href="{event_url}" style="color: #2563eb;">View event details</a>'
+                    ),
+                    logo_url=header_logo_url,
+                    npo_name=npo_name,
+                )
 
-            # HTML version using professional template
-            html_body = _create_email_html_template(
-                heading=f"You're Invited to {event.name}!",
-                body_paragraphs=body_paragraphs,
-                cta_text="Complete Account Setup",
-                cta_url=cta_url,
-                footer_text=(
-                    "This invitation is specifically for you. Please complete your registration to confirm your attendance. "
-                    f'<a href="{event_url}" style="color: #2563eb;">View event details</a>'
-                ),
-                logo_url=header_logo_url,
-                npo_name=npo_name,
-            )
+                logger.info(
+                    f"Attempting to send invitation email to {guest.email}",
+                    extra={"cta_url": cta_url},
+                )
 
-            logger.info(
-                f"Attempting to send invitation email to {guest.email}",
-                extra={"cta_url": cta_url},
-            )
+                await email_service._send_email_with_retry(
+                    to_email=guest.email,
+                    subject=subject,
+                    body=body,
+                    html_body=html_body,
+                    email_type="admin_guest_invitation",
+                )
 
-            await email_service._send_email_with_retry(
-                to_email=guest.email,
-                subject=subject,
-                body=body,
-                html_body=html_body,
-                email_type="admin_guest_invitation",
-            )
+                # Update invitation sent timestamp
+                guest.invitation_sent_at = func.now()
+                email_sent = True
 
-            # Update invitation sent timestamp
-            guest.invitation_sent_at = func.now()
-            email_sent = True
-
-            logger.info(
-                f"Admin invitation sent to {guest.email} for event {event.id} by {invited_by_user.email}"
-            )
+                logger.info(
+                    f"Admin invitation sent to {guest.email} for event {event.id} by {invited_by_user.email}"
+                )
 
         except Exception as e:
             logger.error(f"Failed to send admin invitation email: {str(e)}")
@@ -1000,8 +1005,8 @@ class AdminGuestService:
 
         await db.commit()
 
-        # Return guest with email status
-        return guest, email_sent
+        # Return guest with email status and invite link
+        return guest, email_sent, invite_link
 
     @staticmethod
     async def delete_guest(

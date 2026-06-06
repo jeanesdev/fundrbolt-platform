@@ -159,12 +159,14 @@ export const inviteGuestToEvent = async (
     custom_message?: string
     ticket_package_id?: string
     ticket_quantity?: number
+    send_email?: boolean
   }
 ): Promise<{
   guest_id: string
   name: string
   email: string
   email_sent: boolean
+  invite_link: string
   message: string
 }> => {
   const response = await apiClient.post<{
@@ -172,6 +174,7 @@ export const inviteGuestToEvent = async (
     name: string
     email: string
     email_sent: boolean
+    invite_link: string
     message: string
   }>(`/admin/events/${eventId}/invite-guest`, guestData)
 
