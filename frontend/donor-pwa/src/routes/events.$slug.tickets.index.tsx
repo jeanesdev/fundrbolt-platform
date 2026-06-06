@@ -66,6 +66,7 @@ function TicketListingPage() {
     data: event,
     isLoading: eventLoading,
     isFetching: eventFetching,
+    isPending: eventPending,
     error: eventError,
   } = useQuery({
     queryKey: ['event', slug],
@@ -80,6 +81,7 @@ function TicketListingPage() {
     data: packages = [],
     isLoading: packagesLoading,
     isFetching: packagesFetching,
+    isPending: packagesPending,
     error: packagesError,
   } = useQuery({
     queryKey: ['ticket-packages', slug],
@@ -108,7 +110,9 @@ function TicketListingPage() {
   const itemCount = totalItems()
   const cartSubtotal = subtotal()
   const isFetching = eventFetching || packagesFetching
-  const isLoading = eventLoading || packagesLoading || isFetching
+  // Include isPending to guard against the brief window between mount and first fetch
+  // where fetchStatus is 'idle' but data hasn't loaded yet (causes false error flash)
+  const isLoading = eventLoading || packagesLoading || isFetching || eventPending || packagesPending
   const error = eventError || packagesError
 
   const handleQuantityChange = (pkg: PublicTicketPackage, qty: number) => {
