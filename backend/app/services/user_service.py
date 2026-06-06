@@ -193,6 +193,7 @@ class UserService:
                     first_name=user.first_name,
                     last_name=user.last_name,
                     phone=user.phone,
+                    gender=user.gender,
                     role=role_name,
                     npo_memberships=npo_memberships,
                     email_verified=user.email_verified,
@@ -272,6 +273,7 @@ class UserService:
             first_name=user_data.first_name,
             last_name=user_data.last_name,
             phone=user_data.phone,
+            gender=user_data.gender,
             organization_name=user_data.organization_name,
             address_line1=user_data.address_line1,
             address_line2=user_data.address_line2,
@@ -388,6 +390,8 @@ class UserService:
             user.last_name = user_data.last_name
         if user_data.phone is not None:
             user.phone = user_data.phone or None  # Convert empty string to None
+        if user_data.gender is not None:
+            user.gender = user_data.gender or None
         if user_data.organization_name is not None:
             user.organization_name = user_data.organization_name or None
         if user_data.address_line1 is not None:
