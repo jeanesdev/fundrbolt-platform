@@ -5,7 +5,7 @@
  * Creates a guest record and generates an invite link.
  * Optionally sends the invitation via email.
  */
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Check, Copy, Loader2, Mail, Ticket, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -78,7 +78,6 @@ export function InviteGuestDialog({
   const [createdGuestName, setCreatedGuestName] = useState('')
   const [createdGuestEmail, setCreatedGuestEmail] = useState('')
   const [copied, setCopied] = useState(false)
-  const linkTextareaRef = useRef<HTMLTextAreaElement>(null)
 
   const [formData, setFormData] = useState<GuestFormData>({
     name: '',
@@ -164,13 +163,11 @@ export function InviteGuestDialog({
   }
 
   const handleCopyLink = async () => {
-    // Robust clipboard copy with textarea fallback
     const copyText = async (text: string) => {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(text)
         return
       }
-      // Fallback for non-secure contexts or older browsers
       const el = document.createElement('textarea')
       el.value = text
       el.style.position = 'fixed'
@@ -187,7 +184,7 @@ export function InviteGuestDialog({
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      linkTextareaRef.current?.select()
+      // silently fail — user can manually select the text
     }
   }
 
@@ -429,24 +426,20 @@ export function InviteGuestDialog({
             </DialogHeader>
 
             <div className='grid gap-4 py-4'>
+              {/* Link row: full URL text + copy icon button */}
               <div className='grid gap-2'>
                 <Label>Invite Link</Label>
-                <div className='flex gap-2'>
-                  <textarea
-                    ref={linkTextareaRef}
-                    value={inviteLink}
-                    readOnly
-                    rows={3}
-                    className='border-input bg-background text-foreground focus-visible:ring-ring flex w-full resize-none rounded-md border px-3 py-2 font-mono text-xs focus-visible:ring-2 focus-visible:outline-none'
-                    onClick={() => linkTextareaRef.current?.select()}
-                  />
+                <div className='flex items-start gap-2'>
+                  <p className='border-input bg-muted text-foreground min-h-[60px] w-full rounded-md border px-3 py-2 text-xs leading-relaxed break-all'>
+                    {inviteLink}
+                  </p>
                   <Button
                     type='button'
                     size='icon'
                     variant='outline'
                     onClick={handleCopyLink}
                     title='Copy link'
-                    className='shrink-0 self-start'
+                    className='mt-0 shrink-0'
                   >
                     {copied ? (
                       <Check className='h-4 w-4 text-green-600' />
@@ -460,7 +453,8 @@ export function InviteGuestDialog({
                 )}
               </div>
 
-              {!emailSent && (
+              {/* Send via Email */}
+              {!emailSent ? (
                 <Button
                   type='button'
                   variant='outline'
@@ -475,13 +469,11 @@ export function InviteGuestDialog({
                   ) : (
                     <>
                       <Mail className='mr-2 h-4 w-4' />
-                      Send Invitation Email
+                      Send via Email
                     </>
                   )}
                 </Button>
-              )}
-
-              {emailSent && (
+              ) : (
                 <p className='text-muted-foreground flex items-center gap-1.5 text-sm'>
                   <Check className='h-4 w-4 text-green-600' />
                   Invitation email sent to {createdGuestEmail}
@@ -490,9 +482,6 @@ export function InviteGuestDialog({
             </div>
 
             <DialogFooter>
-              <Button type='button' variant='outline' onClick={resetForm}>
-                Invite Another
-              </Button>
               <Button
                 type='button'
                 variant='outline'
