@@ -65,6 +65,7 @@ function TicketListingPage() {
   const {
     data: event,
     isLoading: eventLoading,
+    isFetching: eventFetching,
     error: eventError,
   } = useQuery({
     queryKey: ['event', slug],
@@ -77,6 +78,7 @@ function TicketListingPage() {
   const {
     data: packages = [],
     isLoading: packagesLoading,
+    isFetching: packagesFetching,
     error: packagesError,
   } = useQuery({
     queryKey: ['ticket-packages', slug],
@@ -103,7 +105,8 @@ function TicketListingPage() {
 
   const itemCount = totalItems()
   const cartSubtotal = subtotal()
-  const isLoading = eventLoading || packagesLoading
+  const isLoading =
+    eventLoading || packagesLoading || eventFetching || packagesFetching
   const error = eventError || packagesError
 
   const handleQuantityChange = (pkg: PublicTicketPackage, qty: number) => {

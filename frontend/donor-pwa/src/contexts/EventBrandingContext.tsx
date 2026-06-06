@@ -46,6 +46,7 @@ function hexToRgb(hex: string): string {
 const DEFAULT_BRANDING = {
   primary: '59, 130, 246', // blue-500: #3B82F6
   secondary: '147, 51, 234', // purple-600: #9333EA
+  background: '17, 41, 76', // navy: #11294c
 }
 
 interface EventBrandingProviderProps {
@@ -57,6 +58,14 @@ export function EventBrandingProvider({
 }: EventBrandingProviderProps) {
   const [branding, setBrandingState] = useState<EventBranding | null>(null)
 
+  // Set default background immediately so pages don't flash white before branding loads
+  useEffect(() => {
+    document.documentElement.style.setProperty(
+      '--event-background',
+      DEFAULT_BRANDING.background
+    )
+  }, [])
+
   const setBranding = (newBranding: EventBranding | null) => {
     setBrandingState(newBranding)
 
@@ -65,6 +74,7 @@ export function EventBrandingProvider({
     if (!newBranding) {
       root.style.setProperty('--event-primary', DEFAULT_BRANDING.primary)
       root.style.setProperty('--event-secondary', DEFAULT_BRANDING.secondary)
+      root.style.setProperty('--event-background', DEFAULT_BRANDING.background)
       return
     }
 
@@ -83,6 +93,9 @@ export function EventBrandingProvider({
     } else {
       root.style.setProperty('--event-secondary', DEFAULT_BRANDING.secondary)
     }
+
+    // Background always stays navy regardless of event branding
+    root.style.setProperty('--event-background', DEFAULT_BRANDING.background)
   }
 
   const clearBranding = () => {
@@ -90,6 +103,7 @@ export function EventBrandingProvider({
     const root = document.documentElement
     root.style.setProperty('--event-primary', DEFAULT_BRANDING.primary)
     root.style.setProperty('--event-secondary', DEFAULT_BRANDING.secondary)
+    root.style.setProperty('--event-background', DEFAULT_BRANDING.background)
   }
 
   // Cleanup on unmount
