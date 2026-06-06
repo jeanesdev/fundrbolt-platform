@@ -474,7 +474,7 @@ export function CompleteProfile() {
         payload['postal_code'] = data.postal_code || ''
       }
       if (data.country !== undefined) payload['country'] = data.country || ''
-      if (Object.keys(socialLinks).length > 0) {
+      if (Object.keys(socialLinks).length > 0 || user?.social_media_links) {
         payload['social_media_links'] = socialLinks
       }
 

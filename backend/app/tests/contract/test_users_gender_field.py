@@ -189,13 +189,27 @@ class TestUserGenderField:
 
     @pytest.mark.asyncio
     async def test_get_me_includes_gender_field(self, authenticated_client: AsyncClient) -> None:
-        """Test that GET /users/me includes the gender field in the response.
+        """Test that GET /users/me returns the gender field with the correct value.
 
         Contract: GET /api/v1/users/me
-        Expected: 200 OK, response body contains a 'gender' key
+        Expected: 200 OK, response contains 'gender' key and reflects the stored value
         """
-        response = await authenticated_client.get("/api/v1/users/me")
+        me_response = await authenticated_client.get("/api/v1/users/me")
+        assert me_response.status_code == 200
+        me_data = me_response.json()
+        assert "gender" in me_data
 
-        assert response.status_code == 200
-        data = response.json()
-        assert "gender" in data
+        # Set gender via profile update
+        await authenticated_client.patch(
+            "/api/v1/users/me/profile",
+            json={
+                "first_name": me_data["first_name"],
+                "last_name": me_data["last_name"],
+                "gender": "non-binary",
+            },
+        )
+
+        # Verify GET /me reflects the newly saved value
+        me_response2 = await authenticated_client.get("/api/v1/users/me")
+        assert me_response2.status_code == 200
+        assert me_response2.json()["gender"] == "non-binary"
