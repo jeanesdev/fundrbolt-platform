@@ -73,6 +73,7 @@ function TicketListingPage() {
     enabled: !!slug,
     retry: 2,
     staleTime: 0,
+    gcTime: 0,
   })
 
   const {
@@ -86,6 +87,7 @@ function TicketListingPage() {
     enabled: !!slug,
     retry: 2,
     staleTime: 0,
+    gcTime: 0,
   })
 
   // Sync event to cart store when loaded
@@ -105,8 +107,8 @@ function TicketListingPage() {
 
   const itemCount = totalItems()
   const cartSubtotal = subtotal()
-  const isLoading =
-    eventLoading || packagesLoading || eventFetching || packagesFetching
+  const isFetching = eventFetching || packagesFetching
+  const isLoading = eventLoading || packagesLoading || isFetching
   const error = eventError || packagesError
 
   const handleQuantityChange = (pkg: PublicTicketPackage, qty: number) => {
@@ -143,7 +145,8 @@ function TicketListingPage() {
     )
   }
 
-  if (error || !event) {
+  // Only surface the error once all retries are exhausted (not while still fetching)
+  if ((error || !event) && !isFetching) {
     return (
       <div className='container mx-auto flex min-h-[50vh] items-center justify-center px-4 py-8'>
         <Card className='w-full max-w-md'>
@@ -159,6 +162,21 @@ function TicketListingPage() {
             </Button>
           </CardContent>
         </Card>
+      </div>
+    )
+  }
+
+  // Still fetching but no data yet (e.g. stale error being retried) — keep showing skeleton
+  if (!event) {
+    return (
+      <div className='container mx-auto max-w-2xl space-y-4 px-4 py-8'>
+        <Skeleton className='h-8 w-48' />
+        <Skeleton className='h-5 w-64' />
+        <div className='space-y-4 pt-4'>
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className='h-40 w-full rounded-lg' />
+          ))}
+        </div>
       </div>
     )
   }
