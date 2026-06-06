@@ -54,6 +54,9 @@ export function EventRegistrationsSection() {
               <InviteGuestDialog
                 eventId={currentEvent.id}
                 onGuestInvited={() => {
+                  // Reload is deferred until the dialog closes via onClose
+                }}
+                onClose={() => {
                   window.location.reload()
                 }}
               />

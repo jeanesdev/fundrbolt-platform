@@ -53,6 +53,7 @@ interface TicketPackage {
 interface InviteGuestDialogProps {
   eventId: string
   onGuestInvited?: () => void
+  onClose?: () => void
 }
 
 interface GuestFormData {
@@ -67,6 +68,7 @@ type Step = 'form' | 'success'
 export function InviteGuestDialog({
   eventId,
   onGuestInvited,
+  onClose,
 }: InviteGuestDialogProps) {
   const [open, setOpen] = useState(false)
   const [step, setStep] = useState<Step>('form')
@@ -216,7 +218,13 @@ export function InviteGuestDialog({
   const handleOpenChange = (newOpen: boolean) => {
     if (!isSubmitting && !isSendingEmail) {
       setOpen(newOpen)
-      if (!newOpen) resetForm()
+      if (!newOpen) {
+        const wasOnSuccessStep = step === 'success'
+        resetForm()
+        if (wasOnSuccessStep) {
+          onClose?.()
+        }
+      }
     }
   }
 
