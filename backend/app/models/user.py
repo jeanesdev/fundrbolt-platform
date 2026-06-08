@@ -63,6 +63,7 @@ class User(Base, UUIDMixin, TimestampMixin):
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
     phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    gender: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Organization (Optional)
     organization_name: Mapped[str | None] = mapped_column(String(255), nullable=True)

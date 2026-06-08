@@ -21,6 +21,7 @@ class UserCreateRequest(BaseModel):
     first_name: str = Field(min_length=1, max_length=100)
     last_name: str = Field(min_length=1, max_length=100)
     phone: str | None = Field(None, max_length=20)
+    gender: str | None = Field(None, max_length=100)
     organization_name: str | None = Field(None, max_length=255)
     address_line1: str | None = Field(None, max_length=255)
     address_line2: str | None = Field(None, max_length=255)
@@ -93,6 +94,7 @@ class UserUpdateRequest(BaseModel):
     first_name: str | None = Field(None, min_length=1, max_length=100)
     last_name: str | None = Field(None, min_length=1, max_length=100)
     phone: str | None = Field(None, max_length=20)
+    gender: str | None = Field(None, max_length=100)
     organization_name: str | None = Field(None, max_length=255)
     address_line1: str | None = Field(None, max_length=255)
     address_line2: str | None = Field(None, max_length=255)
@@ -127,6 +129,7 @@ class ProfileUpdateRequest(BaseModel):
     first_name: str = Field(min_length=1, max_length=100)
     last_name: str = Field(min_length=1, max_length=100)
     phone: str | None = Field(None, max_length=20, pattern=r"^\+[1-9]\d{1,14}$")
+    gender: str | None = Field(None, max_length=100)
     organization_name: str | None = Field(None, max_length=255)
     address_line1: str | None = Field(None, max_length=255)
     address_line2: str | None = Field(None, max_length=255)
@@ -175,6 +178,7 @@ class UserPublicWithRole(BaseModel):
     first_name: str
     last_name: str
     phone: str | None = None
+    gender: str | None = None
     organization_name: str | None = None
     address_line1: str | None = None
     address_line2: str | None = None

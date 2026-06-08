@@ -23,7 +23,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { CheckCircle2, Loader2 } from 'lucide-react'
+import { CheckCircle2, Facebook, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -86,6 +86,11 @@ const completeProfileSchema = z.object({
   twitter: z
     .string()
     .regex(/^([A-Za-z0-9_]+)?$/, 'Enter only your Twitter/X handle')
+    .optional(),
+
+  facebook: z
+    .string()
+    .regex(/^([a-zA-Z0-9_.]+)?$/, 'Enter only your Facebook username')
     .optional(),
 
   website: z
@@ -394,6 +399,10 @@ export function CompleteProfile() {
           /^https?:\/\/x\.com\//,
           ''
         ) ?? '',
+      facebook:
+        user?.social_media_links?.facebook?.match(
+          /(?:facebook|fb)\.com\/([^/?#]+)/
+        )?.[1] ?? '',
       website:
         user?.social_media_links?.website?.replace(/^https?:\/\//, '') ?? '',
       phone: user?.phone ?? '',
@@ -422,6 +431,10 @@ export function CompleteProfile() {
       twitter:
         user.social_media_links?.twitter?.replace(/^https?:\/\/x\.com\//, '') ??
         '',
+      facebook:
+        user.social_media_links?.facebook?.match(
+          /(?:facebook|fb)\.com\/([^/?#]+)/
+        )?.[1] ?? '',
       website:
         user.social_media_links?.website?.replace(/^https?:\/\//, '') ?? '',
       phone: user.phone ?? '',
@@ -434,6 +447,8 @@ export function CompleteProfile() {
       if (data.linkedin)
         socialLinks['linkedin'] = `https://linkedin.com/in/${data.linkedin}`
       if (data.twitter) socialLinks['twitter'] = `https://x.com/${data.twitter}`
+      if (data.facebook)
+        socialLinks['facebook'] = `https://facebook.com/${data.facebook}`
       if (data.website)
         socialLinks['website'] = data.website.includes('://')
           ? data.website
@@ -459,7 +474,7 @@ export function CompleteProfile() {
         payload['postal_code'] = data.postal_code || ''
       }
       if (data.country !== undefined) payload['country'] = data.country || ''
-      if (Object.keys(socialLinks).length > 0) {
+      if (Object.keys(socialLinks).length > 0 || user?.social_media_links) {
         payload['social_media_links'] = socialLinks
       }
 
@@ -824,6 +839,27 @@ export function CompleteProfile() {
                         <FormControl>
                           <Input
                             placeholder='yourhandle'
+                            {...field}
+                            value={field.value ?? ''}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name='facebook'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className='text-muted-foreground flex items-center gap-1.5 text-xs font-normal'>
+                          <Facebook className='h-3 w-3' />
+                          Facebook username
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder='yourusername'
                             {...field}
                             value={field.value ?? ''}
                           />
