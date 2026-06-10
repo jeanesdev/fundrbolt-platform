@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from app.services.email_service import EmailService, _create_email_html_template
+from app.services.email_service import EmailSendError, EmailService, _create_email_html_template
 
 
 def test_email_template_defaults_to_fundrbolt_logo() -> None:
@@ -123,3 +123,26 @@ async def test_send_npo_application_submitted_admin_notification_uses_new_fallba
 
     assert kwargs["to_email"] == "npo_approvals@fundrbolt.com"
     assert kwargs["email_type"] == "npo_onboarding_admin_notification"
+
+
+@pytest.mark.asyncio
+async def test_email_service_raises_when_real_delivery_is_unconfigured_in_staging(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Staging should not silently fall back to mock email delivery."""
+    monkeypatch.setattr("app.services.email_service.settings.environment", "staging")
+    monkeypatch.setattr("app.services.email_service.settings.email_backend", "azure_acs")
+    monkeypatch.setattr(
+        "app.services.email_service.settings.azure_communication_connection_string",
+        None,
+    )
+
+    service = EmailService()
+
+    with pytest.raises(EmailSendError, match="not configured for real delivery"):
+        await service._send_email_with_retry(
+            to_email="test@example.com",
+            subject="Reset your password",
+            body="Use this link to reset your password.",
+            email_type="password_reset",
+        )

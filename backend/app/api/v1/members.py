@@ -23,11 +23,22 @@ from app.schemas.member import (
     PendingInvitationResponse,
     UpdateMemberRoleRequest,
 )
+from app.services.email_service import EmailSendError
 from app.services.invitation_service import InvitationService
 from app.services.member_service import MemberService
 from app.services.npo_permission_service import NPOPermissionService
 
 router = APIRouter(prefix="/npos/{npo_id}/members", tags=["NPO Members"])
+
+
+def _invitation_email_failure(message: str) -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail={
+            "code": "INVITATION_EMAIL_FAILED",
+            "message": message,
+        },
+    )
 
 
 @router.get("", response_model=dict)
@@ -222,12 +233,17 @@ async def resend_invitation(
         )
 
     # Resend invitation
-    invitation = await InvitationService.resend_invitation(
-        db=db,
-        invitation_id=invitation_id,
-        npo_id=npo_id,
-        resent_by_user_id=current_user.id,
-    )
+    try:
+        invitation = await InvitationService.resend_invitation(
+            db=db,
+            invitation_id=invitation_id,
+            npo_id=npo_id,
+            resent_by_user_id=current_user.id,
+        )
+    except EmailSendError as exc:
+        raise _invitation_email_failure(
+            "Invitation email could not be sent. Check email delivery configuration and logs."
+        ) from exc
 
     return {
         "message": "Invitation resent successfully",
@@ -297,15 +313,20 @@ async def create_invitation(
         )
 
     # Create invitation
-    invitation = await InvitationService.create_invitation(
-        db=db,
-        npo_id=npo_id,
-        email=invitation_data.email,
-        role=invitation_data.role.value,
-        invited_by_user_id=current_user.id,
-        first_name=invitation_data.first_name,
-        last_name=invitation_data.last_name,
-    )
+    try:
+        invitation = await InvitationService.create_invitation(
+            db=db,
+            npo_id=npo_id,
+            email=invitation_data.email,
+            role=invitation_data.role.value,
+            invited_by_user_id=current_user.id,
+            first_name=invitation_data.first_name,
+            last_name=invitation_data.last_name,
+        )
+    except EmailSendError as exc:
+        raise _invitation_email_failure(
+            "Invitation email could not be sent. Check email delivery configuration and logs."
+        ) from exc
 
     # TODO: Send invitation email with token
     token = getattr(invitation, "token", str(invitation.id))  # Get generated token or fallback

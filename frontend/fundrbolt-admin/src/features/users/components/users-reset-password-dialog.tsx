@@ -1,8 +1,5 @@
 'use client'
 
-import axios from 'axios'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -12,6 +9,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { getErrorMessage } from '@/lib/error-utils'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import axios from 'axios'
+import { toast } from 'sonner'
 import { type User } from '../data/schema'
 
 type UsersResetPasswordDialogProps = {
@@ -40,10 +41,7 @@ export function UsersResetPasswordDialog({
       onOpenChange(false)
     },
     onError: (error: unknown) => {
-      const err = error as { response?: { data?: { detail?: string } } }
-      const message =
-        err?.response?.data?.detail || 'Failed to send password reset email'
-      toast.error(message)
+      toast.error(getErrorMessage(error, 'Failed to send password reset email'))
     },
   })
 

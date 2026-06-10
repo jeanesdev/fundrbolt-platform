@@ -882,7 +882,7 @@ async def request_password_reset(
     # Get client IP address for audit logging
     ip_address = request.client.host if request.client else None
     settings = get_settings()
-    expose_failures = settings.environment in {"development", "test"}
+    expose_failures = settings.environment in {"development", "test", "staging"}
 
     try:
         await PasswordService.request_reset(reset_data.email, db)

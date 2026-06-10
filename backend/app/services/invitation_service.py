@@ -20,7 +20,7 @@ from sqlalchemy.orm import selectinload
 
 from app.api.v1.event_media_urls import resolve_event_logo_url
 from app.core.logging import get_logger
-from app.core.security import create_invitation_token, decode_token, hash_password
+from app.core.security import create_invitation_token, decode_token, hash_password, verify_password
 from app.models.base import Base
 from app.models.event import Event
 from app.models.invitation import Invitation, InvitationStatus
@@ -253,28 +253,17 @@ class InvitationService:
             token_hash = PasswordService.hash_token(setup_token)
             await RedisService.store_password_reset_token(token_hash, new_user.id)
 
-            # Send account-setup email
-            try:
-                await email_service.send_account_setup_email(
-                    to_email=email,
-                    setup_token=setup_token,
-                    user_name=user_first_name,
-                    role=system_role,
-                    event_logo_url=event_logo_url,
-                    npo_logo_url=npo_logo_url,
-                    event_name=event_name,
-                    npo_name=npo.name,
-                    inviter_name=inviter_name,
-                )
-            except EmailSendError as e:
-                logger.error(
-                    "Failed to send account setup email for new invited user",
-                    extra={
-                        "npo_id": str(npo_id),
-                        "invitation_id": str(invitation.id),
-                        "error": str(e),
-                    },
-                )
+            await email_service.send_account_setup_email(
+                to_email=email,
+                setup_token=setup_token,
+                user_name=user_first_name,
+                role=system_role,
+                event_logo_url=event_logo_url,
+                npo_logo_url=npo_logo_url,
+                event_name=event_name,
+                npo_name=npo.name,
+                inviter_name=inviter_name,
+            )
         else:
             # ----------------------------------------------------------------
             # Existing user: send the traditional invitation email so they
@@ -283,26 +272,16 @@ class InvitationService:
             await db.commit()
             await db.refresh(invitation)
 
-            try:
-                await email_service.send_npo_member_invitation_email(
-                    to_email=email,
-                    invitation_token=token,
-                    npo_name=npo.name,
-                    role=role,
-                    invited_by_name=inviter_name,
-                    event_logo_url=event_logo_url,
-                    npo_logo_url=npo_logo_url,
-                    event_name=event_name,
-                )
-            except EmailSendError as e:
-                logger.error(
-                    "Failed to send invitation email",
-                    extra={
-                        "npo_id": str(npo_id),
-                        "invitation_id": str(invitation.id),
-                        "error": str(e),
-                    },
-                )
+            await email_service.send_npo_member_invitation_email(
+                to_email=email,
+                invitation_token=token,
+                npo_name=npo.name,
+                role=role,
+                invited_by_name=inviter_name,
+                event_logo_url=event_logo_url,
+                npo_logo_url=npo_logo_url,
+                event_name=event_name,
+            )
 
         return invitation
 
@@ -436,28 +415,16 @@ class InvitationService:
 
         # Send invitation email
         email_service = get_email_service()
-        try:
-            await email_service.send_npo_member_invitation_email(
-                to_email=invitation.email,
-                invitation_token=token,
-                npo_name=npo.name,
-                role=invitation.role,
-                invited_by_name=resender_name,
-                event_logo_url=event_logo_url,
-                npo_logo_url=npo_logo_url,
-                event_name=event_name,
-            )
-        except EmailSendError as e:
-            logger.error(
-                "Failed to send resent invitation email",
-                extra={
-                    "invitation_id": invitation_id,
-                    "email": invitation.email,
-                    "error": str(e),
-                },
-            )
-            # Don't fail the request - invitation is updated in DB
-            # User can try resending again if needed
+        await email_service.send_npo_member_invitation_email(
+            to_email=invitation.email,
+            invitation_token=token,
+            npo_name=npo.name,
+            role=invitation.role,
+            invited_by_name=resender_name,
+            event_logo_url=event_logo_url,
+            npo_logo_url=npo_logo_url,
+            event_name=event_name,
+        )
 
         return invitation
 
@@ -607,7 +574,7 @@ class InvitationService:
     async def accept_invitation_by_token(
         db: AsyncSession,
         token: str,
-        user_id: uuid.UUID,
+        user_id: uuid.UUID | None = None,
     ) -> NPOMember:
         """
         Accept an invitation using JWT token.
@@ -615,7 +582,8 @@ class InvitationService:
         Args:
             db: Database session
             token: JWT invitation token
-            user_id: User accepting the invitation
+            user_id: Optional user accepting the invitation. If omitted, the
+                user is resolved from the invitation email claim.
 
         Returns:
             Created NPOMember
@@ -630,6 +598,12 @@ class InvitationService:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Invalid or expired invitation token",
+            )
+
+        if claims.get("type") != "invitation":
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Invalid invitation token",
             )
 
         # Extract invitation ID from token
@@ -647,6 +621,33 @@ class InvitationService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Invalid invitation token",
             )
+
+        stmt = select(Invitation).where(Invitation.id == invitation_id)
+        result = await db.execute(stmt)
+        invitation = result.scalar_one_or_none()
+
+        if not invitation or not verify_password(token, invitation.token_hash):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Invalid or expired invitation token",
+            )
+
+        if user_id is None:
+            invite_email = claims.get("email")
+            if not invite_email:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Invalid invitation token",
+                )
+
+            user_result = await db.execute(select(User).where(User.email == invite_email.lower()))
+            user = user_result.scalar_one_or_none()
+            if not user:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="No user found with the invitation email. Please create an account first.",
+                )
+            user_id = user.id
 
         # Use existing accept_invitation logic
         return await InvitationService.accept_invitation(
