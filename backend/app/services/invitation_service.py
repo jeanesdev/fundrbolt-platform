@@ -205,75 +205,76 @@ class InvitationService:
         invitation.token = token  # type: ignore[attr-defined]
 
         email_service = get_email_service()
+        setup_token_hash: str | None = None
+        new_user_id: uuid.UUID | None = None
+        should_refresh_invitation = False
 
-        if not existing_user:
-            # ----------------------------------------------------------------
-            # New user: create account + NPO membership immediately, then
-            # send an account-setup email so they can set their password.
-            # ----------------------------------------------------------------
+        try:
+            if not existing_user:
+                # ----------------------------------------------------------------
+                # New user: create account + NPO membership immediately, then
+                # send an account-setup email so they can set their password.
+                # ----------------------------------------------------------------
 
-            # Derive names from invitation data or email address
-            email_local = email.split("@")[0]
-            parts = email_local.replace(".", " ").replace("_", " ").split()
-            derived_first = parts[0].capitalize() if parts else email_local
-            derived_last = parts[1].capitalize() if len(parts) > 1 else ""
+                # Derive names from invitation data or email address
+                email_local = email.split("@")[0]
+                parts = email_local.replace(".", " ").replace("_", " ").split()
+                derived_first = parts[0].capitalize() if parts else email_local
+                derived_last = parts[1].capitalize() if len(parts) > 1 else ""
 
-            user_first_name = first_name or derived_first
-            user_last_name = last_name or derived_last
+                user_first_name = first_name or derived_first
+                user_last_name = last_name or derived_last
 
-            # Map NPO member role → user system role
-            system_role = _SYSTEM_ROLE_BY_MEMBER_ROLE.get(role, "event_coordinator")
+                # Map NPO member role → user system role
+                system_role = _SYSTEM_ROLE_BY_MEMBER_ROLE.get(role, "event_coordinator")
 
-            # Get system role ID
-            roles_table = Base.metadata.tables["roles"]
-            role_id_result = await db.execute(
-                select(roles_table.c.id).where(roles_table.c.name == system_role)
-            )
-            role_id = role_id_result.scalar_one_or_none()
-            if not role_id:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"System role '{system_role}' not found",
+                # Get system role ID
+                roles_table = Base.metadata.tables["roles"]
+                role_id_result = await db.execute(
+                    select(roles_table.c.id).where(roles_table.c.name == system_role)
+                )
+                role_id = role_id_result.scalar_one_or_none()
+                if not role_id:
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail=f"System role '{system_role}' not found",
+                    )
+
+                # Create the user account (inactive until they complete setup)
+                new_user = User(
+                    email=email.lower(),
+                    first_name=user_first_name,
+                    last_name=user_last_name,
+                    password_hash=hash_password(f"Tmp{secrets.token_urlsafe(10)}1"),
+                    role_id=role_id,
+                    must_change_password=True,
+                    email_verified=False,
+                    is_active=False,
+                )
+                db.add(new_user)
+                await db.flush()
+                new_user_id = new_user.id
+
+                # Add NPO membership with the exact invited role
+                db.add(
+                    NPOMember(
+                        npo_id=npo_id,
+                        user_id=new_user.id,
+                        role=MemberRole(role),
+                        status=MemberStatus.ACTIVE,
+                    )
                 )
 
-            # Create the user account (inactive until they complete setup)
-            new_user = User(
-                email=email.lower(),
-                first_name=user_first_name,
-                last_name=user_last_name,
-                password_hash=hash_password(f"Tmp{secrets.token_urlsafe(10)}1"),
-                role_id=role_id,
-                must_change_password=True,
-                email_verified=False,
-                is_active=False,
-            )
-            db.add(new_user)
-            await db.flush()
+                # Accept the invitation immediately
+                invitation.invited_user_id = new_user.id
+                invitation.status = InvitationStatus.ACCEPTED
+                invitation.accepted_at = datetime.now(UTC)
 
-            # Add NPO membership with the exact invited role
-            db.add(
-                NPOMember(
-                    npo_id=npo_id,
-                    user_id=new_user.id,
-                    role=MemberRole(role),
-                    status=MemberStatus.ACTIVE,
-                )
-            )
+                # Generate and store account-setup token (reuses password-reset infrastructure)
+                setup_token = PasswordService.generate_reset_token()
+                setup_token_hash = PasswordService.hash_token(setup_token)
+                await RedisService.store_password_reset_token(setup_token_hash, new_user.id)
 
-            # Accept the invitation immediately
-            invitation.invited_user_id = new_user.id
-            invitation.status = InvitationStatus.ACCEPTED
-            invitation.accepted_at = datetime.now(UTC)
-
-            await db.commit()
-            await db.refresh(invitation)
-
-            # Generate and store account-setup token (reuses password-reset infrastructure)
-            setup_token = PasswordService.generate_reset_token()
-            token_hash = PasswordService.hash_token(setup_token)
-            await RedisService.store_password_reset_token(token_hash, new_user.id)
-
-            try:
                 await email_service.send_account_setup_email(
                     to_email=email,
                     setup_token=setup_token,
@@ -285,25 +286,11 @@ class InvitationService:
                     npo_name=npo.name,
                     inviter_name=inviter_name,
                 )
-            except EmailSendError:
-                logger.error(
-                    "Failed to send account setup email for invitation",
-                    extra={
-                        "npo_id": str(npo_id),
-                        "invitation_id": str(invitation.id),
-                        "invitee_email": email,
-                    },
-                )
-                raise
-        else:
-            # ----------------------------------------------------------------
-            # Existing user: send the traditional invitation email so they
-            # can click through and accept (joining the NPO).
-            # ----------------------------------------------------------------
-            await db.commit()
-            await db.refresh(invitation)
-
-            try:
+            else:
+                # ----------------------------------------------------------------
+                # Existing user: send the traditional invitation email so they
+                # can click through and accept (joining the NPO).
+                # ----------------------------------------------------------------
                 await email_service.send_npo_member_invitation_email(
                     to_email=email,
                     invitation_token=token,
@@ -314,16 +301,40 @@ class InvitationService:
                     npo_logo_url=npo_logo_url,
                     event_name=event_name,
                 )
-            except EmailSendError:
-                logger.error(
-                    "Failed to send invitation email",
-                    extra={
-                        "npo_id": str(npo_id),
-                        "invitation_id": str(invitation.id),
-                        "invitee_email": email,
-                    },
-                )
-                raise
+
+            await db.commit()
+            should_refresh_invitation = True
+        except EmailSendError:
+            if setup_token_hash:
+                try:
+                    await RedisService.delete_password_reset_token(setup_token_hash)
+                except Exception:
+                    logger.warning(
+                        "Failed to clean up setup token after invitation email failure",
+                        extra={
+                            "npo_id": str(npo_id),
+                            "invitation_id": str(invitation.id),
+                            "invitee_email": email,
+                            "user_id": str(new_user_id) if new_user_id else None,
+                        },
+                    )
+
+            await db.rollback()
+
+            logger.error(
+                "Failed to send invitation email",
+                extra={
+                    "npo_id": str(npo_id),
+                    "invitation_id": str(invitation.id),
+                    "invitee_email": email,
+                    "existing_user": existing_user is not None,
+                },
+            )
+            raise
+
+        if should_refresh_invitation:
+            await db.refresh(invitation)
+            invitation.token = token  # type: ignore[attr-defined]
 
         return invitation
 
@@ -429,12 +440,6 @@ class InvitationService:
         # Extend expiry by 7 days from now
         invitation.expires_at = datetime.now(UTC) + timedelta(days=7)
 
-        await db.commit()
-        await db.refresh(invitation)
-
-        # Store token on invitation object for API response (not persisted)
-        invitation.token = token  # type: ignore[attr-defined]
-
         # Resolve logos for the email header: event logo > NPO logo > FundrBolt default
         event_logo_url: str | None = None
         event_name: str | None = None
@@ -468,7 +473,11 @@ class InvitationService:
                 npo_logo_url=npo_logo_url,
                 event_name=event_name,
             )
+            await db.commit()
+            await db.refresh(invitation)
+            invitation.token = token  # type: ignore[attr-defined]
         except EmailSendError:
+            await db.rollback()
             logger.error(
                 "Failed to resend invitation email",
                 extra={

@@ -1422,32 +1422,34 @@ async def test_invitation_token(
     Returns JWT invitation token for acceptance.
     NOTE: Depends on test_invited_user to ensure user exists with matching email.
     """
+    import uuid
     from datetime import UTC, datetime, timedelta
 
-    from app.core.security import create_invitation_token, hash_password
+    from app.core.security import create_invitation_token
     from app.models.invitation import Invitation, InvitationStatus
+    from app.services.password_service import PasswordService
+
+    invitation_id = uuid.uuid4()
+    token = create_invitation_token(
+        invitation_id=str(invitation_id),
+        npo_id=str(test_npo.id),
+        email="invited@example.com",
+        npo_name=test_npo.name,
+        role="staff",
+    )
 
     # Create invitation
     invitation = Invitation(
+        id=invitation_id,
         npo_id=test_npo.id,
         email="invited@example.com",  # Matches test_invited_user email
         role="staff",
         status=InvitationStatus.PENDING,
         expires_at=datetime.now(UTC) + timedelta(days=7),
         invited_by_user_id=test_user.id,
-        token_hash="temp",
+        token_hash=PasswordService.hash_token(token),
     )
     db_session.add(invitation)
-    await db_session.flush()
-
-    token = create_invitation_token(
-        invitation_id=str(invitation.id),
-        npo_id=str(test_npo.id),
-        email="invited@example.com",
-        npo_name=test_npo.name,
-        role="staff",
-    )
-    invitation.token_hash = hash_password(token)
 
     await db_session.commit()
     await db_session.refresh(invitation)
@@ -1613,32 +1615,34 @@ async def test_expired_invitation_token(
     Returns JWT invitation token for expired invitation.
     NOTE: Depends on test_expired_user to ensure user exists with matching email.
     """
+    import uuid
     from datetime import UTC, datetime, timedelta
 
-    from app.core.security import create_invitation_token, hash_password
+    from app.core.security import create_invitation_token
     from app.models.invitation import Invitation, InvitationStatus
+    from app.services.password_service import PasswordService
+
+    invitation_id = uuid.uuid4()
+    token = create_invitation_token(
+        invitation_id=str(invitation_id),
+        npo_id=str(test_npo.id),
+        email="expired@example.com",
+        npo_name=test_npo.name,
+        role="staff",
+    )
 
     # Create expired invitation
     invitation = Invitation(
+        id=invitation_id,
         npo_id=test_npo.id,
         email="expired@example.com",  # Matches test_expired_user email
         role="staff",
         status=InvitationStatus.PENDING,
         expires_at=datetime.now(UTC) - timedelta(days=1),
         invited_by_user_id=test_user.id,
-        token_hash="temp",
+        token_hash=PasswordService.hash_token(token),
     )
     db_session.add(invitation)
-    await db_session.flush()
-
-    token = create_invitation_token(
-        invitation_id=str(invitation.id),
-        npo_id=str(test_npo.id),
-        email="expired@example.com",
-        npo_name=test_npo.name,
-        role="staff",
-    )
-    invitation.token_hash = hash_password(token)
 
     await db_session.commit()
     await db_session.refresh(invitation)
@@ -1656,32 +1660,34 @@ async def test_accepted_invitation_token(
     Returns JWT invitation token for already accepted invitation.
     NOTE: Depends on test_accepted_user to ensure user exists with matching email.
     """
+    import uuid
     from datetime import UTC, datetime, timedelta
 
-    from app.core.security import create_invitation_token, hash_password
+    from app.core.security import create_invitation_token
     from app.models.invitation import Invitation, InvitationStatus
+    from app.services.password_service import PasswordService
+
+    invitation_id = uuid.uuid4()
+    token = create_invitation_token(
+        invitation_id=str(invitation_id),
+        npo_id=str(test_npo.id),
+        email="accepted@example.com",
+        npo_name=test_npo.name,
+        role="staff",
+    )
 
     # Create accepted invitation
     invitation = Invitation(
+        id=invitation_id,
         npo_id=test_npo.id,
         email="accepted@example.com",  # Matches test_accepted_user email
         role="staff",
         status=InvitationStatus.ACCEPTED,
         expires_at=datetime.now(UTC) + timedelta(days=7),
         invited_by_user_id=test_user.id,
-        token_hash="temp",
+        token_hash=PasswordService.hash_token(token),
     )
     db_session.add(invitation)
-    await db_session.flush()
-
-    token = create_invitation_token(
-        invitation_id=str(invitation.id),
-        npo_id=str(test_npo.id),
-        email="accepted@example.com",
-        npo_name=test_npo.name,
-        role="staff",
-    )
-    invitation.token_hash = hash_password(token)
 
     await db_session.commit()
     await db_session.refresh(invitation)
@@ -1699,32 +1705,34 @@ async def test_revoked_invitation_token(
     Returns JWT invitation token for revoked invitation.
     NOTE: Depends on test_revoked_user to ensure user exists with matching email.
     """
+    import uuid
     from datetime import UTC, datetime, timedelta
 
-    from app.core.security import create_invitation_token, hash_password
+    from app.core.security import create_invitation_token
     from app.models.invitation import Invitation, InvitationStatus
+    from app.services.password_service import PasswordService
+
+    invitation_id = uuid.uuid4()
+    token = create_invitation_token(
+        invitation_id=str(invitation_id),
+        npo_id=str(test_npo.id),
+        email="revoked@example.com",
+        npo_name=test_npo.name,
+        role="staff",
+    )
 
     # Create revoked invitation
     invitation = Invitation(
+        id=invitation_id,
         npo_id=test_npo.id,
         email="revoked@example.com",  # Matches test_revoked_user email
         role="staff",
         status=InvitationStatus.REVOKED,
         expires_at=datetime.now(UTC) + timedelta(days=7),
         invited_by_user_id=test_user.id,
-        token_hash="temp",
+        token_hash=PasswordService.hash_token(token),
     )
     db_session.add(invitation)
-    await db_session.flush()
-
-    token = create_invitation_token(
-        invitation_id=str(invitation.id),
-        npo_id=str(test_npo.id),
-        email="revoked@example.com",
-        npo_name=test_npo.name,
-        role="staff",
-    )
-    invitation.token_hash = hash_password(token)
 
     await db_session.commit()
     await db_session.refresh(invitation)
@@ -1741,32 +1749,34 @@ async def test_invitation_token_existing_member(
 
     Returns JWT invitation token for invitation to existing member.
     """
+    import uuid
     from datetime import UTC, datetime, timedelta
 
-    from app.core.security import create_invitation_token, hash_password
+    from app.core.security import create_invitation_token
     from app.models.invitation import Invitation, InvitationStatus
+    from app.services.password_service import PasswordService
+
+    invitation_id = uuid.uuid4()
+    token = create_invitation_token(
+        invitation_id=str(invitation_id),
+        npo_id=str(test_npo.id),
+        email=test_user.email,
+        npo_name=test_npo.name,
+        role="staff",
+    )
 
     # Create invitation for existing member's email
     invitation = Invitation(
+        id=invitation_id,
         npo_id=test_npo.id,
         email=test_user.email,  # User who is already a member
         role="staff",
         status=InvitationStatus.PENDING,
         expires_at=datetime.now(UTC) + timedelta(days=7),
         invited_by_user_id=test_user.id,
-        token_hash="temp",
+        token_hash=PasswordService.hash_token(token),
     )
     db_session.add(invitation)
-    await db_session.flush()
-
-    token = create_invitation_token(
-        invitation_id=str(invitation.id),
-        npo_id=str(test_npo.id),
-        email=test_user.email,
-        npo_name=test_npo.name,
-        role="staff",
-    )
-    invitation.token_hash = hash_password(token)
 
     await db_session.commit()
     await db_session.refresh(invitation)

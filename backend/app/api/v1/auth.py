@@ -865,7 +865,7 @@ async def request_password_reset(
 
     Business Rules:
     - Returns 200 OK for unknown emails to prevent enumeration
-    - In development and test, email delivery failures return a 503 for debugging
+    - In development, test, and staging, email delivery failures return a 503 for debugging
     - In production, email delivery failures still return a generic 200 response
     - Token is URL-safe, one-time use, expires in 1 hour
     - Previous reset tokens are invalidated

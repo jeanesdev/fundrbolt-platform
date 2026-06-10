@@ -11,6 +11,7 @@ from app.models.npo_member import MemberRole
 from app.schemas.member import CreateInvitationRequest
 from app.services.email_service import EmailSendError
 from app.services.invitation_service import InvitationService
+from app.services.password_service import PasswordService
 
 
 @pytest.mark.asyncio
@@ -79,6 +80,38 @@ async def test_resend_invitation_surfaces_email_delivery_failures() -> None:
 
 @pytest.mark.asyncio
 async def test_accept_invitation_by_token_uses_jwt_and_stored_hash() -> None:
+    invitation_id = uuid.uuid4()
+    npo_id = uuid.uuid4()
+    token = create_invitation_token(
+        invitation_id=str(invitation_id),
+        npo_id=str(npo_id),
+        email="invitee@example.com",
+        npo_name="Test NPO",
+        role="staff",
+    )
+    invitation = SimpleNamespace(id=invitation_id, token_hash=PasswordService.hash_token(token))
+    user = SimpleNamespace(id=uuid.uuid4(), email="invitee@example.com")
+
+    invitation_result = SimpleNamespace(scalar_one_or_none=lambda: invitation)
+    user_result = SimpleNamespace(scalar_one_or_none=lambda: user)
+    db = AsyncMock()
+    db.execute = AsyncMock(side_effect=[invitation_result, user_result])
+
+    accepted_member = SimpleNamespace(id=uuid.uuid4())
+
+    with patch.object(
+        InvitationService,
+        "accept_invitation",
+        new=AsyncMock(return_value=accepted_member),
+    ) as accept_mock:
+        result = await InvitationService.accept_invitation_by_token(db=db, token=token)
+
+    assert result is accepted_member
+    accept_mock.assert_awaited_once_with(db=db, invitation_id=invitation_id, user_id=user.id)
+
+
+@pytest.mark.asyncio
+async def test_accept_invitation_by_token_supports_legacy_bcrypt_hash() -> None:
     invitation_id = uuid.uuid4()
     npo_id = uuid.uuid4()
     token = create_invitation_token(
