@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.logging import get_logger
 from app.middleware.auth import get_current_user
 from app.middleware.request_id import get_request_id
 from app.models.npo_member import MemberRole
@@ -29,6 +30,7 @@ from app.services.member_service import MemberService
 from app.services.npo_permission_service import NPOPermissionService
 
 router = APIRouter(prefix="/npos/{npo_id}/members", tags=["NPO Members"])
+logger = get_logger(__name__)
 
 
 def _invitation_email_failure(message: str) -> HTTPException:
@@ -328,8 +330,21 @@ async def create_invitation(
             "Invitation email could not be sent. Check email delivery configuration and logs."
         ) from exc
 
-    # TODO: Send invitation email with token
-    token = getattr(invitation, "token", str(invitation.id))  # Get generated token or fallback
+    token = getattr(invitation, "token", None)
+    if not isinstance(token, str) or not token:
+        logger.error(
+            "Invitation token missing after invitation creation",
+            extra={
+                "npo_id": str(npo_id),
+                "inviter_user_id": str(current_user.id),
+                "invitation_id": str(invitation.id),
+                "invitee_email": invitation_data.email,
+            },
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate invitation token",
+        )
 
     return {
         "invitation": InvitationWithTokenResponse(

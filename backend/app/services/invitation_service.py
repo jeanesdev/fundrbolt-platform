@@ -8,6 +8,7 @@ Handles invitation lifecycle:
 - Automatic expiry handling
 """
 
+import hmac
 import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -46,6 +47,25 @@ _SYSTEM_ROLE_BY_MEMBER_ROLE: dict[str, str] = {
 
 class InvitationService:
     """Service for managing NPO invitations."""
+
+    @staticmethod
+    def _verify_invitation_token_hash(token: str, stored_hash: str) -> bool:
+        """Verify invitation token hash with backward compatibility.
+
+        New invitations use SHA-256 hashes via PasswordService.hash_token.
+        Older invitations may still have bcrypt hashes.
+        """
+        sha256_hash = PasswordService.hash_token(token)
+        if hmac.compare_digest(sha256_hash, stored_hash):
+            return True
+
+        if stored_hash.startswith(("$2a$", "$2b$", "$2y$")):
+            try:
+                return verify_password(token, stored_hash)
+            except ValueError:
+                return False
+
+        return False
 
     @staticmethod
     async def create_invitation(
@@ -179,7 +199,7 @@ class InvitationService:
             last_name=last_name,
             event_id=str(event_id) if event_id else None,
         )
-        invitation.token_hash = hash_password(token)
+        invitation.token_hash = PasswordService.hash_token(token)
 
         # Store token on invitation object for API response (not persisted)
         invitation.token = token  # type: ignore[attr-defined]
@@ -253,17 +273,28 @@ class InvitationService:
             token_hash = PasswordService.hash_token(setup_token)
             await RedisService.store_password_reset_token(token_hash, new_user.id)
 
-            await email_service.send_account_setup_email(
-                to_email=email,
-                setup_token=setup_token,
-                user_name=user_first_name,
-                role=system_role,
-                event_logo_url=event_logo_url,
-                npo_logo_url=npo_logo_url,
-                event_name=event_name,
-                npo_name=npo.name,
-                inviter_name=inviter_name,
-            )
+            try:
+                await email_service.send_account_setup_email(
+                    to_email=email,
+                    setup_token=setup_token,
+                    user_name=user_first_name,
+                    role=system_role,
+                    event_logo_url=event_logo_url,
+                    npo_logo_url=npo_logo_url,
+                    event_name=event_name,
+                    npo_name=npo.name,
+                    inviter_name=inviter_name,
+                )
+            except EmailSendError:
+                logger.error(
+                    "Failed to send account setup email for invitation",
+                    extra={
+                        "npo_id": str(npo_id),
+                        "invitation_id": str(invitation.id),
+                        "invitee_email": email,
+                    },
+                )
+                raise
         else:
             # ----------------------------------------------------------------
             # Existing user: send the traditional invitation email so they
@@ -272,16 +303,27 @@ class InvitationService:
             await db.commit()
             await db.refresh(invitation)
 
-            await email_service.send_npo_member_invitation_email(
-                to_email=email,
-                invitation_token=token,
-                npo_name=npo.name,
-                role=role,
-                invited_by_name=inviter_name,
-                event_logo_url=event_logo_url,
-                npo_logo_url=npo_logo_url,
-                event_name=event_name,
-            )
+            try:
+                await email_service.send_npo_member_invitation_email(
+                    to_email=email,
+                    invitation_token=token,
+                    npo_name=npo.name,
+                    role=role,
+                    invited_by_name=inviter_name,
+                    event_logo_url=event_logo_url,
+                    npo_logo_url=npo_logo_url,
+                    event_name=event_name,
+                )
+            except EmailSendError:
+                logger.error(
+                    "Failed to send invitation email",
+                    extra={
+                        "npo_id": str(npo_id),
+                        "invitation_id": str(invitation.id),
+                        "invitee_email": email,
+                    },
+                )
+                raise
 
         return invitation
 
@@ -382,7 +424,7 @@ class InvitationService:
             first_name=invitation.first_name,
             last_name=invitation.last_name,
         )
-        invitation.token_hash = hash_password(token)
+        invitation.token_hash = PasswordService.hash_token(token)
 
         # Extend expiry by 7 days from now
         invitation.expires_at = datetime.now(UTC) + timedelta(days=7)
@@ -415,16 +457,27 @@ class InvitationService:
 
         # Send invitation email
         email_service = get_email_service()
-        await email_service.send_npo_member_invitation_email(
-            to_email=invitation.email,
-            invitation_token=token,
-            npo_name=npo.name,
-            role=invitation.role,
-            invited_by_name=resender_name,
-            event_logo_url=event_logo_url,
-            npo_logo_url=npo_logo_url,
-            event_name=event_name,
-        )
+        try:
+            await email_service.send_npo_member_invitation_email(
+                to_email=invitation.email,
+                invitation_token=token,
+                npo_name=npo.name,
+                role=invitation.role,
+                invited_by_name=resender_name,
+                event_logo_url=event_logo_url,
+                npo_logo_url=npo_logo_url,
+                event_name=event_name,
+            )
+        except EmailSendError:
+            logger.error(
+                "Failed to resend invitation email",
+                extra={
+                    "npo_id": str(npo_id),
+                    "invitation_id": str(invitation.id),
+                    "invitee_email": invitation.email,
+                },
+            )
+            raise
 
         return invitation
 
@@ -626,7 +679,10 @@ class InvitationService:
         result = await db.execute(stmt)
         invitation = result.scalar_one_or_none()
 
-        if not invitation or not verify_password(token, invitation.token_hash):
+        if not invitation or not InvitationService._verify_invitation_token_hash(
+            token,
+            invitation.token_hash,
+        ):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Invalid or expired invitation token",
