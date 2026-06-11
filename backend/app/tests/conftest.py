@@ -278,6 +278,48 @@ async def test_engine(test_database_url: str) -> AsyncGenerator[AsyncEngine, Non
     # Since we use NullPool, there should be no pooled connections anyway.
 
 
+async def _ensure_test_schema(connection) -> None:
+    """Recreate the core test schema if a previous test dropped it."""
+    result = await connection.execute(
+        text(
+            """
+            SELECT
+                to_regclass('public.roles') AS roles_table,
+                to_regclass('public.users') AS users_table,
+                to_regclass('public.events') AS events_table
+            """
+        )
+    )
+    row = result.one()
+    if row.roles_table and row.users_table and row.events_table:
+        return
+
+    await connection.run_sync(Base.metadata.create_all)
+    await connection.execute(
+        text(
+            """
+            INSERT INTO roles (id, name, description, scope) VALUES
+                ('00000000-0000-0000-0000-000000000001', 'super_admin',
+                 'FundrBolt platform staff with full access to all NPOs and events',
+                 'platform'),
+                ('00000000-0000-0000-0000-000000000002', 'npo_admin',
+                 'Full management access within assigned nonprofit organization(s)',
+                 'npo'),
+                ('00000000-0000-0000-0000-000000000003', 'event_coordinator',
+                 'Event and auction management within assigned NPO',
+                 'npo'),
+                ('00000000-0000-0000-0000-000000000004', 'staff',
+                 'Donor registration and check-in within assigned events',
+                 'event'),
+                ('00000000-0000-0000-0000-000000000005', 'donor',
+                 'Bidding and profile management only',
+                 'own')
+            ON CONFLICT (name) DO NOTHING
+        """
+        )
+    )
+
+
 @pytest_asyncio.fixture
 async def db_session(test_engine: AsyncEngine) -> AsyncGenerator[AsyncSession, None]:
     """
@@ -289,6 +331,10 @@ async def db_session(test_engine: AsyncEngine) -> AsyncGenerator[AsyncSession, N
     # Start a transaction
     connection = await test_engine.connect()
     transaction = await connection.begin()
+
+    # Guard against cross-test schema leakage from tests that mutate the
+    # database outside the function transaction.
+    await _ensure_test_schema(connection)
 
     # Create session bound to transaction
     session = AsyncSession(bind=connection, expire_on_commit=False)
@@ -1373,34 +1419,42 @@ async def test_invitation_token(
     """
     Create a valid invitation token for testing.
 
-    Returns invitation ID as token string for acceptance.
+    Returns JWT invitation token for acceptance.
     NOTE: Depends on test_invited_user to ensure user exists with matching email.
     """
-    import hashlib
     import uuid
     from datetime import UTC, datetime, timedelta
 
+    from app.core.security import create_invitation_token
     from app.models.invitation import Invitation, InvitationStatus
+    from app.services.password_service import PasswordService
 
-    # Generate a simple token hash for testing
-    token = f"test-token-{uuid.uuid4()}"
-    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    invitation_id = uuid.uuid4()
+    token = create_invitation_token(
+        invitation_id=str(invitation_id),
+        npo_id=str(test_npo.id),
+        email="invited@example.com",
+        npo_name=test_npo.name,
+        role="staff",
+    )
 
     # Create invitation
     invitation = Invitation(
+        id=invitation_id,
         npo_id=test_npo.id,
         email="invited@example.com",  # Matches test_invited_user email
         role="staff",
         status=InvitationStatus.PENDING,
         expires_at=datetime.now(UTC) + timedelta(days=7),
         invited_by_user_id=test_user.id,
-        token_hash=token_hash,
+        token_hash=PasswordService.hash_token(token),
     )
     db_session.add(invitation)
+
     await db_session.commit()
     await db_session.refresh(invitation)
 
-    return str(invitation.id)
+    return token
 
 
 @pytest_asyncio.fixture
@@ -1558,34 +1612,42 @@ async def test_expired_invitation_token(
     """
     Create an expired invitation token for testing.
 
-    Returns invitation ID as token string for expired invitation.
+    Returns JWT invitation token for expired invitation.
     NOTE: Depends on test_expired_user to ensure user exists with matching email.
     """
-    import hashlib
     import uuid
     from datetime import UTC, datetime, timedelta
 
+    from app.core.security import create_invitation_token
     from app.models.invitation import Invitation, InvitationStatus
+    from app.services.password_service import PasswordService
 
-    # Generate a simple token hash for testing
-    token = f"test-token-expired-{uuid.uuid4()}"
-    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    invitation_id = uuid.uuid4()
+    token = create_invitation_token(
+        invitation_id=str(invitation_id),
+        npo_id=str(test_npo.id),
+        email="expired@example.com",
+        npo_name=test_npo.name,
+        role="staff",
+    )
 
     # Create expired invitation
     invitation = Invitation(
+        id=invitation_id,
         npo_id=test_npo.id,
         email="expired@example.com",  # Matches test_expired_user email
         role="staff",
         status=InvitationStatus.PENDING,
         expires_at=datetime.now(UTC) - timedelta(days=1),
         invited_by_user_id=test_user.id,
-        token_hash=token_hash,
+        token_hash=PasswordService.hash_token(token),
     )
     db_session.add(invitation)
+
     await db_session.commit()
     await db_session.refresh(invitation)
 
-    return str(invitation.id)
+    return token
 
 
 @pytest_asyncio.fixture
@@ -1595,34 +1657,42 @@ async def test_accepted_invitation_token(
     """
     Create an accepted invitation token for testing.
 
-    Returns invitation ID as token string for already accepted invitation.
+    Returns JWT invitation token for already accepted invitation.
     NOTE: Depends on test_accepted_user to ensure user exists with matching email.
     """
-    import hashlib
     import uuid
     from datetime import UTC, datetime, timedelta
 
+    from app.core.security import create_invitation_token
     from app.models.invitation import Invitation, InvitationStatus
+    from app.services.password_service import PasswordService
 
-    # Generate a simple token hash for testing
-    token = f"test-token-accepted-{uuid.uuid4()}"
-    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    invitation_id = uuid.uuid4()
+    token = create_invitation_token(
+        invitation_id=str(invitation_id),
+        npo_id=str(test_npo.id),
+        email="accepted@example.com",
+        npo_name=test_npo.name,
+        role="staff",
+    )
 
     # Create accepted invitation
     invitation = Invitation(
+        id=invitation_id,
         npo_id=test_npo.id,
         email="accepted@example.com",  # Matches test_accepted_user email
         role="staff",
         status=InvitationStatus.ACCEPTED,
         expires_at=datetime.now(UTC) + timedelta(days=7),
         invited_by_user_id=test_user.id,
-        token_hash=token_hash,
+        token_hash=PasswordService.hash_token(token),
     )
     db_session.add(invitation)
+
     await db_session.commit()
     await db_session.refresh(invitation)
 
-    return str(invitation.id)
+    return token
 
 
 @pytest_asyncio.fixture
@@ -1632,34 +1702,42 @@ async def test_revoked_invitation_token(
     """
     Create a revoked invitation token for testing.
 
-    Returns invitation ID as token string for revoked invitation.
+    Returns JWT invitation token for revoked invitation.
     NOTE: Depends on test_revoked_user to ensure user exists with matching email.
     """
-    import hashlib
     import uuid
     from datetime import UTC, datetime, timedelta
 
+    from app.core.security import create_invitation_token
     from app.models.invitation import Invitation, InvitationStatus
+    from app.services.password_service import PasswordService
 
-    # Generate a simple token hash for testing
-    token = f"test-token-revoked-{uuid.uuid4()}"
-    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    invitation_id = uuid.uuid4()
+    token = create_invitation_token(
+        invitation_id=str(invitation_id),
+        npo_id=str(test_npo.id),
+        email="revoked@example.com",
+        npo_name=test_npo.name,
+        role="staff",
+    )
 
     # Create revoked invitation
     invitation = Invitation(
+        id=invitation_id,
         npo_id=test_npo.id,
         email="revoked@example.com",  # Matches test_revoked_user email
         role="staff",
         status=InvitationStatus.REVOKED,
         expires_at=datetime.now(UTC) + timedelta(days=7),
         invited_by_user_id=test_user.id,
-        token_hash=token_hash,
+        token_hash=PasswordService.hash_token(token),
     )
     db_session.add(invitation)
+
     await db_session.commit()
     await db_session.refresh(invitation)
 
-    return str(invitation.id)
+    return token
 
 
 @pytest_asyncio.fixture
@@ -1669,33 +1747,41 @@ async def test_invitation_token_existing_member(
     """
     Create an invitation for a user who is already a member.
 
-    Returns invitation ID as token string for invitation to existing member.
+    Returns JWT invitation token for invitation to existing member.
     """
-    import hashlib
     import uuid
     from datetime import UTC, datetime, timedelta
 
+    from app.core.security import create_invitation_token
     from app.models.invitation import Invitation, InvitationStatus
+    from app.services.password_service import PasswordService
 
-    # Generate a simple token hash for testing
-    token = f"test-token-existing-{uuid.uuid4()}"
-    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    invitation_id = uuid.uuid4()
+    token = create_invitation_token(
+        invitation_id=str(invitation_id),
+        npo_id=str(test_npo.id),
+        email=test_user.email,
+        npo_name=test_npo.name,
+        role="staff",
+    )
 
     # Create invitation for existing member's email
     invitation = Invitation(
+        id=invitation_id,
         npo_id=test_npo.id,
         email=test_user.email,  # User who is already a member
         role="staff",
         status=InvitationStatus.PENDING,
         expires_at=datetime.now(UTC) + timedelta(days=7),
         invited_by_user_id=test_user.id,
-        token_hash=token_hash,
+        token_hash=PasswordService.hash_token(token),
     )
     db_session.add(invitation)
+
     await db_session.commit()
     await db_session.refresh(invitation)
 
-    return str(invitation.id)
+    return token
 
 
 # ================================

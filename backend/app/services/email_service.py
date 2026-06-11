@@ -992,6 +992,14 @@ The FundrBolt Team
         """
         max_retries = 3
         retry_delay = 1.0
+        can_send_real_email = settings.email_backend == "mailpit" or (
+            settings.email_backend == "azure_acs" and self.enabled
+        )
+
+        if not can_send_real_email and settings.environment not in {"development", "test"}:
+            raise EmailSendError(
+                f"Email backend '{settings.email_backend}' is not configured for real delivery"
+            )
 
         for attempt in range(max_retries):
             try:
@@ -1003,7 +1011,7 @@ The FundrBolt Team
                     await self._send_via_azure(
                         to_email, subject, body, html_body, from_address, from_name
                     )
-                else:
+                elif settings.environment in {"development", "test"}:
                     sender_display = from_address or settings.email_from_address
                     logger.info(
                         f"[MOCK EMAIL] {email_type} email\n"
@@ -1011,6 +1019,10 @@ The FundrBolt Team
                         f"To: {to_email}\n"
                         f"Subject: {subject}\n"
                         f"Body:\n{body}"
+                    )
+                else:
+                    raise EmailSendError(
+                        f"Email backend '{settings.email_backend}' is not configured for real delivery"
                     )
                 return True
 

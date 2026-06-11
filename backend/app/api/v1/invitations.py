@@ -1,20 +1,12 @@
-"""
-NPO Invitation Acceptance API Endpoints
+"""NPO Invitation Acceptance API endpoints."""
 
-Provides REST API for accepting team invitations.
-"""
-
-import uuid
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.middleware.request_id import get_request_id
-from app.models.invitation import Invitation
-from app.models.user import User
 from app.schemas.member import MemberResponse
 from app.services.invitation_service import InvitationService
 
@@ -53,42 +45,9 @@ async def accept_invitation(
         409: Invitation already accepted or user already member
         410: Invitation expired or revoked
     """
-    # Parse token as UUID (invitation ID)
-    try:
-        invitation_id = uuid.UUID(token)
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Invalid invitation token",
-        )
-
-    # Get the invitation to find the email
-    stmt = select(Invitation).where(Invitation.id == invitation_id)
-    result = await db.execute(stmt)
-    invitation = result.scalar_one_or_none()
-
-    if not invitation:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Invitation not found",
-        )
-
-    # Find user by invitation email
-    user_stmt = select(User).where(User.email == invitation.email)
-    user_result = await db.execute(user_stmt)
-    user = user_result.scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No user found with the invitation email. Please create an account first.",
-        )
-
-    # Accept invitation
-    member = await InvitationService.accept_invitation(
+    member = await InvitationService.accept_invitation_by_token(
         db=db,
-        invitation_id=invitation_id,
-        user_id=user.id,
+        token=token,
     )
 
     return {
