@@ -23,9 +23,12 @@ const resolveApiBaseUrl = (): string => {
   if (configured) {
     const normalized = configured.replace(/\/+$/, '')
 
-    // A relative API URL is valid in dev (Vite proxy), but in production it
-    // can route API calls to the Static Web App origin and return 405.
-    if (!import.meta.env.DEV && normalized.startsWith('/')) {
+    const isAbsoluteHttpUrl = /^https?:\/\//i.test(normalized)
+
+    // In production, only absolute http(s) API URLs are allowed. Any relative
+    // or shorthand value can route calls to the Static Web App origin and
+    // surface 405s instead of backend responses.
+    if (!import.meta.env.DEV && !isAbsoluteHttpUrl) {
       return 'https://api.fundrbolt.com/api/v1'
     }
 
