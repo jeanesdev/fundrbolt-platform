@@ -1,16 +1,16 @@
-import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
-import type {
-  SocialAuthCallbackRequest,
-  SocialAuthCallbackResponse,
-  SocialAuthProvider,
-  SocialAuthProvidersResponse,
-  SocialAuthStartRequest,
-  SocialAuthStartResponse,
-} from '@fundrbolt/shared/types'
-import { sanitizeRequestPayload } from '@fundrbolt/shared/utils'
+import { isRetryableError, retryWithBackoff } from '@/lib/retry'
 import { useAuthStore } from '@/stores/auth-store'
 import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import { isRetryableError, retryWithBackoff } from '@/lib/retry'
+import type {
+    SocialAuthCallbackRequest,
+    SocialAuthCallbackResponse,
+    SocialAuthProvider,
+    SocialAuthProvidersResponse,
+    SocialAuthStartRequest,
+    SocialAuthStartResponse,
+} from '@fundrbolt/shared/types'
+import { sanitizeRequestPayload } from '@fundrbolt/shared/utils'
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 
 // Global flag to track if consent modal is already shown
 let consentModalShown = false
@@ -22,6 +22,16 @@ const resolveApiBaseUrl = (): string => {
   const configured = import.meta.env.VITE_API_URL
   if (configured) {
     const normalized = configured.replace(/\/+$/, '')
+
+    const isAbsoluteHttpUrl = /^https?:\/\//i.test(normalized)
+
+    // In production, only absolute http(s) API URLs are allowed. Any relative
+    // or shorthand value can route calls to the Static Web App origin and
+    // surface 405s instead of backend responses.
+    if (!import.meta.env.DEV && !isAbsoluteHttpUrl) {
+      return 'https://api.fundrbolt.com/api/v1'
+    }
+
     if (normalized.endsWith('/api/v1')) return normalized
     if (normalized.endsWith('/api')) return `${normalized}/v1`
     return `${normalized}/api/v1`

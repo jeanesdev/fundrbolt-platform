@@ -9,9 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import apiClient from '@/lib/axios'
 import { getErrorMessage } from '@/lib/error-utils'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
 import { toast } from 'sonner'
 import { type User } from '../data/schema'
 
@@ -30,7 +30,7 @@ export function UsersResetPasswordDialog({
 
   const resetPassword = useMutation({
     mutationFn: async (email: string) => {
-      const response = await axios.post('/api/v1/auth/password/reset/request', {
+      const response = await apiClient.post('/auth/password/reset/request', {
         email,
       })
       return response.data
