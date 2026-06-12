@@ -180,6 +180,12 @@ class Event(Base, UUIDMixin, TimestampMixin):
         nullable=True,
         comment="Optional fundraising goal for event dashboard totals",
     )
+    nudge_closing_soon_minutes: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default="20",
+        comment="Minutes before auction item close to trigger closing_soon_watchers nudge",
+    )
     last_year_total: Mapped[Decimal | None] = mapped_column(
         Numeric(12, 2),
         nullable=True,
