@@ -16,6 +16,7 @@ celery_app = Celery(
         "app.tasks.recurring_donation_tasks",
         "app.tasks.checkout_tasks",
         "app.tasks.payment_tasks",
+        "app.tasks.nudge_tasks",
     ],
 )
 
@@ -36,6 +37,7 @@ celery_app.conf.update(
     task_routes={
         "app.tasks.notification_tasks.*": {"queue": "notifications"},
         "app.tasks.run_of_show_tasks.*": {"queue": "notifications"},
+        "app.tasks.nudge_tasks.*": {"queue": "notifications"},
     },
     beat_schedule={
         "purge-expired-notifications": {
@@ -45,6 +47,10 @@ celery_app.conf.update(
         "process-monthly-donations": {
             "task": "app.tasks.recurring_donation_tasks.process_monthly_donations",
             "schedule": 86400.0,  # daily at celery beat startup time
+        },
+        "fan-out-nudge-scans": {
+            "task": "app.tasks.nudge_tasks.fan_out_nudge_scans_task",
+            "schedule": 300.0,  # every 5 minutes
         },
     },
 )

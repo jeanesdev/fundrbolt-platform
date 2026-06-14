@@ -39,6 +39,8 @@ from app.models.donation_tier import DonationTier
 from app.models.donor_label import DonorLabel
 from app.models.donor_label_assignment import DonorLabelAssignment
 from app.models.event import Event, EventLink, EventMedia, FoodOption
+from app.models.event_nudge_dismissal import EventNudgeDismissal, NudgeDismissalAction
+from app.models.event_nudge_notification_log import EventNudgeNotificationLog
 from app.models.event_registration import EventRegistration, RegistrationStatus
 from app.models.event_survey_config import EventSurveyConfig
 from app.models.event_table import EventTable
@@ -186,6 +188,9 @@ __all__ = [
     "EventLink",
     "EventMedia",
     "EventSurveyConfig",
+    "EventNudgeDismissal",
+    "EventNudgeNotificationLog",
+    "NudgeDismissalAction",
     "EventRegistration",
     "EventTable",
     "FoodOption",
