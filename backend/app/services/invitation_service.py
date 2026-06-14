@@ -273,7 +273,7 @@ class InvitationService:
                 # Generate and store account-setup token (reuses password-reset infrastructure)
                 setup_token = PasswordService.generate_reset_token()
                 setup_token_hash = PasswordService.hash_token(setup_token)
-                await RedisService.store_password_reset_token(setup_token_hash, new_user.id)
+                await RedisService.store_account_setup_token(setup_token_hash, new_user.id)
 
                 await email_service.send_account_setup_email(
                     to_email=email,

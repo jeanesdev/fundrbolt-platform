@@ -1,6 +1,6 @@
 # Manual Testing Guide — 049 Event Revenue Nudges
 
-**Branch**: `feature/049-event-revenue-nudges`  
+**Branch**: `feature/049-event-revenue-nudges`
 **PR**: https://github.com/jeanesdev/fundrbolt-platform/pull/146
 
 ---
@@ -93,7 +93,7 @@ AND id NOT IN (
 );
 ```
 
-**Expected**: "Items With No Bids" nudge appears.  
+**Expected**: "Items With No Bids" nudge appears.
 **Note**: Rank bumps to 2 if >5 items have no bids or the event closes within 60 minutes.
 
 ---
@@ -154,14 +154,14 @@ If no entries exist for those RGs, the nudge fires automatically.
 ## 4. Dismiss Nudge (Swipe + Button)
 
 1. With at least one dismissible nudge visible:
-2. **Button dismiss**: Click the **×** button on a nudge card  
-   ✅ Card disappears immediately (optimistic update)  
+2. **Button dismiss**: Click the **×** button on a nudge card
+   ✅ Card disappears immediately (optimistic update)
    ✅ After 30 minutes (or click "Reset all"), card reappears
-3. **Button done**: Click the **✓** (green checkmark) button  
+3. **Button done**: Click the **✓** (green checkmark) button
    ✅ Card disappears (actioned — suppressed for 24h)
-4. **Swipe dismiss** (on touch/pointer device):  
-   - Drag the card **left** past 80px threshold → card dismisses  
-   - Drag the card **right** past 80px threshold → card is actioned  
+4. **Swipe dismiss** (on touch/pointer device):
+   - Drag the card **left** past 80px threshold → card dismisses
+   - Drag the card **right** past 80px threshold → card is actioned
    - Background turns red (left) or green (right) when threshold is crossed
 
 ---
@@ -184,8 +184,8 @@ If no entries exist for those RGs, the nudge fires automatically.
 ## 6. Reset All Dismissals
 
 1. Dismiss 2–3 nudges
-2. Click **"Reset all"** in the panel header  
-   ✅ All dismissed nudges reappear immediately  
+2. Click **"Reset all"** in the panel header
+   ✅ All dismissed nudges reappear immediately
    ✅ Badge count updates
 
 ---
@@ -194,7 +194,7 @@ If no entries exist for those RGs, the nudge fires automatically.
 
 1. Open the Event Dashboard
 2. In another terminal, run SQL to create a new nudge condition (e.g., add a watch list entry for a bid-free item)
-3. Wait up to 60 seconds  
+3. Wait up to 60 seconds
    ✅ The new nudge appears without a manual page reload
 
 ---
