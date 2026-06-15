@@ -22,7 +22,8 @@ describe('AlertCards', () => {
     ).toBeInTheDocument()
 
     expect(screen.getByText(/Below 85% target for 3 refreshes\./)).toHaveClass(
-      '!text-foreground'
+      'text-foreground',
+      'font-medium'
     )
   })
 
