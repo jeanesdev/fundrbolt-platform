@@ -14,7 +14,11 @@ from sqlalchemy.orm import selectinload
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.security import decode_token
-from app.middleware.rate_limit import api_rate_limit, rate_limit, strict_rate_limit
+from app.middleware.rate_limit import (
+    api_rate_limit,
+    password_reset_rate_limit,
+    rate_limit,
+)
 from app.models.user import User
 from app.schemas.auth import (
     EmailResendRequest,
@@ -917,7 +921,7 @@ async def request_password_reset(
 @router.post(
     "/password/reset/confirm", status_code=status.HTTP_200_OK, response_model=MessageResponse
 )
-@strict_rate_limit()
+@password_reset_rate_limit()
 async def confirm_password_reset(
     request: Request,
     confirm_data: PasswordResetConfirm,

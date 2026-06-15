@@ -12,23 +12,26 @@ import { PasswordResetConfirmForm } from './components/password-reset-confirm-fo
 
 interface PasswordResetConfirmProps {
   token?: string
+  mode?: 'setup'
 }
 
-export function PasswordResetConfirm({ token }: PasswordResetConfirmProps) {
+export function PasswordResetConfirm({ token, mode }: PasswordResetConfirmProps) {
+  const isAccountSetup = mode === 'setup'
   return (
     <AuthLayout>
       <Card className='gap-4'>
         <CardHeader>
           <CardTitle className='text-lg tracking-tight'>
-            Create New Password
+            {isAccountSetup ? 'Set Your Password' : 'Create New Password'}
           </CardTitle>
           <CardDescription>
-            Enter your reset token and choose a <br /> new password for your
-            account.
+            {isAccountSetup
+              ? 'Choose a password to activate your account.'
+              : 'Enter your reset token and choose a new password for your account.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <PasswordResetConfirmForm token={token} />
+          <PasswordResetConfirmForm token={token} mode={mode} />
         </CardContent>
         <CardFooter>
           <p className='text-muted-foreground mx-auto px-8 text-center text-sm text-balance'>

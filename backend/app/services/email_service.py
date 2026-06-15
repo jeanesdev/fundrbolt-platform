@@ -371,7 +371,7 @@ The FundrBolt Team
             base_url = settings.frontend_donor_url
         else:
             base_url = settings.frontend_admin_url
-        setup_url = f"{base_url}/password-reset-confirm?token={setup_token}"
+        setup_url = f"{base_url}/password-reset-confirm?token={setup_token}&mode=setup"
 
         # Build contextual invitation line
         if inviter_name and npo_name:
