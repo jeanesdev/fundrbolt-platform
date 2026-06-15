@@ -508,8 +508,8 @@ async def create_user(
         setup_token = PasswordService.generate_reset_token()
         token_hash = PasswordService.hash_token(setup_token)
 
-        # Store setup token in Redis (1 hour expiry, matching PASSWORD_RESET_TTL)
-        await RedisService.store_password_reset_token(token_hash, user.id)
+        # Store setup token in Redis (7 day expiry for account setup)
+        await RedisService.store_account_setup_token(token_hash, user.id)
 
         # Send account setup email
         email_service = get_email_service()
