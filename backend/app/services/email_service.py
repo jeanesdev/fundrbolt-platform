@@ -398,7 +398,7 @@ The FundrBolt Team
 To get started, please click the link below to set your password and activate your account:
 {setup_url}
 
-This link will expire in 1 hour.
+This link will expire in 7 days.
 
 Once you've set your password, you'll be able to sign in and access all features.
 
@@ -421,7 +421,7 @@ The FundrBolt Team
             body_paragraphs=[
                 invited_line,
                 "To get started, you'll need to set your password and activate your account.",
-                "Click the button below to complete your account setup. This link will expire in 1 hour.",
+                "Click the button below to complete your account setup. This link will expire in 7 days.",
                 "Once you've set your password, you'll be able to sign in and access all features.",
             ],
             cta_text="Complete Account Setup",

@@ -29,6 +29,7 @@ class RedisService:
     ACCESS_TOKEN_TTL = 900  # 15 minutes
     EMAIL_VERIFY_TTL = 86400  # 24 hours
     PASSWORD_RESET_TTL = 3600  # 1 hour
+    ACCOUNT_SETUP_TTL = 604800  # 7 days
     MAGIC_LINK_TTL = 3600  # 1 hour
     RATE_LIMIT_TTL = 900  # 15 minutes
 
@@ -367,6 +368,25 @@ class RedisService:
         redis = await get_redis()
         key = f"password_reset:{token}"
         await redis.setex(key, RedisService.PASSWORD_RESET_TTL, str(user_id))
+
+    @staticmethod
+    async def store_account_setup_token(token: str, user_id: uuid.UUID) -> None:
+        """Store account setup token for admin-invited users.
+
+        Uses the same key namespace as password_reset so the existing
+        confirmation endpoint can validate it without changes.
+
+        Key: password_reset:{token}
+        Value: user_id (UUID as string)
+        TTL: 7 days
+
+        Args:
+            token: Setup token
+            user_id: User UUID
+        """
+        redis = await get_redis()
+        key = f"password_reset:{token}"
+        await redis.setex(key, RedisService.ACCOUNT_SETUP_TTL, str(user_id))
 
     @staticmethod
     async def get_password_reset_user(token: str) -> uuid.UUID | None:
