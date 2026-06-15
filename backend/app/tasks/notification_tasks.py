@@ -658,6 +658,42 @@ async def _deliver_campaign_async(campaign_id: str) -> int:
                 individual_ids = criteria.get("user_ids", [])
                 user_ids = [uuid.UUID(uid) for uid in individual_ids]
 
+            elif recipient_type == "rg_non_purchasers":
+                from app.models.event_registration import EventRegistration
+                from app.models.registration_guest import RegistrationGuest
+                from app.models.revenue_generator_entry import RevenueGeneratorEntry
+
+                rg_item_id_str = criteria.get("rg_item_id")
+                if rg_item_id_str:
+                    rg_item_uuid = uuid.UUID(rg_item_id_str)
+
+                    # Exclude any registration that has already purchased this RG item.
+                    purchased_guest_exists = (
+                        select(1)
+                        .select_from(RevenueGeneratorEntry)
+                        .join(
+                            RegistrationGuest,
+                            RegistrationGuest.id == RevenueGeneratorEntry.registration_guest_id,
+                        )
+                        .where(
+                            RevenueGeneratorEntry.revenue_generator_item_id == rg_item_uuid,
+                            RegistrationGuest.registration_id == EventRegistration.id,
+                        )
+                        .exists()
+                    )
+
+                    non_purchaser_stmt = (
+                        select(EventRegistration.user_id)
+                        .where(
+                            EventRegistration.event_id == event_id,
+                            EventRegistration.user_id.isnot(None),
+                            ~purchased_guest_exists,
+                        )
+                        .distinct()
+                    )
+                    result = await db.execute(non_purchaser_stmt)
+                    user_ids = [row[0] for row in result.all()]
+
             # Deduplicate
             unique_user_ids = list(set(user_ids))
             campaign.recipient_count = len(unique_user_ids)

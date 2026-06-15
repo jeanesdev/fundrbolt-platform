@@ -45,7 +45,7 @@ class RecipientCriteria(BaseModel):
         ...,
         description=(
             "Recipient type: all_attendees, all_bidders, specific_table, individual, "
-            "item, item_watchers, item_bidders"
+            "item, item_watchers, item_bidders, rg_non_purchasers"
         ),
     )
     table_number: int | None = Field(None, description="Table number for specific_table type")
@@ -58,6 +58,10 @@ class RecipientCriteria(BaseModel):
     item_audiences: list[str] | None = Field(
         None,
         description="Item audiences for item type: any of bidders, watchers",
+    )
+    rg_item_id: str | None = Field(
+        None,
+        description="Revenue generator UUID for rg_non_purchasers type",
     )
 
 

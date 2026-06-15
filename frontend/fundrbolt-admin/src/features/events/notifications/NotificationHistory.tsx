@@ -1,3 +1,8 @@
+import { useCallback, useEffect, useState } from 'react'
+import {
+  eventNotificationService,
+  type Campaign,
+} from '@/services/eventNotificationService'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,11 +20,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  eventNotificationService,
-  type Campaign,
-} from '@/services/eventNotificationService'
-import { useCallback, useEffect, useState } from 'react'
 
 interface NotificationHistoryProps {
   eventId: string
@@ -53,6 +53,8 @@ function recipientLabel(criteria: Record<string, unknown>): string {
       return 'Item Watchers'
     case 'item_bidders':
       return 'Item Bidders'
+    case 'rg_non_purchasers':
+      return 'Revenue Generator Non-Purchasers'
     default:
       return type ?? 'Unknown'
   }

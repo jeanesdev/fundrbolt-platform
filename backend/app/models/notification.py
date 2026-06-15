@@ -43,6 +43,7 @@ class NotificationTypeEnum(str, enum.Enum):
     WELCOME = "welcome"
     CUSTOM = "custom"
     SURVEY_INVITATION = "survey_invitation"
+    NUDGE_ALERT = "nudge_alert"
 
 
 class NotificationPriorityEnum(str, enum.Enum):

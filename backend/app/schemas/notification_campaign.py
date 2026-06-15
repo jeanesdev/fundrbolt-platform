@@ -10,9 +10,13 @@ from pydantic import BaseModel, ConfigDict, Field
 class RecipientCriteria(BaseModel):
     """Criteria for selecting campaign recipients."""
 
-    type: str  # all_attendees, all_bidders, table, individual
+    type: str  # all_attendees, all_bidders, table, individual, item, item_watchers, item_bidders, rg_non_purchasers
     table_number: int | None = None
     user_ids: list[uuid.UUID] | None = None
+    item_id: uuid.UUID | None = None
+    item_audience: str | None = None
+    item_audiences: list[str] | None = None
+    rg_item_id: uuid.UUID | None = None
 
 
 class SendCustomNotificationRequest(BaseModel):

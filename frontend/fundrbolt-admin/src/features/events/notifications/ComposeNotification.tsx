@@ -1,3 +1,33 @@
+import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import {
+  auctionDashboardService,
+  type AuctionItemRow,
+} from '@/services/auction-dashboard'
+import auctionItemService from '@/services/auctionItemService'
+import {
+  donorDashboardService,
+  type DonorLeaderboardEntry,
+} from '@/services/donor-dashboard'
+import {
+  eventNotificationService,
+  type RecipientCriteria,
+} from '@/services/eventNotificationService'
+import revenueGeneratorService from '@/services/revenueGeneratorService'
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronsUpDown,
+  Filter,
+  Link as LinkIcon,
+  Loader2,
+  Search,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { useEventContextStore } from '@/stores/event-context-store'
+import { useNPOContextStore } from '@/stores/npo-context-store'
+import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
+import { getDonorPwaUrl } from '@/lib/donor-portal'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -35,35 +65,6 @@ import {
 } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
-import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
-import { getDonorPwaUrl } from '@/lib/donor-portal'
-import {
-  auctionDashboardService,
-  type AuctionItemRow,
-} from '@/services/auction-dashboard'
-import auctionItemService from '@/services/auctionItemService'
-import {
-  donorDashboardService,
-  type DonorLeaderboardEntry,
-} from '@/services/donor-dashboard'
-import {
-  eventNotificationService,
-  type RecipientCriteria,
-} from '@/services/eventNotificationService'
-import { useEventContextStore } from '@/stores/event-context-store'
-import { useNPOContextStore } from '@/stores/npo-context-store'
-import { useQuery } from '@tanstack/react-query'
-import {
-  ArrowDown,
-  ArrowUp,
-  ChevronsUpDown,
-  Filter,
-  Link as LinkIcon,
-  Loader2,
-  Search,
-} from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { toast } from 'sonner'
 
 const MAX_MESSAGE_LENGTH = 500
 
@@ -71,7 +72,8 @@ const RECIPIENT_TYPES = [
   { value: 'all_attendees', label: 'All Attendees' },
   { value: 'all_bidders', label: 'All Bidders' },
   { value: 'specific_table', label: 'Specific Table' },
-  { value: 'item', label: 'By Item' },
+  { value: 'item', label: 'By Auction Item' },
+  { value: 'rg_non_purchasers', label: 'Non-Purchasers of Revenue Generator' },
   { value: 'individual', label: 'Select Recipients' },
 ] as const
 
@@ -212,25 +214,39 @@ function formatCheckedIn(checkedIn: boolean): string {
 
 interface ComposeNotificationProps {
   eventId: string
+  initialAudience?: string
+  initialItemId?: string
+  initialRgItemId?: string
   onSent: () => void
 }
 
 export function ComposeNotification({
   eventId,
+  initialAudience,
+  initialItemId,
+  initialRgItemId,
   onSent,
 }: ComposeNotificationProps) {
   const [message, setMessage] = useState('')
-  const [recipientType, setRecipientType] =
-    useState<RecipientCriteria['type']>('all_attendees')
+  const [recipientType, setRecipientType] = useState<RecipientCriteria['type']>(
+    initialRgItemId
+      ? 'rg_non_purchasers'
+      : initialItemId
+        ? 'item'
+        : 'all_attendees'
+  )
   const [tableNumber, setTableNumber] = useState('')
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set())
   const [channels, setChannels] = useState<Set<string>>(new Set(['in_app']))
   const [isSending, setIsSending] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [itemId, setItemId] = useState('')
+  const [itemId, setItemId] = useState(initialItemId ?? '')
+  const [rgItemId, setRgItemId] = useState(initialRgItemId ?? '')
   const [linkItemId, setLinkItemId] = useState(USE_SELECTED_ITEM_LINK_VALUE)
   const [itemAudiences, setItemAudiences] = useState<Set<ItemAudience>>(
-    new Set(['bidders', 'watchers'])
+    initialAudience === 'outbid_watchers'
+      ? new Set<ItemAudience>(['bidders'])
+      : new Set<ItemAudience>(['bidders', 'watchers'])
   )
   const [sortKey, setSortKey] = useState<RecipientSortKey>('name')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
@@ -351,6 +367,12 @@ export function ComposeNotification({
     enabled: true,
   })
 
+  const { data: rgItems, isLoading: rgItemsLoading } = useQuery({
+    queryKey: ['event-rg-items', eventId],
+    queryFn: () => revenueGeneratorService.listItems(eventId),
+    enabled: recipientType === 'rg_non_purchasers',
+  })
+
   const resolvedEventSlug = useMemo(() => {
     const matchingEvent = availableEvents.find((event) => event.id === eventId)
     return matchingEvent?.slug ?? selectedEventSlug ?? eventId
@@ -412,15 +434,15 @@ export function ComposeNotification({
     const filtered = recipientRows.filter((attendee) => {
       const matchesGlobalSearch = q
         ? attendee.name?.toLowerCase().includes(q) ||
-        attendee.email?.toLowerCase().includes(q) ||
-        formatCheckedIn(attendee.checked_in ?? false)
-          .toLowerCase()
-          .includes(q) ||
-        String(attendee.table_number ?? '').includes(q) ||
-        String(attendee.bidder_number ?? '').includes(q) ||
-        formatCurrency(attendee.total_given_at_event)
-          .toLowerCase()
-          .includes(q)
+          attendee.email?.toLowerCase().includes(q) ||
+          formatCheckedIn(attendee.checked_in ?? false)
+            .toLowerCase()
+            .includes(q) ||
+          String(attendee.table_number ?? '').includes(q) ||
+          String(attendee.bidder_number ?? '').includes(q) ||
+          formatCurrency(attendee.total_given_at_event)
+            .toLowerCase()
+            .includes(q)
         : true
 
       const matchesColumnFilters =
@@ -646,6 +668,13 @@ export function ComposeNotification({
       criteria.item_id = itemId
       criteria.item_audiences = Array.from(itemAudiences)
     }
+    if (recipientType === 'rg_non_purchasers') {
+      if (!rgItemId) {
+        toast.error('Please select a revenue generator')
+        return
+      }
+      criteria.rg_item_id = rgItemId
+    }
 
     setIsSending(true)
     try {
@@ -661,6 +690,7 @@ export function ComposeNotification({
       setRecipientType('all_attendees')
       setChannels(new Set(['in_app']))
       setItemId('')
+      setRgItemId('')
       setLinkItemId(USE_SELECTED_ITEM_LINK_VALUE)
       setItemAudiences(new Set(['bidders', 'watchers']))
       setColumnFilters(DEFAULT_COLUMN_FILTERS)
@@ -770,6 +800,7 @@ export function ComposeNotification({
                 setItemId('')
                 setItemAudiences(new Set(['bidders', 'watchers']))
               }
+              if (v !== 'rg_non_purchasers') setRgItemId('')
             }}
           >
             {RECIPIENT_TYPES.map((type) => (
@@ -865,6 +896,41 @@ export function ComposeNotification({
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {recipientType === 'rg_non_purchasers' && (
+            <div className='mt-3 space-y-2'>
+              <Label htmlFor='recipient-rg-item'>Revenue Generator</Label>
+              <Select value={rgItemId} onValueChange={setRgItemId}>
+                <SelectTrigger
+                  id='recipient-rg-item'
+                  className='w-full max-w-2xl'
+                >
+                  <SelectValue placeholder='Choose a revenue generator' />
+                </SelectTrigger>
+                <SelectContent>
+                  {rgItemsLoading ? (
+                    <SelectItem value='__loading__' disabled>
+                      Loading…
+                    </SelectItem>
+                  ) : rgItems && rgItems.length > 0 ? (
+                    rgItems.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value='__empty__' disabled>
+                      No revenue generators found
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              <p className='text-muted-foreground text-xs'>
+                Sends to all registered attendees who have not yet purchased
+                this item.
+              </p>
             </div>
           )}
 

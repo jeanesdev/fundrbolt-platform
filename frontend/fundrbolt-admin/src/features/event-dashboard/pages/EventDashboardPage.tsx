@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ChecklistSummaryCard } from '@/features/events/components/ChecklistSummaryCard'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
+import { NudgesPanel } from '@/features/nudges'
 import { AlertCards } from '../components/AlertCards'
 import { CashflowTimeline } from '../components/CashflowTimeline'
 import { LastRefreshed } from '../components/LastRefreshed'
@@ -106,6 +107,7 @@ export function EventDashboardPage() {
 
   return (
     <div className='space-y-6'>
+      <NudgesPanel eventId={currentEvent.id} />
       <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
         <ScenarioToggle value={scenario} onChange={setScenario} />
         <div className='flex flex-wrap items-center justify-between gap-2 sm:justify-end'>
