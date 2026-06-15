@@ -7,6 +7,7 @@ import { ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import apiClient from '@/lib/axios'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth-store'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -37,17 +38,35 @@ const formSchema = z
 
 interface PasswordResetConfirmFormProps extends React.HTMLAttributes<HTMLFormElement> {
   token?: string
+  mode?: 'setup'
+}
+
+type ApiError = {
+  response?: {
+    status?: number
+    data?: {
+      detail?: { message?: string; code?: string }
+      error?: { message?: string }
+      message?: string
+    }
+  }
 }
 
 export function PasswordResetConfirmForm({
   token = '',
+  mode,
   className,
   ...props
 }: PasswordResetConfirmFormProps) {
   const navigate = useNavigate()
+  const setAccessToken = useAuthStore((s) => s.setAccessToken)
+  const setRefreshToken = useAuthStore((s) => s.setRefreshToken)
+  const setUser = useAuthStore((s) => s.setUser)
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  const isAccountSetup = mode === 'setup'
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -62,29 +81,61 @@ export function PasswordResetConfirmForm({
     setIsLoading(true)
 
     try {
-      await apiClient.post('/auth/password/reset/confirm', {
-        token: data.token,
-        new_password: data.new_password,
-      })
+      if (isAccountSetup) {
+        // Account setup: call setup-account which returns JWT tokens for auto-login
+        const response = await apiClient.post<{
+          access_token: string
+          refresh_token: string
+          user: Parameters<typeof setUser>[0]
+        }>('/auth/setup-account', {
+          token: data.token,
+          new_password: data.new_password,
+        })
 
-      toast.success('Password reset successful', {
-        description: 'You can now sign in with your new password.',
-      })
+        const { access_token, refresh_token, user } = response.data
+        setAccessToken(access_token)
+        setRefreshToken(refresh_token)
+        setUser(user)
 
-      form.reset()
-      navigate({ to: '/sign-in' })
-    } catch (error) {
-      const err = error as {
-        response?: {
-          data?: { detail?: { message?: string }; message?: string }
-        }
+        toast.success('Account activated!', {
+          description: "Your password has been set. You're now signed in.",
+        })
+
+        navigate({ to: '/' })
+      } else {
+        // Standard password reset: just confirm and redirect to sign-in
+        await apiClient.post('/auth/password/reset/confirm', {
+          token: data.token,
+          new_password: data.new_password,
+        })
+
+        toast.success('Password reset successful', {
+          description: 'You can now sign in with your new password.',
+        })
+
+        form.reset()
+        navigate({ to: '/sign-in' })
       }
-      const errorMessage =
-        err.response?.data?.detail?.message ||
-        err.response?.data?.message ||
-        'Failed to reset password. The link may have expired.'
+    } catch (error) {
+      const err = error as ApiError
+      const status = err.response?.status
+      const detail = err.response?.data?.detail
 
-      toast.error('Reset failed', {
+      let errorMessage: string
+      if (status === 429) {
+        const retryMsg = err.response?.data?.error?.message
+        errorMessage =
+          retryMsg || 'Too many attempts. Please wait a moment and try again.'
+      } else {
+        errorMessage =
+          detail?.message ||
+          err.response?.data?.message ||
+          (isAccountSetup
+            ? 'Account setup failed. Please contact your administrator for a new invite link.'
+            : 'Failed to reset password. The link may have expired.')
+      }
+
+      toast.error(isAccountSetup ? 'Account setup failed' : 'Reset failed', {
         description: errorMessage,
       })
     } finally {
@@ -195,7 +246,7 @@ export function PasswordResetConfirmForm({
         />
 
         <Button className='mt-2' disabled={isLoading}>
-          Reset password
+          {isAccountSetup ? 'Activate account' : 'Reset password'}
           {isLoading ? <Loader2 className='animate-spin' /> : <ArrowRight />}
         </Button>
       </form>
