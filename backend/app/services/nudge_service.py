@@ -638,10 +638,14 @@ class NudgeService:
                             f'"{row.name}" only has {pct:.0f}% participation '
                             f"({row.entry_count}/{attendee_count} attendees)."
                         ),
-                        action_url=f"/events/{event_id}/revenue-generators",
+                        action_url=(
+                            f"/events/{event_id}/notifications"
+                            f"?audience=non_purchasers&rg_item_id={row.id}"
+                        ),
                         action_label="Boost Participation",
                         affected_count=row.entry_count,
                         metadata={
+                            "rg_item_id": str(row.id),
                             "rg_name": row.name,
                             "participation_pct": round(pct, 1),
                             "entry_count": row.entry_count,

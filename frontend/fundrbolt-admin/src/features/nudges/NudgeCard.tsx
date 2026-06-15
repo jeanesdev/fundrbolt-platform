@@ -1,9 +1,19 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { Check, ExternalLink, X } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { NudgeItem } from './types'
+
+function parseActionUrl(actionUrl: string): {
+  pathname: string
+  search: Record<string, string>
+} {
+  const [pathname, query] = actionUrl.split('?')
+  const search = query
+    ? Object.fromEntries(new URLSearchParams(query).entries())
+    : {}
+  return { pathname, search }
+}
 
 const RANK_STYLES: Record<
   number,
@@ -76,7 +86,8 @@ export function NudgeCard({ nudge, onDismiss, onAction }: NudgeCardProps) {
 
   const handleActionClick = () => {
     if (nudge.action_url) {
-      void navigate({ to: nudge.action_url as string })
+      const { pathname, search } = parseActionUrl(nudge.action_url)
+      void navigate({ to: pathname, search })
     }
   }
 
@@ -110,21 +121,16 @@ export function NudgeCard({ nudge, onDismiss, onAction }: NudgeCardProps) {
             </span>
             <div className='min-w-0 flex-1'>
               <div className='flex flex-wrap items-center gap-2'>
-                <p className='text-sm font-semibold'>{nudge.title}</p>
-                {nudge.affected_count > 0 && (
-                  <Badge variant='secondary' className='text-xs'>
-                    {nudge.affected_count}
-                  </Badge>
-                )}
+                <p className='text-sm font-semibold text-slate-900'>
+                  {nudge.title}
+                </p>
               </div>
-              <p className='text-muted-foreground mt-1 text-xs'>
-                {nudge.description}
-              </p>
+              <p className='mt-1 text-xs text-slate-700'>{nudge.description}</p>
               {nudge.action_url && (
                 <Button
                   variant='link'
                   size='sm'
-                  className='mt-1 h-auto p-0 text-xs'
+                  className='mt-1 h-auto p-0 text-xs text-slate-900'
                   onClick={handleActionClick}
                 >
                   <ExternalLink className='mr-1 h-3 w-3' />
@@ -148,7 +154,7 @@ export function NudgeCard({ nudge, onDismiss, onAction }: NudgeCardProps) {
                 <Button
                   variant='ghost'
                   size='icon'
-                  className='text-muted-foreground h-7 w-7'
+                  className='h-7 w-7 text-slate-600 hover:text-slate-800'
                   title='Dismiss'
                   onClick={onDismiss}
                 >

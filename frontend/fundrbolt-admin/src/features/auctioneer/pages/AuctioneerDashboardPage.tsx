@@ -464,7 +464,6 @@ export function AuctioneerDashboardPage({
 
   return (
     <div className='space-y-6 px-2 py-4 sm:px-4'>
-      <NudgesCompact eventId={currentEvent.id} />
       <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
         <div>
           <h2 className='text-2xl font-bold'>Auctioneer Dashboard</h2>
@@ -613,6 +612,8 @@ export function AuctioneerDashboardPage({
         <RunOfShowCard eventId={currentEvent.id} />
         <EventMapCard layoutImageUrl={currentEvent.seating_layout_image_url} />
       </div>
+
+      <NudgesCompact eventId={currentEvent.id} />
 
       <Tabs
         value={activeTab}
