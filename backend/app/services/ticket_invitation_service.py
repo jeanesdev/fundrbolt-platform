@@ -439,7 +439,7 @@ class TicketInvitationService:
             needs_account_setup = True
             setup_token = PasswordService.generate_reset_token()
             token_hash = PasswordService.hash_token(setup_token)
-            await RedisService.store_password_reset_token(token_hash, guest_user.id)
+            await RedisService.store_account_setup_token(token_hash, guest_user.id)
 
         return InvitationValidateResponse(
             valid=True,

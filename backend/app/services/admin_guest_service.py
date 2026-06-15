@@ -108,7 +108,7 @@ class AdminGuestService:
         if user is not None and not user.is_active and user.must_change_password:
             setup_token = PasswordService.generate_reset_token()
             token_hash = PasswordService.hash_token(setup_token)
-            await RedisService.store_password_reset_token(token_hash, user.id)
+            await RedisService.store_account_setup_token(token_hash, user.id)
             encoded_redirect = quote(redirect_path, safe="")
             return (
                 f"{settings.frontend_donor_url}/password-reset-confirm"
