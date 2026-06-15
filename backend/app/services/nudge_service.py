@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import asyncio
 import uuid
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from typing import Any
 
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -56,30 +56,43 @@ class NudgeService:
 
         closing_soon_minutes = getattr(event, "nudge_closing_soon_minutes", 20)
 
-        results = await asyncio.gather(
-            self._compute_watchers_no_bid(event_id),
-            self._compute_items_no_bids(event_id, event),
-            self._compute_items_most_bids(event_id),
-            self._compute_closing_soon_watchers(event_id, closing_soon_minutes),
-            self._compute_outbid_still_watching(event_id),
-            self._compute_non_participating_attendees(event_id),
-            self._compute_revenue_generator_participation(event_id),
-            self._compute_revenue_generators_not_started(event_id),
-            self._compute_goal_progress(event_id, event),
-            self._compute_pareto_donors(event_id),
-            self._compute_paddle_raise_momentum(event_id),
-            return_exceptions=True,
-        )
-
         nudges: list[NudgeItem] = []
-        for result in results:
-            if isinstance(result, BaseException):
-                logger.warning("nudge compute error: %s", result)
-                continue
+
+        async def extend_from(label: str, coro: Any) -> None:
+            try:
+                result = await coro
+            except Exception:
+                logger.exception("%s compute failed", label)
+                return
+
             if isinstance(result, list):
                 nudges.extend(result)
             elif result is not None:
                 nudges.append(result)
+
+        await extend_from("watchers_no_bid", self._compute_watchers_no_bid(event_id))
+        await extend_from("items_no_bids", self._compute_items_no_bids(event_id, event))
+        await extend_from("items_most_bids", self._compute_items_most_bids(event_id))
+        await extend_from(
+            "closing_soon_watchers",
+            self._compute_closing_soon_watchers(event_id, closing_soon_minutes),
+        )
+        await extend_from("outbid_still_watching", self._compute_outbid_still_watching(event_id))
+        await extend_from(
+            "non_participating_attendees",
+            self._compute_non_participating_attendees(event_id),
+        )
+        await extend_from(
+            "revenue_generator_participation",
+            self._compute_revenue_generator_participation(event_id),
+        )
+        await extend_from(
+            "revenue_generators_not_started",
+            self._compute_revenue_generators_not_started(event_id),
+        )
+        await extend_from("goal_progress", self._compute_goal_progress(event_id, event))
+        await extend_from("pareto_donors", self._compute_pareto_donors(event_id))
+        await extend_from("paddle_raise_momentum", self._compute_paddle_raise_momentum(event_id))
         return nudges
 
     async def get_nudges(
@@ -122,7 +135,7 @@ class NudgeService:
         action: str,
     ) -> DismissNudgeResponse:
         now = datetime.now(UTC)
-        if action == NudgeDismissalAction.DISMISSED:
+        if action == NudgeDismissalAction.DISMISSED.value:
             expires_at: datetime | None = now + timedelta(minutes=30)
         else:
             expires_at = now + timedelta(hours=24)
@@ -473,8 +486,10 @@ class NudgeService:
         result = await self.db.execute(
             select(
                 WatchListEntry.item_id,
+                AuctionItem.title,
                 func.count(WatchListEntry.user_id).label("outbid_watcher_count"),
             )
+            .join(AuctionItem, AuctionItem.id == WatchListEntry.item_id)
             .join(
                 outbid_sq,
                 and_(
@@ -483,7 +498,7 @@ class NudgeService:
                 ),
             )
             .where(WatchListEntry.event_id == event_id)
-            .group_by(WatchListEntry.item_id)
+            .group_by(WatchListEntry.item_id, AuctionItem.title)
             .having(func.count(WatchListEntry.user_id) >= 2)
         )
         rows = result.fetchall()
@@ -492,10 +507,6 @@ class NudgeService:
 
         nudges: list[NudgeItem] = []
         for row in rows:
-            item_result = await self.db.execute(
-                select(AuctionItem.title).where(AuctionItem.id == row.item_id)
-            )
-            item_title = item_result.scalar() or "Unknown Item"
             nudges.append(
                 NudgeItem(
                     nudge_key=f"outbid_watching:{row.item_id}",
@@ -505,7 +516,7 @@ class NudgeService:
                     description=(
                         f"{row.outbid_watcher_count} outbid bidder"
                         f"{'s are' if row.outbid_watcher_count != 1 else ' is'} "
-                        f"still watching '{item_title}' — nudge them back in!"
+                        f"still watching '{row.title}' — nudge them back in!"
                     ),
                     action_url=(
                         f"/events/{event_id}/notifications"
@@ -514,7 +525,7 @@ class NudgeService:
                     action_label="Notify Them",
                     affected_count=row.outbid_watcher_count,
                     metadata={
-                        "item_name": item_title,
+                        "item_name": row.title,
                         "outbid_watcher_count": row.outbid_watcher_count,
                     },
                     is_dismissible=True,
@@ -546,6 +557,12 @@ class NudgeService:
         bid_sq = (
             select(AuctionBid.user_id).where(AuctionBid.event_id == event_id).distinct().subquery()
         )
+        paddle_sq = (
+            select(PaddleRaiseContribution.user_id)
+            .where(PaddleRaiseContribution.event_id == event_id)
+            .distinct()
+            .subquery()
+        )
         # Users who have donated
         donation_sq = (
             select(Donation.donor_user_id)
@@ -558,9 +575,11 @@ class NudgeService:
             select(func.count())
             .select_from(checkin_sq)
             .outerjoin(bid_sq, checkin_sq.c.user_id == bid_sq.c.user_id)
+            .outerjoin(paddle_sq, checkin_sq.c.user_id == paddle_sq.c.user_id)
             .outerjoin(donation_sq, checkin_sq.c.user_id == donation_sq.c.donor_user_id)
             .where(
                 bid_sq.c.user_id.is_(None),
+                paddle_sq.c.user_id.is_(None),
                 donation_sq.c.donor_user_id.is_(None),
             )
         )
@@ -866,42 +885,38 @@ class NudgeService:
         from app.models.quick_entry_donation import QuickEntryDonation
         from app.models.ticket_management import PaymentStatus, TicketPurchase
 
-        results = await asyncio.gather(
-            self.db.execute(
-                select(func.coalesce(func.sum(AuctionBid.bid_amount), 0)).where(
-                    AuctionBid.event_id == event_id,
-                    AuctionBid.bid_status.in_([BidStatus.ACTIVE, BidStatus.WINNING]),
-                )
-            ),
-            self.db.execute(
-                select(func.coalesce(func.sum(PaddleRaiseContribution.amount), 0)).where(
-                    PaddleRaiseContribution.event_id == event_id
-                )
-            ),
-            self.db.execute(
-                # QuickEntryDonation.amount is stored in cents (Integer)
-                select(func.coalesce(func.sum(QuickEntryDonation.amount), 0)).where(
-                    QuickEntryDonation.event_id == event_id
-                )
-            ),
-            self.db.execute(
-                select(func.coalesce(func.sum(TicketPurchase.total_price), 0)).where(
-                    TicketPurchase.event_id == event_id,
-                    TicketPurchase.payment_status == PaymentStatus.COMPLETED,
-                )
-            ),
-            return_exceptions=True,
+        auction_result = await self.db.execute(
+            select(func.coalesce(func.sum(AuctionBid.bid_amount), 0)).where(
+                AuctionBid.event_id == event_id,
+                AuctionBid.bid_status.in_([BidStatus.ACTIVE, BidStatus.WINNING]),
+            )
+        )
+        paddle_result = await self.db.execute(
+            select(func.coalesce(func.sum(PaddleRaiseContribution.amount), 0)).where(
+                PaddleRaiseContribution.event_id == event_id
+            )
+        )
+        # QuickEntryDonation.amount is stored in cents (Integer)
+        quick_result = await self.db.execute(
+            select(func.coalesce(func.sum(QuickEntryDonation.amount), 0)).where(
+                QuickEntryDonation.event_id == event_id
+            )
+        )
+        ticket_result = await self.db.execute(
+            select(func.coalesce(func.sum(TicketPurchase.total_price), 0)).where(
+                TicketPurchase.event_id == event_id,
+                TicketPurchase.payment_status == PaymentStatus.COMPLETED,
+            )
         )
 
-        total = Decimal(0)
-        # Quick entry donation amount is in cents; divide by 100
-        for i, result in enumerate(results):
-            if isinstance(result, BaseException):
-                continue
-            val = result.scalar()
-            if val is not None:
-                amount = Decimal(str(val))
-                if i == 2:  # QuickEntryDonation index
-                    amount = amount / 100
-                total += amount
-        return total
+        auction_total = auction_result.scalar() or 0
+        paddle_total = paddle_result.scalar() or 0
+        quick_total = quick_result.scalar() or 0
+        ticket_total = ticket_result.scalar() or 0
+
+        return (
+            Decimal(str(auction_total))
+            + Decimal(str(paddle_total))
+            + Decimal(str(quick_total)) / 100
+            + Decimal(str(ticket_total))
+        )

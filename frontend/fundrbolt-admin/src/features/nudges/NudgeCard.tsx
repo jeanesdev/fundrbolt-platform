@@ -146,6 +146,7 @@ export function NudgeCard({ nudge, onDismiss, onAction }: NudgeCardProps) {
                   variant='ghost'
                   size='icon'
                   className='h-7 w-7 text-green-600 hover:text-green-700'
+                  aria-label='Mark nudge done'
                   title='Mark done'
                   onClick={onAction}
                 >
@@ -155,6 +156,7 @@ export function NudgeCard({ nudge, onDismiss, onAction }: NudgeCardProps) {
                   variant='ghost'
                   size='icon'
                   className='h-7 w-7 text-slate-600 hover:text-slate-800'
+                  aria-label='Dismiss nudge'
                   title='Dismiss'
                   onClick={onDismiss}
                 >

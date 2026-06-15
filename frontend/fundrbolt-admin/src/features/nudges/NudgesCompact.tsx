@@ -55,7 +55,19 @@ export function NudgesCompact({ eventId }: NudgesCompactProps) {
               </span>
             )}
           </div>
-          <Button variant='ghost' size='icon' className='h-6 w-6'>
+          <Button
+            variant='ghost'
+            size='icon'
+            className='h-6 w-6'
+            aria-label={
+              expanded ? 'Collapse revenue nudges' : 'Expand revenue nudges'
+            }
+            aria-expanded={expanded}
+            onClick={(e) => {
+              e.stopPropagation()
+              setExpanded((v) => !v)
+            }}
+          >
             {expanded ? (
               <ChevronUp className='h-4 w-4' />
             ) : (

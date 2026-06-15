@@ -49,6 +49,7 @@ export function NudgesPanel({ eventId }: NudgesPanelProps) {
               variant='ghost'
               size='icon'
               className='h-7 w-7'
+              aria-label='Refresh nudges'
               title='Refresh nudges'
               onClick={() => refresh()}
             >
@@ -59,6 +60,7 @@ export function NudgesPanel({ eventId }: NudgesPanelProps) {
                 variant='ghost'
                 size='sm'
                 className='text-muted-foreground h-7 text-xs'
+                aria-label='Clear all dismissals'
                 title='Clear all dismissals'
                 onClick={() => clearAll()}
               >
