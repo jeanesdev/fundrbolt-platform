@@ -1,4 +1,4 @@
-openapi: "3.1.0"
+openapi: "3.0.3"
 info:
   title: Cause Section Cards API
   version: "1.0"
@@ -40,8 +40,8 @@ paths:
       tags: [cause-section-cards-admin]
       summary: Publish current draft to live
       description: >
-        Atomically copies draft cards to the published snapshot and increments
-        published_version. Records a revision audit entry.
+        Sets `published_version = draft_version` on the event config row
+        (version-pointer model; no row copying). Records a revision audit entry. Records a revision audit entry.
       parameters:
         - $ref: "#/components/parameters/EventId"
       requestBody:
@@ -409,7 +409,7 @@ components:
         built_in_section_key:
           type: string
           nullable: true
-          enum: [about, sponsors, event_details, null]
+          enum: [about, sponsors, event_details]
         display_order:
           type: integer
         is_enabled:
@@ -458,14 +458,67 @@ components:
           format: date-time
 
     PublicCauseSectionCard:
-      description: Donor-safe view — no draft_version, only enabled published cards
-      allOf:
-        - $ref: "#/components/schemas/CauseSectionCard"
-        - type: object
-          properties:
-            draft_version:
-              readOnly: true
-              description: Not included in public response
+      description: >-
+        Donor-safe view of a cause section card. Same shape as CauseSectionCard
+        but draft_version is omitted from the response (server never exposes it
+        on the public endpoint).
+      type: object
+      required: [id, event_id, card_type, display_order, is_enabled]
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        card_type:
+          $ref: "#/components/schemas/CardType"
+        built_in_section_key:
+          type: string
+          nullable: true
+          enum: [about, sponsors, event_details]
+        display_order:
+          type: integer
+        is_enabled:
+          type: boolean
+        title:
+          type: string
+          nullable: true
+        show_header:
+          type: boolean
+        is_collapsible:
+          type: boolean
+        background_color_token:
+          type: string
+          nullable: true
+        border_color_token:
+          type: string
+          nullable: true
+        content_html:
+          type: string
+          nullable: true
+        video_url:
+          type: string
+          nullable: true
+        video_media_source:
+          $ref: "#/components/schemas/MediaSource"
+          nullable: true
+        video_autoplay:
+          type: boolean
+          nullable: true
+        video_muted_by_default:
+          type: boolean
+          nullable: true
+        slides:
+          type: array
+          items:
+            $ref: "#/components/schemas/SlideItem"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
 
     SlideItem:
       type: object

@@ -34,7 +34,7 @@
 - [ ] T010 Verify migration runs cleanly: `cd backend && poetry run alembic upgrade head`
 - [ ] T011 [P] Implement all Pydantic request/response schemas in `backend/app/schemas/cause_section_card.py` (CausePageConfigResponse, CauseSectionCardResponse, SlideItemResponse, CreateCardRequest, UpdateCardRequest, ReorderRequest, CreateSlideRequest, UpdateSlideRequest, SlideReorderRequest, PublishRequest, ConflictResponse)
 - [ ] T012 [P] Add HTML sanitisation helper in `backend/app/services/cause_section_card_service.py` (strip scripts and untrusted iframes from `content_html` and `overlay_html` before every write; use bleach or equivalent)
-- [ ] T013 [P] Add external URL validation helper in `backend/app/services/cause_section_card_service.py` (HEAD request with 5-second timeout; reject non-HTTPS or unreachable URLs)
+- [ ] T013 [P] Add external URL validation helper in `backend/app/services/cause_section_card_service.py`: reject non-HTTPS schemes; resolve the hostname and reject private/loopback/link-local IP ranges (RFC 1918, 127.0.0.0/8, 169.254.0.0/16, ::1) to prevent SSRF. Do NOT make an outbound HTTP request — use DNS resolution only.
 - [ ] T014 Register `cause_section_cards` router in `backend/app/main.py`
 
 **Checkpoint**: `poetry run alembic upgrade head` succeeds; FastAPI starts with new router mounted.
@@ -53,7 +53,7 @@
 - [ ] T016 [US1] Implement `create_card` in service (validates card_type, sanitises content_html, validates video_url, appends to draft at end; bumps draft_version)
 - [ ] T017 [US1] Implement `update_card` in service (version check → update fields → sanitise/validate → bump draft_version)
 - [ ] T018 [US1] Implement `delete_card` in service (rejects built_in cards; bumps draft_version)
-- [ ] T019 [US1] Implement `publish` in service (version check → copy draft cards to published snapshot → increment published_version → write revision record)
+- [ ] T019 [US1] Implement `publish` in service (version check → set `published_version = draft_version` on the config row → write revision record; no row copying needed — the donor public endpoint queries by `draft_version = published_version`)
 - [ ] T020 [US1] Implement `add_slide`, `update_slide`, `delete_slide` in service (version check; image variants require non-empty media_url; alt_text required for image variants)
 - [ ] T021 [US1] Wire `GET /admin/events/{event_id}/cause-page/config` endpoint in `backend/app/api/v1/cause_section_cards.py`
 - [ ] T022 [US1] Wire `GET /admin/events/{event_id}/cause-page/cards` endpoint
@@ -156,7 +156,7 @@
 
 | Item | Reason | Revisit When |
 |------|--------|--------------|
-| Duplicate card (`POST /cards/{card_id}/duplicate`) — specified in FR-001 | No task added to keep Phase 3 MVP tight; low user impact vs build cost | After Phase 3 ships and admin feedback gathered |
+| Duplicate card (`POST /cards/{card_id}/duplicate`) — note: FR-001 has been updated to SHOULD for this capability | No task added to keep Phase 3 MVP tight; low user impact vs build cost | After Phase 3 ships and admin feedback gathered |
 
 ---
 

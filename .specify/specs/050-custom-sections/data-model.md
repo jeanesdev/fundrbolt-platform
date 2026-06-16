@@ -71,6 +71,7 @@ Slides belonging to a slideshow card.
 **Constraints**:
 - `UNIQUE (card_id, display_order)` — no duplicate positions within a card
 - `CHECK (slide_variant = 'text_only' OR media_url IS NOT NULL)` — image variants must have media
+- `CHECK (slide_variant = 'text_only' OR (alt_text IS NOT NULL AND alt_text != ''))` — alt text required and non-empty for all image-bearing variants (WCAG 2.1 AA, success criterion 1.1.1); also enforced in the service layer
 
 ### `cause_section_card_revisions`
 

@@ -5,7 +5,7 @@
 ## Decision 1: Rich-Text Storage Format
 
 **Decision**: Store rich text as sanitised HTML.
-**Rationale**: The admin WYSIWYG editor (TipTap, already used in this codebase per `tiptap-textstyle-named-export.md` repo memory) outputs HTML. Storing HTML avoids a double-conversion step. Server-side sanitisation with a strict allowlist (bleach or equivalent) ensures XSS is impossible before persistence.
+**Rationale**: The admin WYSIWYG editor (TipTap, already used in this codebase — see `frontend/fundrbolt-admin/src/features/settings/components/content-section.tsx`) outputs HTML. Storing HTML avoids a double-conversion step. Server-side sanitisation with a strict allowlist (bleach or equivalent) ensures XSS is impossible before persistence.
 **Alternatives considered**:
 - Markdown — simpler storage but TipTap is HTML-first; would require a conversion layer.
 - ProseMirror JSON — portable, but increases parse complexity on the donor PWA render path.
@@ -13,17 +13,20 @@
 ## Decision 2: Slide/Video Media Storage
 
 **Decision**: Support both uploaded blobs (Azure Blob Storage) and validated external HTTPS URLs in the same `media_url` field, distinguished by a `media_source` enum (`upload` | `external`).
-**Rationale**: Reuses existing Azure Blob upload pattern used by `EventMedia` and `AuctionItem` image uploads. External URL support is a user requirement and reduces friction for video embeds (e.g., YouTube). URL validation at save time uses a HEAD request with a timeout.
+**Rationale**: Reuses existing Azure Blob upload pattern used by `EventMedia` and `AuctionItem` image uploads. External URL support is a user requirement and reduces friction for video embeds (e.g., YouTube).
+**External URL validation**: Validate that the URL scheme is HTTPS and the resolved hostname does not fall within private/loopback/link-local ranges (RFC 1918, 127.0.0.0/8, 169.254.0.0/16, ::1, etc.) — this prevents SSRF. Do NOT perform a live HTTP fetch from the server (many hosts return 405 on HEAD; server-side fetches also carry SSRF risk). Browser-side reachability feedback (via `<video>`/`<img>` error events in the admin editor) is preferable for UX.
 **Alternatives considered**:
+- Server-side HEAD request for reachability — rejected due to SSRF risk and 405 false-negatives on common CDN/streaming hosts.
 - Uploads only — rejected because admins asked for external URL support for video.
 - External URLs only — rejected because uploads give content persistence guarantees.
 
 ## Decision 3: Draft/Publish Model
 
-**Decision**: Per-event card layout is stored in two rows per event: one `draft` config snapshot and one `published` config snapshot, each in a JSON column on a `event_cause_page_config` table. Cards are child rows in `cause_section_cards` linked to `event_id` with a `draft_version` integer. Publish copies draft rows to published snapshot and increments `published_version`.
-**Rationale**: Simplest model that satisfies FR-016 and FR-017 without needing complex state machine per-card. The donor PWA always reads from the published snapshot via a lightweight denormalized view. Admins read draft. This also naturally supports the audit trail (FR-015).
+**Decision**: Per-event card layout uses a version-pointer model. `event_cause_page_config` stores `draft_version` (incremented on every draft mutation) and `published_version` (set to `draft_version` on Publish). Cards in `cause_section_cards` are stored per `(event_id, draft_version)`. The live Our Cause page reads cards where `draft_version = published_version` on the config row. Publish simply sets `published_version = draft_version` — no row copying.
+**Rationale**: Simplest model that satisfies FR-016 and FR-017. The donor PWA always reads from the published version via a single filter. Admins read the current `draft_version`. This also naturally supports the audit trail (FR-015).
 **Alternatives considered**:
-- Per-card draft state — adds complexity, two cards in different states is confusing UX.
+- Physically copying rows to a "published" table — adds write amplification and complexity with no benefit.
+- Per-card draft state — adds complexity; two cards in different states is confusing UX.
 - Event-level published_at timestamp only — too coarse, no clean diff between draft and live.
 
 ## Decision 4: Conflict Detection

@@ -3,7 +3,7 @@
 **Feature Branch**: `050-custom-sections`
 **Created**: 2026-06-15
 **Status**: Draft
-**Input**: User description: "custom-sections I want to be able to define custom cards that show on the \"Our Cause\" page. I want to be able to define these cards through the admin pwa. I want to have a few different templates, such as a text card, a slides show card (including slides with just images, and slides with text overlaid on the images, slides with just text, like testimonials), a video card (configurable to play automatically, enable or disable audio, autoplay, etc). The text should be editible with a WYSIWYG editor. I want the admin to be able to configure how each card looks (should it include a background or border and what color, header, should it be collapsable, etc), and change their order. All the existing sections on the \"Our Cause page\", such as the \"About This Event\" the sponsors, Event Details, etc should be a card that the admin can configure, re-arrange, disable, etc."
+**Input**: User description: "custom-sections I want to be able to define custom cards that show on the \"Our Cause\" page. I want to be able to define these cards through the admin pwa. I want to have a few different templates, such as a text card, a slideshow card (including slides with just images, and slides with text overlaid on the images, slides with just text, like testimonials), a video card (configurable to play automatically, enable or disable audio, autoplay, etc). The text should be editable with a WYSIWYG editor. I want the admin to be able to configure how each card looks (should it include a background or border and what color, header, should it be collapsible, etc), and change their order. All the existing sections on the \"Our Cause page\", such as the \"About This Event\" the sponsors, Event Details, etc should be a card that the admin can configure, rearrange, disable, etc."
 
 ## Clarifications
 
@@ -74,7 +74,7 @@ As an event administrator, I can manage existing Our Cause sections (such as Abo
 
 ### Functional Requirements
 
-- **FR-001**: System MUST allow authorized administrators to create, edit, duplicate, and delete custom Our Cause cards for an event.
+- **FR-001**: System MUST allow authorized administrators to create, edit, and delete custom Our Cause cards for an event. Administrators SHOULD be able to duplicate existing cards (deferred to a future iteration; see tasks.md Deferred section).
 - **FR-002**: System MUST provide at least these card templates: text card, slideshow card, and video card.
 - **FR-003**: System MUST provide rich text editing for card text content, including basic formatting and link support.
 - **FR-004**: System MUST support slideshow cards with these slide variants: image-only, text-over-image, and text-only.
