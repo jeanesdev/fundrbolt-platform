@@ -30,17 +30,43 @@ function getPendingDonationStorageKey(npoSlug: string): string {
   return `donate-now:pending:${npoSlug}`
 }
 
-export function useDonateNow(npoSlug: string) {
+function toUrlAmountCents(urlAmountDollars?: number): number | null {
+  if (
+    !Number.isFinite(urlAmountDollars) ||
+    !urlAmountDollars ||
+    urlAmountDollars <= 0
+  ) {
+    return null
+  }
+
+  return Math.round(urlAmountDollars * 100)
+}
+
+function formatAmountFromCents(amountCents: number): string {
+  const dollars = amountCents / 100
+  if (Number.isInteger(dollars)) {
+    return String(dollars)
+  }
+
+  return dollars.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')
+}
+
+export function useDonateNow(npoSlug: string, urlAmountDollars?: number) {
   const queryClient = useQueryClient()
   const user = useAuthStore((s) => s.user)
   const defaultDonorName =
     `${user?.first_name ?? ''} ${user?.last_name ?? ''}`.trim()
+  const urlAmountCents = toUrlAmountCents(urlAmountDollars)
 
-  const [selectedAmount, setSelectedAmount] = useState<number>(2500) // $25 default
-  const [customAmount, setCustomAmount] = useState<string>('')
+  const [selectedAmount, setSelectedAmount] = useState<number>(
+    () => urlAmountCents ?? 2500
+  ) // $25 default
+  const [customAmount, setCustomAmount] = useState<string>(() =>
+    urlAmountCents ? formatAmountFromCents(urlAmountCents) : ''
+  )
   const [donorName, setDonorName] = useState<string>(defaultDonorName)
   const [isMonthly, setIsMonthly] = useState(false)
-  const [coversProcessingFee, setCoversProcessingFee] = useState(false)
+  const [coversProcessingFee, setCoversProcessingFee] = useState(true)
   const [isAnonymous, setIsAnonymous] = useState(false)
   const [showAmount, setShowAmount] = useState(true)
   const [wallMessage, setWallMessage] = useState('')
