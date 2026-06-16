@@ -1,0 +1,719 @@
+openapi: "3.0.3"
+info:
+  title: Cause Section Cards API
+  version: "1.0"
+  description: >
+    Endpoints for managing the configurable Our Cause card layout per event.
+    Admin endpoints require NPO Admin or Staff role. Donor endpoint is public.
+
+servers:
+  - url: http://localhost:8000/api/v1
+
+tags:
+  - name: cause-section-cards-admin
+    description: Admin card management (draft / publish workflow)
+  - name: cause-section-cards-public
+    description: Public card read for the donor PWA
+
+paths:
+
+  # ── Admin: config root ────────────────────────────────────────────────────
+
+  /admin/events/{event_id}/cause-page/config:
+    get:
+      tags: [cause-section-cards-admin]
+      summary: Get current draft config and version
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      responses:
+        "200":
+          description: Draft config returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CausePageConfig"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /admin/events/{event_id}/cause-page/publish:
+    post:
+      tags: [cause-section-cards-admin]
+      summary: Publish current draft to live
+      description: >
+        Sets `published_version = draft_version` on the event config row
+        (version-pointer model; no row copying). Records a revision audit entry. Records a revision audit entry.
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishRequest"
+      responses:
+        "200":
+          description: Published successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CausePageConfig"
+        "409":
+          $ref: "#/components/responses/VersionConflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  # ── Admin: cards CRUD ─────────────────────────────────────────────────────
+
+  /admin/events/{event_id}/cause-page/cards:
+    get:
+      tags: [cause-section-cards-admin]
+      summary: List all cards for the current draft (ordered)
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      responses:
+        "200":
+          description: Ordered list of draft cards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CauseSectionCard"
+
+    post:
+      tags: [cause-section-cards-admin]
+      summary: Create a new custom card
+      description: Creates card appended to end of draft. Increments draft_version.
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCardRequest"
+      responses:
+        "201":
+          description: Card created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CauseSectionCard"
+        "409":
+          $ref: "#/components/responses/VersionConflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /admin/events/{event_id}/cause-page/cards/{card_id}:
+    patch:
+      tags: [cause-section-cards-admin]
+      summary: Update a card's content or style settings
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+        - $ref: "#/components/parameters/CardId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCardRequest"
+      responses:
+        "200":
+          description: Card updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CauseSectionCard"
+        "409":
+          $ref: "#/components/responses/VersionConflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+    delete:
+      tags: [cause-section-cards-admin]
+      summary: Delete a custom card from the draft
+      description: Built-in section cards cannot be deleted; disable them instead.
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+        - $ref: "#/components/parameters/CardId"
+      responses:
+        "204":
+          description: Deleted
+        "409":
+          $ref: "#/components/responses/VersionConflict"
+        "422":
+          description: Cannot delete a built-in section card
+
+  /admin/events/{event_id}/cause-page/cards/reorder:
+    patch:
+      tags: [cause-section-cards-admin]
+      summary: Bulk reorder all cards
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReorderRequest"
+      responses:
+        "200":
+          description: Reordered successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CauseSectionCard"
+        "409":
+          $ref: "#/components/responses/VersionConflict"
+
+  # ── Admin: slides ────────────────────────────────────────────────────────
+
+  /admin/events/{event_id}/cause-page/cards/{card_id}/slides:
+    get:
+      tags: [cause-section-cards-admin]
+      summary: List slides for a slideshow card (ordered)
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+        - $ref: "#/components/parameters/CardId"
+      responses:
+        "200":
+          description: Ordered slides
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SlideItem"
+
+    post:
+      tags: [cause-section-cards-admin]
+      summary: Add a slide to a slideshow card
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+        - $ref: "#/components/parameters/CardId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSlideRequest"
+      responses:
+        "201":
+          description: Slide created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SlideItem"
+        "409":
+          $ref: "#/components/responses/VersionConflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /admin/events/{event_id}/cause-page/cards/{card_id}/slides/{slide_id}:
+    patch:
+      tags: [cause-section-cards-admin]
+      summary: Update a slide
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+        - $ref: "#/components/parameters/CardId"
+        - $ref: "#/components/parameters/SlideId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSlideRequest"
+      responses:
+        "200":
+          description: Slide updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SlideItem"
+        "409":
+          $ref: "#/components/responses/VersionConflict"
+
+    delete:
+      tags: [cause-section-cards-admin]
+      summary: Remove a slide
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+        - $ref: "#/components/parameters/CardId"
+        - $ref: "#/components/parameters/SlideId"
+      responses:
+        "204":
+          description: Deleted
+        "409":
+          $ref: "#/components/responses/VersionConflict"
+
+  /admin/events/{event_id}/cause-page/cards/{card_id}/slides/reorder:
+    patch:
+      tags: [cause-section-cards-admin]
+      summary: Bulk reorder slides within a slideshow card
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+        - $ref: "#/components/parameters/CardId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SlideReorderRequest"
+      responses:
+        "200":
+          description: Reordered
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SlideItem"
+        "409":
+          $ref: "#/components/responses/VersionConflict"
+
+  # ── Public: donor PWA ─────────────────────────────────────────────────────
+
+  /events/{event_id}/cause-page/cards:
+    get:
+      tags: [cause-section-cards-public]
+      summary: Get published cards for the Our Cause page
+      description: Returns only enabled cards from the latest published snapshot, in display order.
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      responses:
+        "200":
+          description: Ordered published card list (enabled cards only)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PublicCauseSectionCard"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+# ── Components ────────────────────────────────────────────────────────────────
+
+components:
+
+  parameters:
+    EventId:
+      name: event_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    CardId:
+      name: card_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    SlideId:
+      name: slide_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    VersionConflict:
+      description: >
+        Draft version conflict — another admin has modified the draft since the
+        client last fetched it. Client must re-fetch and present conflict
+        resolution UI.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ConflictResponse"
+
+    ValidationError:
+      description: Request failed validation
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+
+    CardType:
+      type: string
+      enum: [text, slideshow, video, built_in]
+
+    SlideVariant:
+      type: string
+      enum: [image_only, text_over_image, text_only]
+
+    MediaSource:
+      type: string
+      enum: [upload, external]
+
+    CausePageConfig:
+      type: object
+      required: [event_id, draft_version, published_version]
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        draft_version:
+          type: integer
+          description: Current draft version (used for optimistic concurrency)
+        published_version:
+          type: integer
+          description: 0 = never published
+        last_published_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_published_by_user_id:
+          type: string
+          format: uuid
+          nullable: true
+
+    PublishRequest:
+      type: object
+      required: [draft_version]
+      properties:
+        draft_version:
+          type: integer
+          description: The client's current known draft_version (optimistic concurrency)
+
+    CauseSectionCard:
+      type: object
+      required: [id, event_id, draft_version, card_type, display_order, is_enabled]
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        draft_version:
+          type: integer
+        card_type:
+          $ref: "#/components/schemas/CardType"
+        built_in_section_key:
+          type: string
+          nullable: true
+          enum: [about, sponsors, event_details]
+        display_order:
+          type: integer
+        is_enabled:
+          type: boolean
+        title:
+          type: string
+          nullable: true
+        show_header:
+          type: boolean
+        is_collapsible:
+          type: boolean
+        background_color_token:
+          type: string
+          nullable: true
+          description: Tailwind semantic token, e.g. "slate-50". Null = no background.
+        border_color_token:
+          type: string
+          nullable: true
+          description: Tailwind semantic token, e.g. "slate-200". Null = no border.
+        content_html:
+          type: string
+          nullable: true
+          description: Sanitised HTML. Only present for card_type = text.
+        video_url:
+          type: string
+          nullable: true
+        video_media_source:
+          $ref: "#/components/schemas/MediaSource"
+          nullable: true
+        video_autoplay:
+          type: boolean
+          nullable: true
+        video_muted_by_default:
+          type: boolean
+          nullable: true
+        slides:
+          type: array
+          items:
+            $ref: "#/components/schemas/SlideItem"
+          description: Populated for card_type = slideshow. Empty for other types.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    PublicCauseSectionCard:
+      description: >-
+        Donor-safe view of a cause section card. Same shape as CauseSectionCard
+        but draft_version is omitted from the response (server never exposes it
+        on the public endpoint).
+      type: object
+      required: [id, event_id, card_type, display_order, is_enabled]
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        card_type:
+          $ref: "#/components/schemas/CardType"
+        built_in_section_key:
+          type: string
+          nullable: true
+          enum: [about, sponsors, event_details]
+        display_order:
+          type: integer
+        is_enabled:
+          type: boolean
+        title:
+          type: string
+          nullable: true
+        show_header:
+          type: boolean
+        is_collapsible:
+          type: boolean
+        background_color_token:
+          type: string
+          nullable: true
+        border_color_token:
+          type: string
+          nullable: true
+        content_html:
+          type: string
+          nullable: true
+        video_url:
+          type: string
+          nullable: true
+        video_media_source:
+          $ref: "#/components/schemas/MediaSource"
+          nullable: true
+        video_autoplay:
+          type: boolean
+          nullable: true
+        video_muted_by_default:
+          type: boolean
+          nullable: true
+        slides:
+          type: array
+          items:
+            $ref: "#/components/schemas/SlideItem"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    SlideItem:
+      type: object
+      required: [id, card_id, display_order, slide_variant]
+      properties:
+        id:
+          type: string
+          format: uuid
+        card_id:
+          type: string
+          format: uuid
+        display_order:
+          type: integer
+        slide_variant:
+          $ref: "#/components/schemas/SlideVariant"
+        media_url:
+          type: string
+          nullable: true
+        media_source:
+          $ref: "#/components/schemas/MediaSource"
+          nullable: true
+        alt_text:
+          type: string
+          nullable: true
+          description: Required (and must not be empty) for image_only and text_over_image variants
+        overlay_html:
+          type: string
+          nullable: true
+          description: Sanitised HTML. For text_over_image and text_only variants.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateCardRequest:
+      type: object
+      required: [card_type, draft_version]
+      properties:
+        draft_version:
+          type: integer
+        card_type:
+          $ref: "#/components/schemas/CardType"
+        title:
+          type: string
+          nullable: true
+        show_header:
+          type: boolean
+          default: false
+        is_collapsible:
+          type: boolean
+          default: false
+        background_color_token:
+          type: string
+          nullable: true
+        border_color_token:
+          type: string
+          nullable: true
+        content_html:
+          type: string
+          nullable: true
+        video_url:
+          type: string
+          nullable: true
+        video_media_source:
+          $ref: "#/components/schemas/MediaSource"
+          nullable: true
+        video_autoplay:
+          type: boolean
+          nullable: true
+        video_muted_by_default:
+          type: boolean
+          nullable: true
+
+    UpdateCardRequest:
+      type: object
+      required: [draft_version]
+      properties:
+        draft_version:
+          type: integer
+        is_enabled:
+          type: boolean
+        title:
+          type: string
+          nullable: true
+        show_header:
+          type: boolean
+        is_collapsible:
+          type: boolean
+        background_color_token:
+          type: string
+          nullable: true
+        border_color_token:
+          type: string
+          nullable: true
+        content_html:
+          type: string
+          nullable: true
+        video_url:
+          type: string
+          nullable: true
+        video_media_source:
+          $ref: "#/components/schemas/MediaSource"
+          nullable: true
+        video_autoplay:
+          type: boolean
+          nullable: true
+        video_muted_by_default:
+          type: boolean
+          nullable: true
+
+    ReorderRequest:
+      type: object
+      required: [draft_version, order]
+      properties:
+        draft_version:
+          type: integer
+        order:
+          type: array
+          description: Full ordered list of card IDs after reordering
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+
+    CreateSlideRequest:
+      type: object
+      required: [slide_variant, draft_version]
+      properties:
+        draft_version:
+          type: integer
+        slide_variant:
+          $ref: "#/components/schemas/SlideVariant"
+        media_url:
+          type: string
+          nullable: true
+        media_source:
+          $ref: "#/components/schemas/MediaSource"
+          nullable: true
+        alt_text:
+          type: string
+          nullable: true
+        overlay_html:
+          type: string
+          nullable: true
+
+    UpdateSlideRequest:
+      type: object
+      required: [draft_version]
+      properties:
+        draft_version:
+          type: integer
+        slide_variant:
+          $ref: "#/components/schemas/SlideVariant"
+        media_url:
+          type: string
+          nullable: true
+        media_source:
+          $ref: "#/components/schemas/MediaSource"
+          nullable: true
+        alt_text:
+          type: string
+          nullable: true
+        overlay_html:
+          type: string
+          nullable: true
+
+    SlideReorderRequest:
+      type: object
+      required: [draft_version, order]
+      properties:
+        draft_version:
+          type: integer
+        order:
+          type: array
+          description: Full ordered list of slide IDs after reordering
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+
+    ErrorResponse:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+
+    ConflictResponse:
+      type: object
+      required: [detail, current_draft_version]
+      properties:
+        detail:
+          type: string
+        current_draft_version:
+          type: integer
+          description: The server's current draft version so client can re-fetch

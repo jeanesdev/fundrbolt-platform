@@ -90,6 +90,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - PostgreSQL 15 (seed + test DB), Redis 7 (existing) — no new schema changes (047-integration-testing-beta)
 - Python 3.11 (backend), TypeScript 5.x (frontend) + FastAPI 0.120, SQLAlchemy 2.0, Pydantic 2.0, Alembic (backend); React 18/19, Vite, TanStack Router, Zustand, Radix UI, Tailwind CSS 4 (frontend) (048-attendee-profile-survey)
 - Azure Database for PostgreSQL (5 new tables + 2 modified + 1 enum extension) (048-attendee-profile-survey)
+- Python 3.11+ (backend), TypeScript 5.x (frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (backend); React 19, Vite 7, TanStack Router, TanStack React Query 5, Zustand 5, Radix UI, Tailwind CSS 4 (admin PWA); React 19, Vite 7, TanStack Router (donor PWA) (050-custom-sections)
+- Azure Database for PostgreSQL (card config, revision history); Azure Blob Storage (uploaded slide/video media) (050-custom-sections)
 
 ## Project Structure
 ```
@@ -174,9 +176,10 @@ git commit -m "message"
 ```
 
 ## Recent Changes
+- 050-custom-sections: Added Python 3.11+ (backend), TypeScript 5.x (frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (backend); React 19, Vite 7, TanStack Router, TanStack React Query 5, Zustand 5, Radix UI, Tailwind CSS 4 (admin PWA); React 19, Vite 7, TanStack Router (donor PWA)
 - 048-attendee-profile-survey: Added Python 3.11 (backend), TypeScript 5.x (frontend) + FastAPI 0.120, SQLAlchemy 2.0, Pydantic 2.0, Alembic (backend); React 18/19, Vite, TanStack Router, Zustand, Radix UI, Tailwind CSS 4 (frontend)
 - 047-integration-testing-beta: Added Python 3.11+ (backend API tests / seed), TypeScript 5.x (Playwright E2E tests) + pytest 7.4+, pytest-asyncio 0.21+, httpx 0.25+, freezegun 1.5+, pytest-freezegun 0.4+, @playwright/test ^1.58.2
-- 044-checkout-i-need: Added Python 3.11+ (backend), TypeScript 5.x (frontend)
+- 014-table-details-management: Added event_tables table with custom_capacity, table_name, table_captain_id fields
   - ✅ Database migration: Added event_tables table with custom_capacity, table_name, table_captain_id fields
   - ✅ Updated registration_guests with is_table_captain boolean field
   - ✅ US1 - Customize Table Capacity: Event coordinators can set custom capacity per table (1-20), system enforces limits
