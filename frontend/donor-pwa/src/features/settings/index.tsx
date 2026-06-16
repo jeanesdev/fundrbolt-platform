@@ -1,8 +1,8 @@
-import { BottomNav } from '@/components/layout/bottom-nav'
-import { useTabSwipe } from '@/hooks/use-tab-swipe'
-import { useEventContextStore } from '@/stores/event-context-store'
 import { Outlet, useLocation, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft } from 'lucide-react'
+import { useEventContextStore } from '@/stores/event-context-store'
+import { useTabSwipe } from '@/hooks/use-tab-swipe'
+import { BottomNav } from '@/components/layout/bottom-nav'
 
 const SETTINGS_TABS = [
   '/settings',
@@ -75,7 +75,7 @@ export function Settings() {
 
       {/* Swipeable content area */}
       <main
-        className='flex-1 overflow-y-auto px-4 py-4 pb-bottom-nav'
+        className='pb-bottom-nav flex-1 overflow-y-auto px-4 py-4'
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}

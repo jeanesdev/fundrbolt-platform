@@ -55,17 +55,19 @@ export function DataDeletionPage() {
                 </a>
               </li>
               <li>
-                Go to <strong className='text-foreground'>Settings</strong>{' '}
-                (tap your profile icon or use the menu)
+                Go to <strong className='text-foreground'>Settings</strong> (tap
+                your profile icon or use the menu)
               </li>
               <li>
-                Select the{' '}
-                <strong className='text-foreground'>Other</strong> tab
+                Select the <strong className='text-foreground'>Other</strong>{' '}
+                tab
               </li>
               <li>
                 Under{' '}
-                <strong className='text-foreground'>Privacy &amp; Data Rights</strong>,
-                click{' '}
+                <strong className='text-foreground'>
+                  Privacy &amp; Data Rights
+                </strong>
+                , click{' '}
                 <strong className='text-foreground'>Delete Account</strong>
               </li>
               <li>
@@ -109,16 +111,15 @@ export function DataDeletionPage() {
               and include:
             </p>
             <ul className='text-muted-foreground list-disc space-y-1 pl-5 text-sm'>
-              <li>
-                The email address associated with your FundrBolt account
-              </li>
+              <li>The email address associated with your FundrBolt account</li>
               <li>
                 If signing in with Facebook: your Facebook name or profile URL
               </li>
             </ul>
             <p className='text-muted-foreground text-sm'>
-              We will process your request within <strong className='text-foreground'>30 days</strong> and
-              send confirmation once complete.
+              We will process your request within{' '}
+              <strong className='text-foreground'>30 days</strong> and send
+              confirmation once complete.
             </p>
           </CardContent>
         </Card>
@@ -151,10 +152,7 @@ export function DataDeletionPage() {
         <div className='border-t pt-4'>
           <p className='text-muted-foreground text-sm'>
             For more information, see our{' '}
-            <Link
-              to='/privacy-policy'
-              className='text-primary hover:underline'
-            >
+            <Link to='/privacy-policy' className='text-primary hover:underline'>
               Privacy Policy
             </Link>
             . Questions? Email{' '}

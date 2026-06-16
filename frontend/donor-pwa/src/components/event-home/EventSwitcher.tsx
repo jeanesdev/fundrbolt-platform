@@ -11,6 +11,9 @@
  * - Events sorted: upcoming first (date ASC), then past (date DESC)
  * - Conditional dropdown (only shows chevron if multiple events)
  */
+import * as React from 'react'
+import type { RegisteredEventWithBranding } from '@/types/event-branding'
+import { Calendar, Check, ChevronDown } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -21,9 +24,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import type { RegisteredEventWithBranding } from '@/types/event-branding'
-import { Calendar, Check, ChevronDown } from 'lucide-react'
-import * as React from 'react'
 
 export interface EventSwitcherProps {
   /** Currently selected event */

@@ -1,17 +1,17 @@
-import { handleServerError } from '@/lib/handle-server-error'
-import { useAuthStore } from '@/stores/auth-store'
-import { useGlobalInputSanitizer } from '@fundrbolt/shared/hooks'
-import * as Sentry from '@sentry/react'
+import { StrictMode, useEffect } from 'react'
+import ReactDOM from 'react-dom/client'
+import { AxiosError } from 'axios'
 import {
   QueryCache,
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
-import { AxiosError } from 'axios'
-import { StrictMode, useEffect } from 'react'
-import ReactDOM from 'react-dom/client'
+import { useGlobalInputSanitizer } from '@fundrbolt/shared/hooks'
+import * as Sentry from '@sentry/react'
 import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import { handleServerError } from '@/lib/handle-server-error'
 import { DirectionProvider } from './context/direction-provider'
 import { FontProvider } from './context/font-provider'
 import { ThemeProvider } from './context/theme-provider'

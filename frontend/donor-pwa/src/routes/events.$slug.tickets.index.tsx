@@ -112,7 +112,12 @@ function TicketListingPage() {
   const isFetching = eventFetching || packagesFetching
   // Include isPending to guard against the brief window between mount and first fetch
   // where fetchStatus is 'idle' but data hasn't loaded yet (causes false error flash)
-  const isLoading = eventLoading || packagesLoading || isFetching || eventPending || packagesPending
+  const isLoading =
+    eventLoading ||
+    packagesLoading ||
+    isFetching ||
+    eventPending ||
+    packagesPending
   const error = eventError || packagesError
 
   const handleQuantityChange = (pkg: PublicTicketPackage, qty: number) => {

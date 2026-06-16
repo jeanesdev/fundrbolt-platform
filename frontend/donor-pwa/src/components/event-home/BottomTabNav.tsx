@@ -5,8 +5,8 @@
  * Active tab uses the event primary brand colour.
  * Supports a badge count on any tab.
  */
-import { cn } from '@/lib/utils'
 import { Heart, PartyPopper, Ticket } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export type DonorTab = 'home' | 'auction' | 'seat'
 

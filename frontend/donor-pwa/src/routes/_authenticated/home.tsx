@@ -1,16 +1,7 @@
-import { PublicDirectoryExplorer } from '@/components/home/public-directory-explorer'
-import { LegalFooter } from '@/components/legal/legal-footer'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Button } from '@/components/ui/button'
-import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
-import { getMyInventory } from '@/lib/api/ticket-purchases'
-import { useAuthStore } from '@/stores/auth-store'
-import { getEffectiveNow } from '@/stores/debug-spoof-store'
-import { useEventContextStore } from '@/stores/event-context-store'
-import type { RegisteredEventWithBranding } from '@/types/event-branding'
-import { colors, LogoWhiteGold } from '@fundrbolt/shared/assets'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import type { RegisteredEventWithBranding } from '@/types/event-branding'
+import { colors, LogoWhiteGold } from '@fundrbolt/shared/assets'
 import {
   Calendar,
   ChevronRight,
@@ -19,6 +10,15 @@ import {
   TicketCheck,
   Users,
 } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
+import { getEffectiveNow } from '@/stores/debug-spoof-store'
+import { useEventContextStore } from '@/stores/event-context-store'
+import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
+import { getMyInventory } from '@/lib/api/ticket-purchases'
+import { Button } from '@/components/ui/button'
+import { PublicDirectoryExplorer } from '@/components/home/public-directory-explorer'
+import { LegalFooter } from '@/components/legal/legal-footer'
+import { ProfileDropdown } from '@/components/profile-dropdown'
 
 // Unified display type — registered events plus admin-only events mapped to same shape
 type DisplayEvent = RegisteredEventWithBranding & { has_admin_access?: boolean }

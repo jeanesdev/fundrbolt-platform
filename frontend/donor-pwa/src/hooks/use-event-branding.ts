@@ -150,7 +150,7 @@ export function useEventBranding() {
     // Update theme-color meta tag and body to match event background
     // This prevents the iOS Safari chrome (top/bottom bars) from being a different color
     updateThemeColorMeta(backgroundColor)
-    document.body.style.backgroundColor = backgroundColor
+    document.body.style.setProperty('background-color', backgroundColor)
   }
 
   /**
@@ -180,7 +180,7 @@ export function useEventBranding() {
 
     // Reset theme-color to dark default and clear inline body background
     updateThemeColorMeta(DEFAULT_COLORS.background)
-    document.body.style.backgroundColor = ''
+    document.body.style.removeProperty('background-color')
   }
 
   /**

@@ -1,8 +1,36 @@
-import { InlineDonorLabels } from '@/components/admin/InlineDonorLabels'
-import { CheckInAssignmentDialog } from '@/components/checkin/CheckInAssignmentDialog'
-import { QRCodeDialog } from '@/components/checkin/QRCodeDialog'
-import { QuickSaleDialog } from '@/components/checkin/QuickSaleDialog'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useEffect, useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { checkinService } from '@/services/checkin-service'
+import { fetchEventTables } from '@/services/seating-service'
+import {
+  Check,
+  ChevronDown,
+  CreditCard,
+  Crown,
+  Filter,
+  Loader2,
+  Plus,
+  QrCode,
+  RotateCcw,
+  Search,
+  Settings2,
+  X,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
+import {
+  adminCreatePaymentProfile,
+  adminCreatePaymentSession,
+} from '@/lib/api/admin-payments'
+import {
+  assignBidderNumber,
+  assignGuestToTable,
+  assignRegistrationBidderNumber,
+  assignRegistrationToTable,
+  getNextAvailableBidderNumber,
+} from '@/lib/api/admin-seating'
+import { getErrorMessage } from '@/lib/error-utils'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -44,40 +72,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { InlineDonorLabels } from '@/components/admin/InlineDonorLabels'
+import { CheckInAssignmentDialog } from '@/components/checkin/CheckInAssignmentDialog'
+import { QRCodeDialog } from '@/components/checkin/QRCodeDialog'
+import { QuickSaleDialog } from '@/components/checkin/QuickSaleDialog'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { getUser, updateUser } from '@/features/users/api/users-api'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
-import {
-  adminCreatePaymentProfile,
-  adminCreatePaymentSession,
-} from '@/lib/api/admin-payments'
-import {
-  assignBidderNumber,
-  assignGuestToTable,
-  assignRegistrationBidderNumber,
-  assignRegistrationToTable,
-  getNextAvailableBidderNumber,
-} from '@/lib/api/admin-seating'
-import { getErrorMessage } from '@/lib/error-utils'
-import { checkinService } from '@/services/checkin-service'
-import { fetchEventTables } from '@/services/seating-service'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  Check,
-  ChevronDown,
-  CreditCard,
-  Crown,
-  Filter,
-  Loader2,
-  Plus,
-  QrCode,
-  RotateCcw,
-  Search,
-  Settings2,
-  X,
-} from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
-import { toast } from 'sonner'
 import { useEventWorkspace } from '../useEventWorkspace'
 
 function StatusBadge({ checkedIn }: { checkedIn: boolean }) {
@@ -294,9 +294,9 @@ export function EventCheckInSection() {
       const assignment =
         !undo && (bidderNumber !== undefined || tableNumber !== undefined)
           ? {
-            bidder_number: bidderNumber,
-            table_number: tableNumber ?? undefined,
-          }
+              bidder_number: bidderNumber,
+              table_number: tableNumber ?? undefined,
+            }
           : undefined
 
       if (attendeeType === 'guest') {
@@ -470,13 +470,13 @@ export function EventCheckInSection() {
         (initialContactSnapshot.organizationName !==
           currentContactSnapshot.organizationName ||
           initialContactSnapshot.addressLine1 !==
-          currentContactSnapshot.addressLine1 ||
+            currentContactSnapshot.addressLine1 ||
           initialContactSnapshot.addressLine2 !==
-          currentContactSnapshot.addressLine2 ||
+            currentContactSnapshot.addressLine2 ||
           initialContactSnapshot.city !== currentContactSnapshot.city ||
           initialContactSnapshot.state !== currentContactSnapshot.state ||
           initialContactSnapshot.postalCode !==
-          currentContactSnapshot.postalCode ||
+            currentContactSnapshot.postalCode ||
           initialContactSnapshot.country !== currentContactSnapshot.country)
 
       if (attendee.user_id && hasContactChanges) {
@@ -1378,10 +1378,11 @@ export function EventCheckInSection() {
                           <dt className='text-muted-foreground'>Payment</dt>
                           <dd>
                             <span
-                              className={`flex items-center gap-1 text-xs ${attendee.has_payment_profile
-                                ? 'text-green-600'
-                                : 'text-muted-foreground'
-                                }`}
+                              className={`flex items-center gap-1 text-xs ${
+                                attendee.has_payment_profile
+                                  ? 'text-green-600'
+                                  : 'text-muted-foreground'
+                              }`}
                             >
                               <CreditCard className='h-3 w-3' />
                               {attendee.has_payment_profile
@@ -1700,10 +1701,11 @@ export function EventCheckInSection() {
                               }
                             >
                               <CreditCard
-                                className={`h-4 w-4 ${attendee.has_payment_profile
-                                  ? 'text-green-600'
-                                  : 'text-muted-foreground'
-                                  }`}
+                                className={`h-4 w-4 ${
+                                  attendee.has_payment_profile
+                                    ? 'text-green-600'
+                                    : 'text-muted-foreground'
+                                }`}
                               />
                             </span>
                           </TableCell>

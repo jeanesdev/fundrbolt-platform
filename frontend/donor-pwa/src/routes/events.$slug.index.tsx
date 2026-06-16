@@ -15,7 +15,11 @@ import { useAuthStore } from '@/stores/auth-store'
 import { type EventContextOption } from '@/stores/event-context-store'
 import { getEventBySlug, type EventMediaUsageTag } from '@/lib/api/events'
 import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
-import { getDonorSurveyStatus, markSurveyDonateBack, submitDonorSurvey } from '@/lib/api/survey'
+import {
+  getDonorSurveyStatus,
+  markSurveyDonateBack,
+  submitDonorSurvey,
+} from '@/lib/api/survey'
 import { getMyInventory } from '@/lib/api/ticket-purchases'
 import apiClient from '@/lib/axios'
 import { hasValidRefreshToken } from '@/lib/storage/tokens'
@@ -112,8 +116,7 @@ function RouteComponent() {
   const isRegisteredInContext = availableEvents.some(
     (eventOption) => eventOption.slug === slug && eventOption.is_registered
   )
-  const npoName =
-    availableEvents.find((e) => e.slug === slug)?.npo_name ?? null
+  const npoName = availableEvents.find((e) => e.slug === slug)?.npo_name ?? null
   const isRegisteredFromQuery =
     registrationsData?.events?.some(
       (registeredEvent) => registeredEvent.slug === slug
@@ -172,7 +175,10 @@ function RouteComponent() {
         queryKey: ['donor-survey-status', event?.id],
       })
       dismissSurvey()
-      if (response.status === 'completed' && response.discount_cents_applied > 0) {
+      if (
+        response.status === 'completed' &&
+        response.discount_cents_applied > 0
+      ) {
         setSurveyThankYou({ discountCents: response.discount_cents_applied })
       } else if (response.status === 'completed') {
         toast.success('Thanks for sharing your preferences!')

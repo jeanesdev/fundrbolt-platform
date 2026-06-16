@@ -1,10 +1,8 @@
-import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
-import {
-    hasSeenProfileSetup,
-} from '@/features/auth/complete-profile/utils'
-import { hasValidRefreshToken } from '@/lib/storage/tokens'
-import { useAuthStore } from '@/stores/auth-store'
 import { createFileRoute, redirect } from '@tanstack/react-router'
+import { useAuthStore } from '@/stores/auth-store'
+import { hasValidRefreshToken } from '@/lib/storage/tokens'
+import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
+import { hasSeenProfileSetup } from '@/features/auth/complete-profile/utils'
 
 /**
  * Authenticated route wrapper for donor PWA

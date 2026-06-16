@@ -2,6 +2,19 @@
  * RevenueGeneratorItemCard
  * Display card for a single Revenue Generator item, styled like AuctionItemCard
  */
+import { useState } from 'react'
+import revenueGeneratorService, {
+  type RGItem,
+} from '@/services/revenueGeneratorService'
+import {
+  DollarSign,
+  MoreVertical,
+  Pencil,
+  Ticket,
+  Trash2,
+  Trophy,
+} from 'lucide-react'
+import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -20,19 +33,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Switch } from '@/components/ui/switch'
 import { RGItemForm } from '@/features/revenue-generators/RGItemForm'
-import revenueGeneratorService, {
-  type RGItem,
-} from '@/services/revenueGeneratorService'
-import {
-  DollarSign,
-  MoreVertical,
-  Pencil,
-  Ticket,
-  Trash2,
-  Trophy,
-} from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
 
 interface RevenueGeneratorItemCardProps {
   item: RGItem

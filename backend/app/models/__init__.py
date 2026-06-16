@@ -13,6 +13,16 @@ from app.models.auctioneer import AuctioneerEventSettings, AuctioneerItemCommiss
 from app.models.audit_log import AuditLog
 from app.models.base import Base, TimestampMixin, UUIDMixin
 from app.models.buy_now_availability import BuyNowAvailability
+from app.models.cause_section_card import (
+    CardTypeEnum,
+    CauseSectionCard,
+    CauseSectionCardRevision,
+    CauseSectionSlideItem,
+    EventCausePageConfig,
+    MediaSourceEnum,
+    RevisionActionEnum,
+    SlideVariantEnum,
+)
 from app.models.checklist import (
     ChecklistItem,
     ChecklistItemStatus,
@@ -160,6 +170,10 @@ __all__ = [
     "BidActionAudit",
     "BuyNowAvailability",
     "CampaignStatusEnum",
+    "CardTypeEnum",
+    "CauseSectionCard",
+    "CauseSectionCardRevision",
+    "CauseSectionSlideItem",
     "ChecklistItem",
     "ChecklistItemStatus",
     "ChecklistTemplate",
@@ -185,6 +199,7 @@ __all__ = [
     "DonorLabelAssignment",
     "DiscountType",
     "Event",
+    "EventCausePageConfig",
     "EventLink",
     "EventMedia",
     "EventSurveyConfig",
@@ -202,6 +217,7 @@ __all__ = [
     "IssueSeverity",
     "LegalDocument",
     "MealSelection",
+    "MediaSourceEnum",
     "NPO",
     "NPOApplication",
     "NPOBranding",
@@ -247,6 +263,7 @@ __all__ = [
     "RegistrationStatus",
     "RegistrationValidationIssue",
     "ImportBatchStatus",
+    "RevisionActionEnum",
     "ValidationSeverity",
     "Role",
     "Session",
@@ -256,6 +273,7 @@ __all__ = [
     "EmailVerificationChallenge",
     "AdminStepUpChallenge",
     "Sponsor",
+    "SlideVariantEnum",
     "SurveyAnswer",
     "SurveyQuestion",
     "SurveyQuestionOption",

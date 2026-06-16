@@ -1,5 +1,23 @@
-import { ConsentHistory } from '@/components/legal/consent-history'
-import { DataRightsForm } from '@/components/legal/data-rights-form'
+import { useState } from 'react'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useQuery } from '@tanstack/react-query'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import {
+  CheckCircle,
+  ChevronDown,
+  ClipboardList,
+  LifeBuoy,
+  Mail,
+  Send,
+  Shield,
+  Tag,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import { useEventContextStore } from '@/stores/event-context-store'
+import { getDonorSurveyStatus } from '@/lib/api/survey'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -30,18 +48,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { ConsentHistory } from '@/components/legal/consent-history'
+import { DataRightsForm } from '@/components/legal/data-rights-form'
 import { ContentSection } from '@/features/settings/components/content-section'
-import { getDonorSurveyStatus } from '@/lib/api/survey'
-import { useAuthStore } from '@/stores/auth-store'
-import { useEventContextStore } from '@/stores/event-context-store'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useQuery } from '@tanstack/react-query'
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { CheckCircle, ChevronDown, ClipboardList, LifeBuoy, Mail, Send, Shield, Tag } from 'lucide-react'
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
-import { z } from 'zod'
 
 const SUPPORT_EMAIL = 'support@fundrbolt.com'
 
@@ -229,7 +238,9 @@ function SurveyStatusSection() {
           ) : (
             <>
               <ClipboardList className='text-muted-foreground h-5 w-5' />
-              <span className='text-muted-foreground text-sm'>Survey not yet completed</span>
+              <span className='text-muted-foreground text-sm'>
+                Survey not yet completed
+              </span>
             </>
           )}
         </div>
@@ -252,7 +263,6 @@ function SurveyStatusSection() {
     </Card>
   )
 }
-
 
 function SettingsOther() {
   return (

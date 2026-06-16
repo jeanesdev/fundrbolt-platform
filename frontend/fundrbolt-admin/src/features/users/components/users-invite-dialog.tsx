@@ -1,4 +1,9 @@
-import { SelectDropdown } from '@/components/select-dropdown'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useQuery } from '@tanstack/react-query'
+import npoService from '@/services/npo-service'
+import { MailPlus, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -18,16 +23,16 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import npoService from '@/services/npo-service'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useQuery } from '@tanstack/react-query'
-import { MailPlus, Send } from 'lucide-react'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
+import { SelectDropdown } from '@/components/select-dropdown'
 import { roles } from '../data/data'
 import { useCreateUser } from '../hooks/use-users'
 
-const NPO_SCOPED_ROLES = ['npo_admin', 'event_coordinator', 'staff', 'auctioneer'] as const
+const NPO_SCOPED_ROLES = [
+  'npo_admin',
+  'event_coordinator',
+  'staff',
+  'auctioneer',
+] as const
 
 const formSchema = z
   .object({
@@ -254,7 +259,11 @@ export function UsersInviteDialog({
                     onValueChange={(value) => {
                       field.onChange(value)
                       // Clear npo_id when switching to a non-NPO-scoped role
-                      if (!NPO_SCOPED_ROLES.includes(value as (typeof NPO_SCOPED_ROLES)[number])) {
+                      if (
+                        !NPO_SCOPED_ROLES.includes(
+                          value as (typeof NPO_SCOPED_ROLES)[number]
+                        )
+                      ) {
                         form.setValue('npo_id', '')
                       }
                     }}

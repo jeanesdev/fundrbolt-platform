@@ -1,8 +1,8 @@
-import { SupportWallModerationTable } from '@/components/donate-now/SupportWallModerationTable'
-import { useNpoContext } from '@/hooks/use-npo-context'
-import apiClient from '@/lib/axios'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useParams } from '@tanstack/react-router'
+import apiClient from '@/lib/axios'
+import { useNpoContext } from '@/hooks/use-npo-context'
+import { SupportWallModerationTable } from '@/components/donate-now/SupportWallModerationTable'
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -43,9 +43,7 @@ function DonateNowWallPage() {
   })
 
   const resolvedNpoId =
-    resolvedFromContext ??
-    nposList?.find((n) => n.slug === npoSlug)?.id ??
-    null
+    resolvedFromContext ?? nposList?.find((n) => n.slug === npoSlug)?.id ?? null
 
   return (
     <div className='space-y-6 p-6'>

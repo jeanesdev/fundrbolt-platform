@@ -35,6 +35,7 @@ from app.api.v1 import (
     auctioneer_run_of_show,
     auth,
     branding,
+    cause_section_cards,
     checkin,
     consent,
     cookies,
@@ -114,6 +115,14 @@ api_router.include_router(public_testimonials.router, tags=["public-testimonials
 api_router.include_router(admin_testimonials.router, tags=["admin-testimonials"])
 api_router.include_router(admin_seating.router, tags=["admin-seating"])
 api_router.include_router(admin_checklist.router, tags=["admin-checklist"])
+api_router.include_router(
+    cause_section_cards.admin_router,
+    tags=["cause-section-cards-admin"],
+)
+api_router.include_router(
+    cause_section_cards.public_router,
+    tags=["cause-section-cards-public"],
+)
 api_router.include_router(admin_auction_bid_import.router)
 api_router.include_router(admin_auction_item_import.router)
 api_router.include_router(admin_registration_import.router)

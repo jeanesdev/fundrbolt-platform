@@ -2,17 +2,17 @@
  * Event Self Check-In Route
  * Allows donors to check themselves in by scanning a QR code or entering their confirmation code
  */
-import { CheckInLookup } from '@/components/checkin/CheckInLookup'
-import { GuestCheckInList } from '@/components/checkin/GuestCheckInList'
-import { RegistrationDetails } from '@/components/checkin/RegistrationDetails'
-import { Button } from '@/components/ui/button'
-import { useEventBranding } from '@/hooks/use-event-branding'
-import type { CheckInLookupResponse } from '@/lib/api/checkin'
-import { getEventBySlug } from '@/lib/api/events'
+import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import type { CheckInLookupResponse } from '@/lib/api/checkin'
+import { getEventBySlug } from '@/lib/api/events'
+import { useEventBranding } from '@/hooks/use-event-branding'
+import { Button } from '@/components/ui/button'
+import { CheckInLookup } from '@/components/checkin/CheckInLookup'
+import { GuestCheckInList } from '@/components/checkin/GuestCheckInList'
+import { RegistrationDetails } from '@/components/checkin/RegistrationDetails'
 
 export const Route = createFileRoute('/events/$slug/checkin')({
   component: RouteComponent,

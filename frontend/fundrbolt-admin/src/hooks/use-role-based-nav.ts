@@ -391,6 +391,7 @@ const EVENT_SECTION_CONFIG: EventSectionConfig[] = [
     icon: 'Award',
     statKey: 'sponsors_count',
   },
+  { title: 'Our Cause', path: 'cause-sections', icon: 'Layout' },
   {
     title: 'Auction Items',
     path: 'auction-items',
@@ -466,6 +467,7 @@ const EVENT_NAV_GROUPS: Array<{
       sectionByPath('tickets/sales'),
       sectionByPath('tickets/promos'),
       sectionByPath('sponsors'),
+      sectionByPath('cause-sections'),
       sectionByPath('notifications'),
     ],
   },

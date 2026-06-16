@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowRight, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'

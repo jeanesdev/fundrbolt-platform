@@ -1,3 +1,7 @@
+import { useMemo, useState } from 'react'
+import { Gift, Loader2, Sparkles } from 'lucide-react'
+import type { DonorSurveyConfig } from '@/lib/api/survey'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -7,10 +11,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
-import type { DonorSurveyConfig } from '@/lib/api/survey'
-import { cn } from '@/lib/utils'
-import { Gift, Loader2, Sparkles } from 'lucide-react'
-import { useMemo, useState } from 'react'
 
 interface AttendeeSurveyModalProps {
   open: boolean
@@ -71,7 +71,12 @@ export function AttendeeSurveyModal({
   const canSubmit = questionCount > 0 && completedCount === questionCount
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose() }}>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) onClose()
+      }}
+    >
       <DialogContent
         className='flex h-[100dvh] w-screen max-w-none flex-col gap-0 rounded-none border-0 p-0 sm:h-[100dvh] sm:max-w-none'
         // Prevent dismissal via outside-click or Escape key; only the explicit
@@ -83,8 +88,8 @@ export function AttendeeSurveyModal({
           {survey.discount_cents > 0 && (
             <div className='mb-3 flex items-center gap-2 text-sm font-medium text-amber-600'>
               <Gift className='h-4 w-4' />
-              Complete this survey to earn {formatCurrency(survey.discount_cents)}{' '}
-              off checkout
+              Complete this survey to earn{' '}
+              {formatCurrency(survey.discount_cents)} off checkout
             </div>
           )}
           <DialogTitle className='text-2xl sm:text-3xl'>
@@ -197,7 +202,8 @@ export function AttendeeSurveyModal({
                     activeQuestions.map((question) => {
                       const selectedIds = answers[question.id] ?? []
                       const hasOtherSelected = selectedIds.some(
-                        (id) => question.options.find((o) => o.id === id)?.is_other
+                        (id) =>
+                          question.options.find((o) => o.id === id)?.is_other
                       )
                       return {
                         question_id: question.id,

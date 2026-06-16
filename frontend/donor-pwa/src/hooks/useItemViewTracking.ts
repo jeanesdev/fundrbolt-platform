@@ -46,9 +46,7 @@ export function useItemViewTracking({
         if (durationSeconds >= 1) {
           auctionItemService
             .trackItemView(eventId, trackedItemId, durationSeconds)
-            .catch((err) => {
-              console.error('[ViewTracking] Failed to record view:', err)
-            })
+            .catch(() => undefined)
         }
 
         // Reset refs

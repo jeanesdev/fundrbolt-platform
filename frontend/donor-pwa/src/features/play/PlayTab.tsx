@@ -1,3 +1,12 @@
+import { useRef, useState } from 'react'
+import axios from 'axios'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  getEventRevenueGenerators,
+  purchaseEntry,
+} from '@/services/revenueGeneratorService'
+import { Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -6,15 +15,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  getEventRevenueGenerators,
-  purchaseEntry,
-} from '@/services/revenueGeneratorService'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
-import { Loader2 } from 'lucide-react'
-import { useRef, useState } from 'react'
-import { toast } from 'sonner'
 import { RevenueGeneratorCard } from './RevenueGeneratorCard'
 
 interface Props {
@@ -74,7 +74,9 @@ export function PlayTab({ eventId, brandPrimary }: Props) {
         ? error.response?.data
         : null
       const rawDetail =
-        responseData && typeof responseData === 'object' && 'detail' in responseData
+        responseData &&
+        typeof responseData === 'object' &&
+        'detail' in responseData
           ? responseData.detail
           : null
       const detail =

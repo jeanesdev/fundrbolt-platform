@@ -9,6 +9,47 @@
  * Branding CSS variables (injected by useEventBranding):
  *   --event-primary, --event-secondary, --event-background, --event-accent
  */
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { AxiosError } from 'axios'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
+import { Link, useNavigate, useParams } from '@tanstack/react-router'
+import { usePreviewMode } from '@/contexts/PreviewContext'
+import auctionItemService from '@/services/auctionItemService'
+import {
+  getEventGuests,
+  getMyActivity,
+} from '@/services/donor-activity-service'
+import { getEventRevenueGenerators } from '@/services/revenueGeneratorService'
+import { getDonorRunOfShow } from '@/services/runOfShowService'
+import {
+  getMySeatingInfo,
+  type SeatingInfoResponse,
+} from '@/services/seating-service'
+import watchListService from '@/services/watchlistService'
+import type { AuctionItemGalleryItem } from '@/types/auction-gallery'
+import type { EventMediaUsageTag } from '@/types/event'
+import type { RegisteredEventWithBranding } from '@/types/event-branding'
+import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
+import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
+import { AlertCircle, Loader2, Ticket, TriangleAlert } from 'lucide-react'
+import { toast } from 'sonner'
+import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import { useEventContextStore } from '@/stores/event-context-store'
+import { useEventStore } from '@/stores/event-store'
+import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
+import { getMyInventory } from '@/lib/api/ticket-purchases'
+import apiClient from '@/lib/axios'
+import { triggerCelebrationConfetti } from '@/lib/celebration-confetti'
+import { useEventBranding } from '@/hooks/use-event-branding'
+import { useEventContext } from '@/hooks/use-event-context'
+import { useUnreadCount } from '@/hooks/use-notifications'
+import { useTabSwipe } from '@/hooks/use-tab-swipe'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   AuctionGallery,
   EventDetails,
@@ -40,51 +81,15 @@ import { PushOptInPrompt } from '@/components/notifications/PushOptInPrompt'
 import { CheckoutCartIcon } from '@/components/payments/CheckoutCartIcon'
 import { CheckoutSummaryCard } from '@/components/payments/CheckoutSummaryCard'
 import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { usePreviewMode } from '@/contexts/PreviewContext'
-import { useEventBranding } from '@/hooks/use-event-branding'
-import { useEventContext } from '@/hooks/use-event-context'
-import { useUnreadCount } from '@/hooks/use-notifications'
-import { useTabSwipe } from '@/hooks/use-tab-swipe'
-import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
-import { getMyInventory } from '@/lib/api/ticket-purchases'
-import apiClient from '@/lib/axios'
-import { triggerCelebrationConfetti } from '@/lib/celebration-confetti'
-import auctionItemService from '@/services/auctionItemService'
-import {
-  getEventGuests,
-  getMyActivity,
-} from '@/services/donor-activity-service'
-import { getEventRevenueGenerators } from '@/services/revenueGeneratorService'
-import { getDonorRunOfShow } from '@/services/runOfShowService'
-import {
-  getMySeatingInfo,
-  type SeatingInfoResponse,
-} from '@/services/seating-service'
-import watchListService from '@/services/watchlistService'
-import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import { useEventContextStore } from '@/stores/event-context-store'
-import { useEventStore } from '@/stores/event-store'
-import type { AuctionItemGalleryItem } from '@/types/auction-gallery'
-import type { EventMediaUsageTag } from '@/types/event'
-import type { RegisteredEventWithBranding } from '@/types/event-branding'
-import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
-import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
-import {
-  keepPreviousData,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
-import { Link, useNavigate, useParams } from '@tanstack/react-router'
-import type { AxiosError } from 'axios'
-import { AlertCircle, Loader2, Ticket, TriangleAlert } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { toast } from 'sonner'
+import { CauseSectionsRenderer } from '@/features/events/cause-sections/CauseSectionsRenderer'
 
 export function EventHomePage() {
   const navigate = useNavigate()
   const { isPreviewMode } = usePreviewMode()
+  const initialSearchParams = useMemo(
+    () => new URLSearchParams(window.location.search),
+    []
+  )
   const params = useParams({ strict: false }) as {
     eventSlug?: string
     slug?: string
@@ -105,16 +110,20 @@ export function EventHomePage() {
   const timeBaseRealMs = useDebugSpoofStore((state) => state.timeBaseRealMs)
   const timeBaseSpoofMs = useDebugSpoofStore((state) => state.timeBaseSpoofMs)
 
-  const [userSelectedTab, setUserSelectedTab] = useState<DonorTab | null>(null)
+  const [userSelectedTab, setUserSelectedTab] = useState<DonorTab | null>(
+    initialSearchParams.get('tab') === 'auction' ? 'auction' : null
+  )
   const [selectedAuctionItemId, setSelectedAuctionItemId] = useState<
     string | null
-  >(null)
+  >(initialSearchParams.get('item'))
   const [isItemWatching, setIsItemWatching] = useState(false)
   const [winningItemMap, setWinningItemMap] = useState<Record<string, boolean>>(
     {}
   )
   const [maxBidItemMap, setMaxBidItemMap] = useState<Record<string, number>>({})
-  const [displayedTab, setDisplayedTab] = useState<DonorTab>('home')
+  const [displayedTab, setDisplayedTab] = useState<DonorTab>(
+    initialSearchParams.get('tab') === 'auction' ? 'auction' : 'home'
+  )
   const prefetchedAuctionImagesRef = useRef<Set<string>>(new Set())
   const prefetchedVenueMapUrlsRef = useRef<Set<string>>(new Set())
   const queryClient = useQueryClient()
@@ -193,24 +202,6 @@ export function EventHomePage() {
     }
     prevOnlineRef.current = isOnline
   }, [isOnline, queryClient])
-
-  // Handle deep-link search params (e.g. ?item=<uuid> or ?tab=auction)
-  const deepLinkHandled = useRef(false)
-  useEffect(() => {
-    if (deepLinkHandled.current) return
-    const params = new URLSearchParams(window.location.search)
-    const itemParam = params.get('item')
-    const tabParam = params.get('tab')
-    if (itemParam) {
-      deepLinkHandled.current = true
-      setSelectedAuctionItemId(itemParam)
-    }
-    if (tabParam === 'auction') {
-      deepLinkHandled.current = true
-      setDisplayedTab('auction')
-      setUserSelectedTab('auction')
-    }
-  }, [])
 
   const getTaggedImageUrls = useCallback(
     (tag: EventMediaUsageTag) => {
@@ -798,14 +789,14 @@ export function EventHomePage() {
           (
             previous:
               | {
-                watch_list?: Array<{
-                  id: string
-                  user_id: string
-                  auction_item_id: string
-                  added_at: string
-                }>
-                total?: number
-              }
+                  watch_list?: Array<{
+                    id: string
+                    user_id: string
+                    auction_item_id: string
+                    added_at: string
+                  }>
+                  total?: number
+                }
               | undefined
           ) => {
             const existing = previous?.watch_list ?? []
@@ -900,14 +891,14 @@ export function EventHomePage() {
             (
               previous:
                 | {
-                  watch_list?: Array<{
-                    id: string
-                    user_id: string
-                    auction_item_id: string
-                    added_at: string
-                  }>
-                  total?: number
-                }
+                    watch_list?: Array<{
+                      id: string
+                      user_id: string
+                      auction_item_id: string
+                      added_at: string
+                    }>
+                    total?: number
+                  }
                 | undefined
             ) => {
               const existing = previous?.watch_list ?? []
@@ -1371,54 +1362,69 @@ export function EventHomePage() {
           </div>
         )}
 
-        {/* Event Details */}
-        <div>
-          <EventDetails
-            eventDatetime={resolveEventDateTime(currentEvent) ?? ''}
-            timezone={currentEvent.timezone}
-            venueName={currentEvent.venue_name}
-            venueAddress={currentEvent.venue_address}
-            venueCity={currentEvent.venue_city}
-            venueState={currentEvent.venue_state}
-            venueZip={currentEvent.venue_zip}
-            attire={currentEvent.attire}
-            contactEmail={currentEvent.primary_contact_email}
-            contactPhone={currentEvent.primary_contact_phone}
-            eventWebsite={
-              currentEvent.links?.find((l) => l.link_type === 'website')?.url
-            }
-            isPast={currentEventForSwitcher?.is_past}
-            isUpcoming={currentEventForSwitcher?.is_upcoming}
-          />
-        </div>
+        <CauseSectionsRenderer
+          eventId={currentEvent.id}
+          event={{
+            ...currentEvent,
+            event_datetime: resolveEventDateTime(currentEvent) ?? '',
+          }}
+          currentEventForSwitcher={currentEventForSwitcher}
+          aboutEventHtml={aboutEventHtml}
+          fallback={
+            <>
+              <div>
+                <EventDetails
+                  eventDatetime={resolveEventDateTime(currentEvent) ?? ''}
+                  timezone={currentEvent.timezone}
+                  venueName={currentEvent.venue_name}
+                  venueAddress={currentEvent.venue_address}
+                  venueCity={currentEvent.venue_city}
+                  venueState={currentEvent.venue_state}
+                  venueZip={currentEvent.venue_zip}
+                  attire={currentEvent.attire}
+                  contactEmail={currentEvent.primary_contact_email}
+                  contactPhone={currentEvent.primary_contact_phone}
+                  eventWebsite={
+                    currentEvent.links?.find((l) => l.link_type === 'website')
+                      ?.url
+                  }
+                  isPast={currentEventForSwitcher?.is_past}
+                  isUpcoming={currentEventForSwitcher?.is_upcoming}
+                />
+              </div>
 
-        {/* About */}
-        {currentEvent.description && (
-          <div
-            className='rounded-2xl border p-4'
-            style={{
-              backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.08)',
-              borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
-            }}
-          >
-            <h3
-              className='mb-2 text-xs font-bold tracking-widest uppercase'
-              style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
-            >
-              About This Event
-            </h3>
-            <div
-              className='text-sm leading-relaxed [&_a]:font-medium'
-              style={{ color: 'var(--event-text-on-background, #374151)' }}
-              dangerouslySetInnerHTML={{ __html: aboutEventHtml }}
-            />
-          </div>
-        )}
+              {currentEvent.description && (
+                <div
+                  className='rounded-2xl border p-4'
+                  style={{
+                    backgroundColor:
+                      'rgb(var(--event-primary, 59, 130, 246) / 0.08)',
+                    borderColor:
+                      'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
+                  }}
+                >
+                  <h3
+                    className='mb-2 text-xs font-bold tracking-widest uppercase'
+                    style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
+                  >
+                    About This Event
+                  </h3>
+                  <div
+                    className='text-sm leading-relaxed [&_a]:font-medium'
+                    style={{
+                      color: 'var(--event-text-on-background, #374151)',
+                    }}
+                    dangerouslySetInnerHTML={{ __html: aboutEventHtml }}
+                  />
+                </div>
+              )}
 
-        {/* Sponsors */}
-        <div>
-          <SponsorsCarousel eventId={currentEvent.id} />
-        </div>
+              <div>
+                <SponsorsCarousel eventId={currentEvent.id} />
+              </div>
+            </>
+          }
+        />
       </div>
     </>
   )
@@ -1634,10 +1640,13 @@ export function EventHomePage() {
   const renderTabPage = (tab: DonorTab) => {
     return (
       <div
-        className='min-h-full pb-bottom-nav'
+        className='pb-bottom-nav min-h-full'
         style={{
           backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
-          paddingBottom: tab === 'auction' ? 'calc(5rem + 40px + var(--bottom-safe-area, 0px))' : undefined,
+          paddingBottom:
+            tab === 'auction'
+              ? 'calc(5rem + 40px + var(--bottom-safe-area, 0px))'
+              : undefined,
         }}
       >
         {renderTabContent(tab)}
@@ -1688,17 +1697,13 @@ export function EventHomePage() {
       </main>
 
       {/* Check-in reminder — fixed above the bottom nav bar, hidden once checked in */}
-      {visibleTab === 'auction' &&
-        !(
-          (seatingInfo as any)?.my_info?.checked_in ??
-          (seatingInfo?.myInfo as any)?.checked_in ??
-          seatingInfo?.myInfo?.checkedIn
-        ) && (
+      {visibleTab === 'auction' && !seatingInfo?.myInfo?.checkedIn && (
         <div
-          className='fixed bottom-20 left-0 right-0 z-40 flex items-center gap-2 px-4 py-2.5 shadow-md'
+          className='fixed right-0 bottom-20 left-0 z-40 flex items-center gap-2 px-4 py-2.5 shadow-md'
           style={{
             backgroundColor: 'rgba(var(--event-primary, 59, 130, 246), 0.85)',
-            borderTop: '1px solid rgba(var(--event-primary, 59, 130, 246), 0.5)',
+            borderTop:
+              '1px solid rgba(var(--event-primary, 59, 130, 246), 0.5)',
             backdropFilter: 'blur(4px)',
           }}
         >

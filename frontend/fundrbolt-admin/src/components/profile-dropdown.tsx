@@ -1,5 +1,19 @@
-import { DebugSpoofSheet } from '@/components/debug-spoof-sheet'
-import { SignOutDialog } from '@/components/sign-out-dialog'
+import { useState } from 'react'
+import { Link } from '@tanstack/react-router'
+import {
+  Building2,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  LogOut,
+  Settings,
+} from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import useDialogState from '@/hooks/use-dialog-state'
+import { useEventContext } from '@/hooks/use-event-context'
+import { useNpoContext } from '@/hooks/use-npo-context'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,22 +33,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { InitialAvatar } from '@/components/ui/initial-avatar'
-import useDialogState from '@/hooks/use-dialog-state'
-import { useEventContext } from '@/hooks/use-event-context'
-import { useNpoContext } from '@/hooks/use-npo-context'
-import { useAuthStore } from '@/stores/auth-store'
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import { Link } from '@tanstack/react-router'
-import {
-  Building2,
-  Calendar,
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  LogOut,
-  Settings,
-} from 'lucide-react'
-import { useState } from 'react'
+import { DebugSpoofSheet } from '@/components/debug-spoof-sheet'
+import { SignOutDialog } from '@/components/sign-out-dialog'
 
 export function ProfileDropdown() {
   const [open, setOpen] = useDialogState()
@@ -76,8 +76,8 @@ export function ProfileDropdown() {
   const filteredEvents =
     shouldShowSearch && eventSearchQuery
       ? availableEvents.filter((event) =>
-        event.name.toLowerCase().includes(eventSearchQuery.toLowerCase())
-      )
+          event.name.toLowerCase().includes(eventSearchQuery.toLowerCase())
+        )
       : availableEvents
 
   return (
@@ -101,7 +101,9 @@ export function ProfileDropdown() {
                 {user ? `${user.first_name} ${user.last_name}` : 'User'}
               </p>
               <p className='text-muted-foreground text-xs leading-none'>
-                {user?.communications_email?.trim() || user?.email || 'Not logged in'}
+                {user?.communications_email?.trim() ||
+                  user?.email ||
+                  'Not logged in'}
               </p>
               {timeBaseSpoofMs !== null && (
                 <p className='text-xs leading-none text-amber-600'>

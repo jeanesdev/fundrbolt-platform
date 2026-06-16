@@ -2,8 +2,16 @@
  * NotificationCenter — slide-out panel showing all notifications
  * Uses Radix Sheet (right-anchored)
  */
-import { EmptyNotifications } from '@/components/notifications/EmptyNotifications'
-import { NotificationItem } from '@/components/notifications/NotificationItem'
+import { useCallback, useEffect, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { CheckCheck, Loader2 } from 'lucide-react'
+import { useNotificationStore } from '@/stores/notification-store'
+import {
+  useDeleteNotification,
+  useMarkAllRead,
+  useMarkRead,
+  useNotifications,
+} from '@/hooks/use-notifications'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -11,16 +19,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import {
-  useDeleteNotification,
-  useMarkAllRead,
-  useMarkRead,
-  useNotifications,
-} from '@/hooks/use-notifications'
-import { useNotificationStore } from '@/stores/notification-store'
-import { useQueryClient } from '@tanstack/react-query'
-import { CheckCheck, Loader2 } from 'lucide-react'
-import { useCallback, useEffect, useRef } from 'react'
+import { EmptyNotifications } from '@/components/notifications/EmptyNotifications'
+import { NotificationItem } from '@/components/notifications/NotificationItem'
 
 interface NotificationCenterProps {
   eventId: string

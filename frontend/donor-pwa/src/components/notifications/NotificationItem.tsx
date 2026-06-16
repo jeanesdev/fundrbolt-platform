@@ -1,10 +1,7 @@
 /**
  * NotificationItem — single notification row with swipe-to-reveal delete
  */
-import {
-  getNotificationBodyText,
-  getNotificationLink,
-} from '@/components/notifications/notification-link'
+import { useCallback, useRef, useState } from 'react'
 import type { NotificationData } from '@/services/notification-service'
 import {
   Bell,
@@ -19,7 +16,10 @@ import {
   Trash2,
   Trophy,
 } from 'lucide-react'
-import { useCallback, useRef, useState } from 'react'
+import {
+  getNotificationBodyText,
+  getNotificationLink,
+} from '@/components/notifications/notification-link'
 
 /**
  * Render the appropriate icon for a notification type
@@ -195,8 +195,9 @@ export function NotificationItem({
         <button
           type='button'
           onClick={handleClick}
-          className={`hover:bg-muted/50 flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${!notification.is_read ? 'bg-primary/5' : ''
-            }`}
+          className={`hover:bg-muted/50 flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${
+            !notification.is_read ? 'bg-primary/5' : ''
+          }`}
         >
           {/* Leading visual: thumbnail or icon */}
           {notification.data?.image_url ? (

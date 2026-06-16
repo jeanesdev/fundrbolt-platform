@@ -2,26 +2,26 @@
  * QRCodeDialog Component
  * Displays QR codes for event check-in and app access
  */
-import { Button } from '@/components/ui/button'
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card'
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useRef, useState } from 'react'
 import { Download, QrCode, X } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
-import { useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 interface QRCodeDialogProps {
   open: boolean
@@ -47,7 +47,10 @@ export function QRCodeDialog({
   /**
    * Downloads a QR code as PNG image
    */
-  const downloadQRCode = (qrRef: React.RefObject<HTMLDivElement | null>, filename: string) => {
+  const downloadQRCode = (
+    qrRef: React.RefObject<HTMLDivElement | null>,
+    filename: string
+  ) => {
     if (!qrRef.current) {
       toast.error('QR code not found')
       return
@@ -75,7 +78,9 @@ export function QRCodeDialog({
 
       // Create an image from SVG
       const svgData = new XMLSerializer().serializeToString(svg)
-      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
+      const svgBlob = new Blob([svgData], {
+        type: 'image/svg+xml;charset=utf-8',
+      })
       const url = URL.createObjectURL(svgBlob)
 
       const img = new Image()
@@ -133,7 +138,10 @@ export function QRCodeDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'event' | 'checkin')}>
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as 'event' | 'checkin')}
+        >
           <TabsList className='grid w-full grid-cols-2'>
             <TabsTrigger value='event'>Event Access</TabsTrigger>
             <TabsTrigger value='checkin'>Self Check-In</TabsTrigger>
@@ -144,8 +152,9 @@ export function QRCodeDialog({
               <CardHeader>
                 <CardTitle>Event Access QR Code</CardTitle>
                 <CardDescription>
-                  Scan this code to open the event page on app.fundrbolt.com. Donors can
-                  use this to access the event on their mobile devices.
+                  Scan this code to open the event page on app.fundrbolt.com.
+                  Donors can use this to access the event on their mobile
+                  devices.
                 </CardDescription>
               </CardHeader>
               <CardContent className='space-y-4'>
@@ -163,7 +172,7 @@ export function QRCodeDialog({
 
                 <div className='bg-muted/50 space-y-2 rounded-md border p-3'>
                   <p className='text-sm font-medium'>Event: {eventName}</p>
-                  <p className='text-muted-foreground break-all text-xs'>
+                  <p className='text-muted-foreground text-xs break-all'>
                     {eventAppUrl}
                   </p>
                 </div>
@@ -183,7 +192,7 @@ export function QRCodeDialog({
                   </Button>
                 </div>
 
-                <div className='bg-blue-50 dark:bg-blue-950/20 space-y-2 rounded-md border border-blue-200 dark:border-blue-800 p-3'>
+                <div className='space-y-2 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950/20'>
                   <p className='text-sm font-medium text-blue-900 dark:text-blue-100'>
                     💡 Usage Tips
                   </p>
@@ -205,8 +214,9 @@ export function QRCodeDialog({
               <CardHeader>
                 <CardTitle>Self Check-In QR Code</CardTitle>
                 <CardDescription>
-                  Scan this code to access the self check-in page. Donors can check
-                  themselves in by entering their confirmation code or email.
+                  Scan this code to access the self check-in page. Donors can
+                  check themselves in by entering their confirmation code or
+                  email.
                 </CardDescription>
               </CardHeader>
               <CardContent className='space-y-4'>
@@ -224,7 +234,7 @@ export function QRCodeDialog({
 
                 <div className='bg-muted/50 space-y-2 rounded-md border p-3'>
                   <p className='text-sm font-medium'>Self Check-In Portal</p>
-                  <p className='text-muted-foreground break-all text-xs'>
+                  <p className='text-muted-foreground text-xs break-all'>
                     {checkinUrl}
                   </p>
                 </div>
@@ -244,15 +254,15 @@ export function QRCodeDialog({
                   </Button>
                 </div>
 
-                <div className='bg-green-50 dark:bg-green-950/20 space-y-2 rounded-md border border-green-200 dark:border-green-800 p-3'>
+                <div className='space-y-2 rounded-md border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-950/20'>
                   <p className='text-sm font-medium text-green-900 dark:text-green-100'>
                     💡 Usage Tips
                   </p>
                   <ul className='text-muted-foreground space-y-1 text-xs'>
+                    <li>• Place at check-in desk or registration table</li>
                     <li>
-                      • Place at check-in desk or registration table
+                      • Donors can self-check-in using their confirmation code
                     </li>
-                    <li>• Donors can self-check-in using their confirmation code</li>
                     <li>• Reduces check-in time and staff workload</li>
                     <li>
                       • Guests can look up their registration by email or code

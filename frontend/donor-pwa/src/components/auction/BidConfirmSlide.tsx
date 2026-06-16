@@ -7,6 +7,10 @@
  * - Visual feedback for slide progress
  * - Event branding support
  */
+/* eslint-disable react-hooks/set-state-in-effect */
+import { useEffect, useState } from 'react'
+import { ArrowRight, Check, X } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -16,9 +20,6 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
-import { cn } from '@/lib/utils'
-import { ArrowRight, Check, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
 
 export interface BidConfirmSlideProps {
   isOpen: boolean

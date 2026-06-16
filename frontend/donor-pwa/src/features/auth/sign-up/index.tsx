@@ -1,4 +1,10 @@
 import { useState } from 'react'
+import { Link, useSearch } from '@tanstack/react-router'
+import { Building2, ChevronDown, HandCoins, Users } from 'lucide-react'
+import {
+  buildAdminPortalNpoOnboardingUrl,
+  buildAdminPortalSignUpUrl,
+} from '@/lib/admin-portal'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -13,12 +19,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
-import {
-  buildAdminPortalNpoOnboardingUrl,
-  buildAdminPortalSignUpUrl,
-} from '@/lib/admin-portal'
-import { Link, useSearch } from '@tanstack/react-router'
-import { Building2, ChevronDown, HandCoins, Users } from 'lucide-react'
 import { AuthLayout } from '../auth-layout'
 import { DonorSignUpWizard } from './components/DonorSignUpWizard'
 
@@ -41,7 +41,7 @@ export function SignUp() {
           <CardContent className='grid gap-4'>
             <div className='min-w-0 rounded-xl border p-5'>
               <div className='mb-4 flex items-start gap-3'>
-                <div className='bg-primary/10 text-primary rounded-lg p-2 shrink-0'>
+                <div className='bg-primary/10 text-primary shrink-0 rounded-lg p-2'>
                   <HandCoins className='h-5 w-5' />
                 </div>
                 <div className='min-w-0 flex-1'>
@@ -61,7 +61,7 @@ export function SignUp() {
 
             <Collapsible open={staffOrgOpen} onOpenChange={setStaffOrgOpen}>
               <CollapsibleTrigger asChild>
-                <button className='flex w-full items-center justify-between rounded-xl border px-5 py-4 text-left text-sm font-medium transition-colors hover:bg-muted/50'>
+                <button className='hover:bg-muted/50 flex w-full items-center justify-between rounded-xl border px-5 py-4 text-left text-sm font-medium transition-colors'>
                   <span className='text-muted-foreground'>
                     Staff or organization account
                   </span>
@@ -73,7 +73,7 @@ export function SignUp() {
               <CollapsibleContent className='mt-2 grid gap-3'>
                 <div className='min-w-0 rounded-xl border p-5'>
                   <div className='mb-4 flex items-start gap-3'>
-                    <div className='bg-primary/10 text-primary rounded-lg p-2 shrink-0'>
+                    <div className='bg-primary/10 text-primary shrink-0 rounded-lg p-2'>
                       <Building2 className='h-5 w-5' />
                     </div>
                     <div className='min-w-0 flex-1'>
@@ -90,7 +90,7 @@ export function SignUp() {
                   <Button
                     asChild
                     variant='outline'
-                    className='h-auto w-full whitespace-normal py-2.5'
+                    className='h-auto w-full py-2.5 whitespace-normal'
                   >
                     <a href={buildAdminPortalNpoOnboardingUrl()}>
                       Continue as Organization Administrator
@@ -100,7 +100,7 @@ export function SignUp() {
 
                 <div className='min-w-0 rounded-xl border p-5'>
                   <div className='mb-4 flex items-start gap-3'>
-                    <div className='bg-primary/10 text-primary rounded-lg p-2 shrink-0'>
+                    <div className='bg-primary/10 text-primary shrink-0 rounded-lg p-2'>
                       <Users className='h-5 w-5' />
                     </div>
                     <div className='min-w-0 flex-1'>

@@ -1,5 +1,15 @@
-import { InlineDonorLabels } from '@/components/admin/InlineDonorLabels'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useMemo, useState } from 'react'
+import { ArrowLeft, Filter, Mail, Phone, X } from 'lucide-react'
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -12,23 +22,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { InlineDonorLabels } from '@/components/admin/InlineDonorLabels'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import {
   useConfirmAllSuggestedDonorLabels,
   useConfirmSuggestedDonorLabel,
   useDismissSuggestedDonorLabel,
 } from '@/features/users/hooks/use-donor-labels'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import { ArrowLeft, Filter, Mail, Phone, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
 import { useDonorProfile } from '../hooks/useDonorDashboard'
 
 const fmt = (n: number) =>

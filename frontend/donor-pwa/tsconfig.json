@@ -10,15 +10,9 @@
   ],
   "compilerOptions": {
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@fundrbolt/shared": [
-        "../shared/src/index.ts"
-      ],
-      "@fundrbolt/shared/*": [
-        "../shared/src/*"
-      ]
+      "@/*": ["./src/*"],
+      "@fundrbolt/shared": ["../shared/src/index.ts"],
+      "@fundrbolt/shared/*": ["../shared/src/*"]
     }
   }
 }

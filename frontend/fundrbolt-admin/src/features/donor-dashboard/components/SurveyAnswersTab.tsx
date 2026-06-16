@@ -1,17 +1,17 @@
+import { useMemo, useState } from 'react'
+import { ArrowUpDown, Search, X } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table'
-import { ArrowUpDown, Search, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
 import { useEventSurveyAnswers } from '../hooks/useDonorDashboard'
 
 interface SurveyAnswersTabProps {
@@ -41,8 +41,7 @@ export function SurveyAnswersTab({
   const query = useEventSurveyAnswers(params)
 
   const hasActiveFilters =
-    globalSearch.trim() ||
-    Object.values(columnFilters).some((v) => v.trim())
+    globalSearch.trim() || Object.values(columnFilters).some((v) => v.trim())
 
   const filteredDonors = useMemo(() => {
     const donors = query.data?.donors ?? []
@@ -51,10 +50,7 @@ export function SurveyAnswersTab({
     return donors.filter((donor) => {
       // Global search across name + all answers
       if (q) {
-        const haystack = [
-          donor.name,
-          ...Object.values(donor.answers),
-        ]
+        const haystack = [donor.name, ...Object.values(donor.answers)]
           .join(' ')
           .toLowerCase()
         if (!haystack.includes(q)) return false
@@ -138,7 +134,7 @@ export function SurveyAnswersTab({
         <div className='flex flex-wrap items-end gap-3'>
           {/* Global search */}
           <div className='relative min-w-56 flex-1'>
-            <Search className='text-muted-foreground absolute left-2.5 top-2.5 h-4 w-4' />
+            <Search className='text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4' />
             <Input
               className='pl-8'
               value={globalSearch}
@@ -213,10 +209,7 @@ export function SurveyAnswersTab({
                     </div>
                   </TableHead>
                   {questions.map((question) => (
-                    <TableHead
-                      key={question.id}
-                      className='min-w-56 align-top'
-                    >
+                    <TableHead key={question.id} className='min-w-56 align-top'>
                       <div className='space-y-1.5'>
                         <div className='flex items-start gap-1.5'>
                           <ArrowUpDown className='text-muted-foreground mt-0.5 h-3.5 w-3.5 shrink-0' />

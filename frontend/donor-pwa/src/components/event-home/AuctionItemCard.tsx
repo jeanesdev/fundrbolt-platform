@@ -9,12 +9,12 @@
  * - Cleaner typography hierarchy
  * - More prominent CTA button with scale-bounce on click
  */
-import { cn } from '@/lib/utils'
-import { getEffectiveNow } from '@/stores/debug-spoof-store'
+import { useRef, useState } from 'react'
 import type { AuctionItemGalleryItem } from '@/types/auction-gallery'
 import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
 import { Eye, Flame, Gavel, Heart, Image as ImageIcon, Zap } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { getEffectiveNow } from '@/stores/debug-spoof-store'
+import { cn } from '@/lib/utils'
 
 export interface AuctionItemCardProps {
   item: AuctionItemGalleryItem
@@ -119,9 +119,9 @@ function AuctionCardImage({
   const [primarySrc, setPrimarySrc] = useState(initialSrc)
   const [isPrimaryImageLoaded, setIsPrimaryImageLoaded] = useState(
     loadedAuctionCardImageKeys.has(cacheKey) ||
-    !!cachedSrc ||
-    loadedAuctionCardImageUrls.has(initialSrc) ||
-    warmCache.has(initialSrc)
+      !!cachedSrc ||
+      loadedAuctionCardImageUrls.has(initialSrc) ||
+      warmCache.has(initialSrc)
   )
   const nextSrc = thumbnailUrl !== primarySrc ? thumbnailUrl : null
 
@@ -250,12 +250,12 @@ export function AuctionItemCard({
         'group relative flex flex-col overflow-hidden rounded-2xl border transition-all duration-200',
         'hover:-translate-y-0.5 hover:shadow-xl',
         isCurrentUserWinning &&
-        hasCurrentBid &&
-        'animate-winning-glow border-green-500',
+          hasCurrentBid &&
+          'animate-winning-glow border-green-500',
         !isCurrentUserWinning &&
-        hasCurrentBid &&
-        isWatched &&
-        'animate-outbid-pulse border-amber-500',
+          hasCurrentBid &&
+          isWatched &&
+          'animate-outbid-pulse border-amber-500',
         !isCurrentUserWinning && !hasCurrentBid && 'border-transparent',
         onClick && 'cursor-pointer',
         className

@@ -26,6 +26,7 @@ export function GuestCheckInList({
       await checkinApi.checkInGuest(guestId)
       onGuestUpdated()
     } catch {
+      return
     } finally {
       setLoading(null)
     }
@@ -37,6 +38,7 @@ export function GuestCheckInList({
       await checkinApi.undoCheckInGuest(guestId)
       onGuestUpdated()
     } catch {
+      return
     } finally {
       setLoading(null)
     }

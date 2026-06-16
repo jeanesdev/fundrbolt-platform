@@ -2,17 +2,9 @@
  * EventRunOfShowPage — Full-page view of the run-of-show for an event.
  * Accessible via /events/:eventId/run-of-show
  */
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { useEventWorkspace } from '@/features/events/useEventWorkspace'
+import React, { useCallback, useMemo, useState } from 'react'
+import { format } from 'date-fns'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   applyRosTemplate,
   createRosItem,
@@ -43,11 +35,26 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { format } from 'date-fns'
-import { CalendarClock, Clock, ListPlus, Loader2, Plus, Save } from 'lucide-react'
-import React, { useCallback, useMemo, useState } from 'react'
+import {
+  CalendarClock,
+  Clock,
+  ListPlus,
+  Loader2,
+  Plus,
+  Save,
+} from 'lucide-react'
 import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useEventWorkspace } from '@/features/events/useEventWorkspace'
 import { RunOfShowItemForm } from '../components/RunOfShowItemForm'
 import { SortableRunOfShowItem } from '../components/SortableRunOfShowItem'
 
@@ -517,10 +524,11 @@ export function EventRunOfShowPage() {
                     key={t.id}
                     type='button'
                     onClick={() => setSelectedTemplateId(t.id)}
-                    className={`w-full rounded-md border px-3 py-2 text-left text-sm transition-colors ${selectedTemplateId === t.id
-                      ? 'bg-accent border-primary'
-                      : 'hover:bg-accent/50'
-                      }`}
+                    className={`w-full rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+                      selectedTemplateId === t.id
+                        ? 'bg-accent border-primary'
+                        : 'hover:bg-accent/50'
+                    }`}
                   >
                     <span className='font-medium'>{t.name}</span>
                     <span className='text-muted-foreground ml-2 text-xs'>

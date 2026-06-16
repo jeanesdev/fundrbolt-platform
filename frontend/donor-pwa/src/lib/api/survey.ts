@@ -53,13 +53,13 @@ export async function submitDonorSurvey(
   payload:
     | { action: 'skip'; answers?: [] }
     | {
-      action: 'complete'
-      answers: Array<{
-        question_id: string
-        option_ids: string[]
-        other_text?: string | null
-      }>
-    }
+        action: 'complete'
+        answers: Array<{
+          question_id: string
+          option_ids: string[]
+          other_text?: string | null
+        }>
+      }
 ): Promise<DonorSurveySubmitResponse> {
   const response = await apiClient.post<DonorSurveySubmitResponse>(
     `/donor/events/${eventId}/survey/response`,
