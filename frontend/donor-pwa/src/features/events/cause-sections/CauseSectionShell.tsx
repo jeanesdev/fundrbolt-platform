@@ -21,7 +21,7 @@ export function CauseSectionShell({
     return (
       <details className={cn(getCauseCardClasses(card), className)} open>
         <summary className='cursor-pointer list-none text-sm font-semibold tracking-wide uppercase'>
-          {card.show_header ? title : 'Open section'}
+          {card.show_header ? (title || 'Section') : 'Open section'}
         </summary>
         <div className={cn(card.show_header && 'mt-4')}>{children}</div>
       </details>
