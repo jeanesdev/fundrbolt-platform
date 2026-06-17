@@ -3,16 +3,17 @@ import {
   createCardSlide,
   deleteCardSlide,
   reorderCardSlides,
+  updateCardSlide,
   type CauseSectionCard,
   type ConflictResponse,
   type CreateSlideRequest,
   type MediaSource,
-  type SlideReorderRequest,
   type SlideItem,
+  type SlideReorderRequest,
   type SlideVariant,
   type UpdateSlideRequest,
-  updateCardSlide,
 } from '@/services/cause-section-cards'
+import type { EventMedia } from '@/types/event'
 import { ArrowDown, ArrowUp, Plus, Save, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { getErrorMessage, isErrorStatus } from '@/lib/error-utils'
@@ -32,6 +33,7 @@ import {
 interface SlideshowCardEditorProps {
   eventId: string
   card: CauseSectionCard
+  eventMedia: EventMedia[]
   draftVersion: number
   onConflict: (
     detail: ConflictResponse,
@@ -45,6 +47,7 @@ interface SlideDraft {
   slide_variant: SlideVariant
   media_url: string
   media_source: MediaSource
+  slide_name: string
   alt_text: string
   overlay_html: string
 }
@@ -54,6 +57,7 @@ function toDraft(slide?: SlideItem): SlideDraft {
     slide_variant: slide?.slide_variant ?? 'image_only',
     media_url: slide?.media_url ?? '',
     media_source: slide?.media_source ?? 'external',
+    slide_name: slide?.slide_name ?? '',
     alt_text: slide?.alt_text ?? '',
     overlay_html: slide?.overlay_html ?? '',
   }
@@ -62,6 +66,7 @@ function toDraft(slide?: SlideItem): SlideDraft {
 export function SlideshowCardEditor({
   eventId,
   card,
+  eventMedia,
   draftVersion,
   onConflict,
   onCardReplaced,
@@ -70,19 +75,39 @@ export function SlideshowCardEditor({
   const [activeSlideId, setActiveSlideId] = useState<string | null>(
     card.slides[0]?.id ?? null
   )
+  const [activeSlideOrder, setActiveSlideOrder] = useState<number | null>(
+    card.slides[0]?.display_order ?? null
+  )
   const [draft, setDraft] = useState<SlideDraft>(toDraft(card.slides[0]))
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     const active = card.slides.find((slide) => slide.id === activeSlideId)
-    const nextSlide = active ?? card.slides[0]
+    const byOrder =
+      activeSlideOrder === null
+        ? null
+        : card.slides.find((slide) => slide.display_order === activeSlideOrder)
+    const nextSlide = active ?? byOrder ?? card.slides[0]
     setActiveSlideId(nextSlide?.id ?? null)
+    setActiveSlideOrder(nextSlide?.display_order ?? null)
     setDraft(toDraft(nextSlide))
-  }, [activeSlideId, card.slides])
+  }, [activeSlideId, activeSlideOrder, card.slides])
 
   const activeSlide = useMemo(
     () => card.slides.find((slide) => slide.id === activeSlideId) ?? null,
     [activeSlideId, card.slides]
+  )
+
+  const uploadedImageAssets = useMemo(
+    () =>
+      eventMedia
+        .filter(
+          (media) =>
+            media.media_type === 'image' ||
+            media.mime_type?.toLowerCase().startsWith('image/')
+        )
+        .sort((a, b) => a.display_order - b.display_order),
+    [eventMedia]
   )
 
   const handleError = (
@@ -108,6 +133,7 @@ export function SlideshowCardEditor({
       slide_variant: 'image_only',
       media_url: 'https://example.com/image.jpg',
       media_source: 'external',
+      slide_name: null,
       alt_text: 'Describe this slide',
       overlay_html: '',
     }
@@ -117,6 +143,7 @@ export function SlideshowCardEditor({
       await onRefresh()
       onCardReplaced({ ...card, id: created.card_id })
       setActiveSlideId(created.id)
+      setActiveSlideOrder(created.display_order)
       setDraft(toDraft(created))
       toast.success('Slide added')
     } catch (error) {
@@ -134,6 +161,7 @@ export function SlideshowCardEditor({
       slide_variant: draft.slide_variant,
       media_url: draft.media_url || null,
       media_source: draft.media_source,
+      slide_name: draft.slide_name || null,
       alt_text: draft.alt_text || null,
       overlay_html: draft.overlay_html || null,
     }
@@ -148,6 +176,7 @@ export function SlideshowCardEditor({
       onCardReplaced({ ...card, id: updated.card_id })
       await onRefresh()
       setActiveSlideId(updated.id)
+      setActiveSlideOrder(updated.display_order)
       toast.success('Slide saved')
     } catch (error) {
       handleError(error, handleSaveSlide)
@@ -229,10 +258,13 @@ export function SlideshowCardEditor({
                 className='text-left'
                 onClick={() => {
                   setActiveSlideId(slide.id)
+                  setActiveSlideOrder(slide.display_order)
                   setDraft(toDraft(slide))
                 }}
               >
-                <p className='font-medium'>Slide {index + 1}</p>
+                <p className='font-medium'>
+                  {slide.slide_name?.trim() || `Slide ${index + 1}`}
+                </p>
                 <p className='text-muted-foreground text-sm'>
                   {slide.slide_variant.replace(/_/g, ' ')}
                 </p>
@@ -291,6 +323,20 @@ export function SlideshowCardEditor({
           </CardHeader>
           <CardContent className='space-y-4'>
             <div className='space-y-2'>
+              <Label>Slide Name</Label>
+              <Input
+                value={draft.slide_name}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    slide_name: event.target.value,
+                  }))
+                }
+                placeholder='Optional internal slide name'
+              />
+            </div>
+
+            <div className='space-y-2'>
               <Label>Slide Variant</Label>
               <Select
                 value={draft.slide_variant}
@@ -340,16 +386,57 @@ export function SlideshowCardEditor({
                 </div>
                 <div className='space-y-2'>
                   <Label>Media URL</Label>
-                  <Input
-                    value={draft.media_url}
-                    onChange={(event) =>
-                      setDraft((current) => ({
-                        ...current,
-                        media_url: event.target.value,
-                      }))
-                    }
-                    placeholder='https://...'
-                  />
+                  {draft.media_source === 'upload' ? (
+                    <>
+                      <Select
+                        value={draft.media_url || undefined}
+                        onValueChange={(value) =>
+                          setDraft((current) => ({
+                            ...current,
+                            media_url: value,
+                          }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder='Select an uploaded image' />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {uploadedImageAssets.map((media) => (
+                            <SelectItem key={media.id} value={media.file_url}>
+                              <div className='flex items-center gap-2'>
+                                <img
+                                  src={media.file_url}
+                                  alt={media.file_name}
+                                  className='h-8 w-8 rounded object-cover'
+                                  loading='lazy'
+                                />
+                                <span className='truncate'>
+                                  {media.file_name}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {uploadedImageAssets.length === 0 && (
+                        <p className='text-muted-foreground text-xs'>
+                          No uploaded images found for this event. Upload media
+                          in Event Media first.
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <Input
+                      value={draft.media_url}
+                      onChange={(event) =>
+                        setDraft((current) => ({
+                          ...current,
+                          media_url: event.target.value,
+                        }))
+                      }
+                      placeholder='https://...'
+                    />
+                  )}
                 </div>
                 <div className='space-y-2'>
                   <Label>Alt Text</Label>

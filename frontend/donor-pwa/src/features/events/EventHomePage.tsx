@@ -593,11 +593,18 @@ export function EventHomePage() {
         )
       }
 
-      loadPromise.catch(() => {
-        toast.error('Failed to load event')
-        setSelectedEvent(null, 'Select Event', null)
-        navigate({ to: '/home' })
-      })
+      loadPromise
+        .then(() => {
+          const loadedEvent = useEventStore.getState().currentEvent
+          if (loadedEvent?.slug === eventSlug) {
+            setSelectedEvent(loadedEvent.id, loadedEvent.name, loadedEvent.slug)
+          }
+        })
+        .catch(() => {
+          toast.error('Failed to load event')
+          setSelectedEvent(null, 'Select Event', null)
+          navigate({ to: '/home' })
+        })
     }
   }, [
     eventSlug,
@@ -1038,7 +1045,7 @@ export function EventHomePage() {
   })
 
   // ─── Notifications ──────────────────────────────────────────────────────────
-  useUnreadCount(currentEvent?.id ?? '')
+  useUnreadCount(currentEvent?.id ?? '', { enabled: !isPreviewMode })
 
   // ─── Loading state ───────────────────────────────────────────────────────────
   if (eventsLoading) {
@@ -1234,11 +1241,13 @@ export function EventHomePage() {
       venueMapLink={venueMapLink}
       profileSlot={
         <div className='flex items-center gap-1'>
-          <CheckoutCartIcon
-            eventId={currentEvent.id}
-            eventSlug={currentEvent.slug}
-            variant='hero'
-          />
+          {!isPreviewMode && (
+            <CheckoutCartIcon
+              eventId={currentEvent.id}
+              eventSlug={currentEvent.slug}
+              variant='hero'
+            />
+          )}
           <NotificationBell />
           <ProfileDropdown />
         </div>
@@ -1263,7 +1272,7 @@ export function EventHomePage() {
         )}
 
         {/* Push notification opt-in prompt */}
-        <PushOptInPrompt />
+        {!isPreviewMode && <PushOptInPrompt />}
 
         {/* Event Hashtag & Share */}
         <div
@@ -1466,11 +1475,13 @@ export function EventHomePage() {
                 LIVE
               </span>
             )}
-            <CheckoutCartIcon
-              eventId={currentEvent.id}
-              eventSlug={currentEvent.slug}
-              variant='header'
-            />
+            {!isPreviewMode && (
+              <CheckoutCartIcon
+                eventId={currentEvent.id}
+                eventSlug={currentEvent.slug}
+                variant='header'
+              />
+            )}
             <NotificationBell variant='header' />
             <ProfileDropdown />
           </div>
@@ -1516,11 +1527,13 @@ export function EventHomePage() {
             My Event
           </h2>
           <div className='flex items-center gap-2'>
-            <CheckoutCartIcon
-              eventId={currentEvent.id}
-              eventSlug={currentEvent.slug}
-              variant='header'
-            />
+            {!isPreviewMode && (
+              <CheckoutCartIcon
+                eventId={currentEvent.id}
+                eventSlug={currentEvent.slug}
+                variant='header'
+              />
+            )}
             <NotificationBell variant='header' />
             <ProfileDropdown />
           </div>
@@ -1529,10 +1542,12 @@ export function EventHomePage() {
 
       <div className='space-y-4 px-4 py-4'>
         {/* Checkout summary card — shown at the top when organizer opens checkout */}
-        <CheckoutSummaryCard
-          eventId={currentEvent.id}
-          eventSlug={currentEvent.slug}
-        />
+        {!isPreviewMode && (
+          <CheckoutSummaryCard
+            eventId={currentEvent.id}
+            eventSlug={currentEvent.slug}
+          />
+        )}
         {seatingLoading && (
           <div className='flex items-center justify-center py-16'>
             <Loader2
@@ -1752,7 +1767,7 @@ export function EventHomePage() {
       />
 
       {/* Notification Center (slide-out panel) */}
-      <NotificationCenter eventId={currentEvent.id} />
+      {!isPreviewMode && <NotificationCenter eventId={currentEvent.id} />}
     </div>
   )
 }

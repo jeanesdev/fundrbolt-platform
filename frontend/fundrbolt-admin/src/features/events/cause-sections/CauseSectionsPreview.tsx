@@ -1,123 +1,128 @@
-import type { CauseSectionCard } from '@/services/cause-section-cards'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useEffect, useState } from 'react'
+import { Loader2 } from 'lucide-react'
+import apiClient from '@/lib/axios'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 
-const backgroundTokenClass: Record<string, string> = {
-  'slate-50': 'bg-slate-50',
-  'slate-100': 'bg-slate-100',
-  'slate-200': 'bg-slate-200',
-  white: 'bg-white',
-  transparent: 'bg-transparent',
-}
+function getDonorPreviewBaseUrl() {
+  const configured = import.meta.env.VITE_DONOR_PWA_URL?.replace(/\/+$/, '')
 
-const borderTokenClass: Record<string, string> = {
-  'slate-50': 'border-slate-50',
-  'slate-100': 'border-slate-100',
-  'slate-200': 'border-slate-200',
-  white: 'border-white',
-  transparent: 'border-transparent',
-}
+  if (
+    import.meta.env.DEV &&
+    typeof window !== 'undefined' &&
+    ['localhost', '127.0.0.1'].includes(window.location.hostname)
+  ) {
+    return 'http://localhost:5174'
+  }
 
-function cardClasses(card: CauseSectionCard) {
-  return [
-    'rounded-2xl border p-4 shadow-sm',
-    backgroundTokenClass[card.background_color_token ?? 'white'] ?? 'bg-white',
-    borderTokenClass[card.border_color_token ?? 'slate-200'] ??
-      'border-slate-200',
-  ].join(' ')
+  return (
+    configured ||
+    (import.meta.env.DEV
+      ? 'http://localhost:5174'
+      : 'https://app.fundrbolt.com')
+  )
 }
 
 export function CauseSectionsPreview({
-  cards,
-  eventDescription,
+  eventId,
+  previewKey,
 }: {
-  cards: CauseSectionCard[]
-  eventDescription: string | null | undefined
+  eventId: string
+  previewKey?: string
 }) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [previewToken, setPreviewToken] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadPreviewToken = async () => {
+      setPreviewToken(null)
+      setPreviewUrl(null)
+      setError(null)
+
+      try {
+        const response = await apiClient.post<{ token: string }>(
+          `/admin/events/${eventId}/preview-token`
+        )
+
+        if (cancelled) return
+
+        setPreviewToken(response.data.token)
+      } catch (previewError) {
+        if (cancelled) return
+
+        setError(
+          previewError instanceof Error
+            ? previewError.message
+            : 'Unable to load donor preview.'
+        )
+      }
+    }
+
+    void loadPreviewToken()
+
+    return () => {
+      cancelled = true
+    }
+  }, [eventId])
+
+  useEffect(() => {
+    if (!previewToken) return
+
+    const searchParams = new URLSearchParams({
+      eventId,
+      token: previewToken,
+    })
+
+    if (previewKey) {
+      searchParams.set('previewKey', previewKey)
+    }
+
+    setPreviewUrl(
+      `${getDonorPreviewBaseUrl()}/preview?${searchParams.toString()}`
+    )
+  }, [eventId, previewKey, previewToken])
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Donor Preview</CardTitle>
+        <CardDescription>
+          Live render of the donor page using the same preview route as the
+          published experience.
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className='space-y-4 rounded-2xl bg-slate-100 p-4'>
-          {cards
-            .filter((card) => card.is_enabled)
-            .sort((a, b) => a.display_order - b.display_order)
-            .map((card) => (
-              <div key={card.id} className={cardClasses(card)}>
-                {card.show_header && card.title && (
-                  <h3 className='mb-3 text-sm font-semibold tracking-wide uppercase'>
-                    {card.title}
-                  </h3>
-                )}
-
-                {card.card_type === 'text' && (
-                  <div
-                    className='prose prose-sm max-w-none'
-                    dangerouslySetInnerHTML={{
-                      __html: card.content_html ?? '',
-                    }}
-                  />
-                )}
-
-                {card.card_type === 'slideshow' && (
-                  <div className='space-y-3'>
-                    {card.slides.map((slide, index) => (
-                      <div
-                        key={slide.id}
-                        className='rounded-xl border bg-white p-3'
-                      >
-                        <p className='text-xs font-medium tracking-wide uppercase'>
-                          Slide {index + 1}
-                        </p>
-                        {slide.media_url && (
-                          <img
-                            src={slide.media_url}
-                            alt={slide.alt_text ?? 'Slide media'}
-                            className='mt-2 h-40 w-full rounded-lg object-cover'
-                          />
-                        )}
-                        {slide.overlay_html && (
-                          <div
-                            className='prose prose-sm mt-3 max-w-none'
-                            dangerouslySetInnerHTML={{
-                              __html: slide.overlay_html,
-                            }}
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {card.card_type === 'video' && (
-                  <div className='space-y-2 text-sm'>
-                    <p className='font-medium'>Video URL</p>
-                    <p className='text-muted-foreground break-all'>
-                      {card.video_url ?? 'No video configured'}
-                    </p>
-                  </div>
-                )}
-
-                {card.card_type === 'built_in' && (
-                  <div className='text-muted-foreground text-sm'>
-                    {card.built_in_section_key === 'about' &&
-                      'About This Event will render here using the donor experience layout.'}
-                    {card.built_in_section_key === 'sponsors' &&
-                      'Sponsors carousel will render here using published sponsor data.'}
-                    {card.built_in_section_key === 'event_details' &&
-                      'Event details accordion will render here using current event details.'}
-                    {card.built_in_section_key === 'about' &&
-                      eventDescription && (
-                        <div
-                          className='prose prose-sm mt-3 max-w-none'
-                          dangerouslySetInnerHTML={{ __html: eventDescription }}
-                        />
-                      )}
-                  </div>
-                )}
+        <div className='overflow-hidden rounded-2xl border bg-slate-950'>
+          {!previewUrl && !error ? (
+            <div className='flex min-h-[760px] items-center justify-center p-6'>
+              <div className='flex items-center gap-3 text-sm text-slate-300'>
+                <Loader2 className='h-4 w-4 animate-spin' />
+                Loading donor preview
               </div>
-            ))}
+            </div>
+          ) : error ? (
+            <div className='flex min-h-[760px] items-center justify-center p-6'>
+              <div className='max-w-md rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700'>
+                <p className='font-semibold'>Preview unavailable</p>
+                <p className='mt-1'>{error}</p>
+              </div>
+            </div>
+          ) : (
+            <iframe
+              title='Donor preview'
+              src={previewUrl ?? undefined}
+              className='h-[760px] w-full bg-white'
+              referrerPolicy='no-referrer'
+            />
+          )}
         </div>
       </CardContent>
     </Card>

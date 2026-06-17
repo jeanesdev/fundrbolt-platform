@@ -4,6 +4,7 @@
  * strikethrough, bullet lists, ordered lists, text alignment, font family,
  * and text colour.
  */
+import { useEffect } from 'react'
 import Color from '@tiptap/extension-color'
 import FontFamily from '@tiptap/extension-font-family'
 import Placeholder from '@tiptap/extension-placeholder'
@@ -110,6 +111,15 @@ export function RichTextEditor({
       onChange(html === '<p></p>' ? '' : html)
     },
   })
+
+  useEffect(() => {
+    if (!editor) return
+    const incomingValue = value || ''
+    const currentValue = editor.getHTML() === '<p></p>' ? '' : editor.getHTML()
+    if (incomingValue !== currentValue) {
+      editor.commands.setContent(incomingValue, { emitUpdate: false })
+    }
+  }, [editor, value])
 
   if (!editor) return null
 

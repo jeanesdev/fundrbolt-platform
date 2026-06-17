@@ -152,11 +152,18 @@ const isValidEmail = (email: string): boolean => {
 const isValidUrl = (url: string): boolean => {
   if (!url) return true // Empty is valid (optional field)
   try {
-    const urlObj = new URL(url)
+    const normalized = /^https?:\/\//i.test(url) ? url : `https://${url}`
+    const urlObj = new URL(normalized)
     return urlObj.protocol === 'http:' || urlObj.protocol === 'https:'
   } catch {
     return false
   }
+}
+
+const normalizeWebsiteUrl = (url: string): string => {
+  const trimmed = url.trim()
+  if (!trimmed) return ''
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
 }
 
 // Form validation schema
@@ -201,7 +208,9 @@ const npoFormSchema = z.object({
     .or(z.literal('')),
   website_url: z
     .string()
-    .url('Invalid URL format')
+    .refine((value) => !value || isValidUrl(value), {
+      message: 'Please enter a valid website (e.g., yourorg.org)',
+    })
     .optional()
     .or(z.literal('')),
   phone: z
@@ -456,7 +465,7 @@ export function NPOCreationForm({
       cleanData.mission_statement = values.mission_statement.trim()
     }
     if (values.website_url?.trim()) {
-      cleanData.website_url = values.website_url.trim()
+      cleanData.website_url = normalizeWebsiteUrl(values.website_url)
     }
     if (values.phone?.trim()) {
       cleanData.phone = values.phone.trim()
@@ -651,16 +660,14 @@ export function NPOCreationForm({
                   <FormLabel>Website</FormLabel>
                   <FormControl>
                     <Input
-                      type='url'
-                      placeholder='https://yourorg.org'
+                      type='text'
+                      placeholder='yourorg.org'
                       {...field}
                       onBlur={(e) => {
                         field.onBlur()
                         const value = e.target.value
                         if (value && !isValidUrl(value)) {
-                          setWebsiteError(
-                            'Please enter a valid URL (must start with http:// or https://)'
-                          )
+                          setWebsiteError('Please enter a valid website')
                         } else {
                           setWebsiteError(null)
                         }
@@ -670,7 +677,8 @@ export function NPOCreationForm({
                     />
                   </FormControl>
                   <FormDescription>
-                    Your organization's website (optional)
+                    Your organization's website (optional). We will add https://
+                    automatically if omitted.
                   </FormDescription>
                   {websiteError && (
                     <p className='flex items-center gap-1 text-xs text-red-500'>

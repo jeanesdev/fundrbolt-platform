@@ -66,6 +66,7 @@ from app.api.v1 import (
     sales_tracking,
     search,
     sponsors,
+    support,
     ticket_assignments,
     ticket_invitations,
     ticket_options,
@@ -109,6 +110,7 @@ api_router.include_router(legal_documents.router, prefix="/legal", tags=["legal"
 api_router.include_router(consent.router, prefix="/consent", tags=["consent"])
 api_router.include_router(cookies.router, prefix="/cookies", tags=["cookies"])
 api_router.include_router(search.router, tags=["search"])
+api_router.include_router(support.router, tags=["support"])
 api_router.include_router(public_contact.router, prefix="/public", tags=["public-contact"])
 api_router.include_router(public_onboarding.router, prefix="/public", tags=["public-onboarding"])
 api_router.include_router(public_testimonials.router, tags=["public-testimonials"])

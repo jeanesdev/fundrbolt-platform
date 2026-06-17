@@ -199,6 +199,7 @@ class CauseSectionSlideItem(Base, UUIDMixin, TimestampMixin):
         ),
         nullable=True,
     )
+    slide_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
     alt_text: Mapped[str | None] = mapped_column(String(500), nullable=True)
     overlay_html: Mapped[str | None] = mapped_column(Text, nullable=True)
 

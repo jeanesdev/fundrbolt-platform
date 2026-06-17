@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 import bleach
 from bleach.css_sanitizer import CSSSanitizer
 from fastapi import HTTPException, status
-from sqlalchemy import Select, select
+from sqlalchemy import Select, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -335,9 +335,24 @@ async def reorder_cards(
         )
 
     new_version, card_map, _, _ = await _copy_on_write(db, event_id, config)
-    for display_order, old_id in enumerate(requested_ids):
-        mapped_card = card_map[old_id]
-        mapped_card.display_order = display_order
+    temp_order_base = max(card.display_order for card in current_cards) + len(requested_ids) + 1
+    ordered_cards = [card_map[card_id] for card_id in requested_ids]
+    for index, card_id in enumerate(requested_ids):
+        await db.execute(
+            text("UPDATE cause_section_cards SET display_order = :temp_order WHERE id = :card_id"),
+            {"temp_order": temp_order_base + index, "card_id": card_map[card_id].id},
+        )
+
+    for index, card_id in enumerate(requested_ids):
+        await db.execute(
+            text(
+                "UPDATE cause_section_cards SET display_order = :final_order, updated_at = now() WHERE id = :card_id"
+            ),
+            {"final_order": index, "card_id": card_map[card_id].id},
+        )
+
+    for card in ordered_cards:
+        await db.refresh(card)
 
     await _record_revision(
         db,
@@ -351,7 +366,7 @@ async def reorder_cards(
         },
     )
     await db.commit()
-    return await _get_cards_for_version(db, event_id, new_version)
+    return ordered_cards
 
 
 async def add_slide(
@@ -721,6 +736,7 @@ async def _copy_on_write(
                 slide_variant=slide.slide_variant,
                 media_url=slide.media_url,
                 media_source=slide.media_source,
+                slide_name=slide.slide_name,
                 alt_text=slide.alt_text,
                 overlay_html=slide.overlay_html,
             )
@@ -837,6 +853,7 @@ def _apply_card_update_payload(
 
 
 def _apply_slide_create_payload(slide: CauseSectionSlideItem, request: CreateSlideRequest) -> None:
+    slide.slide_name = request.slide_name
     slide.overlay_html = sanitize_html(request.overlay_html)
     if request.slide_variant == SlideVariantEnum.TEXT_ONLY:
         slide.media_url = None
@@ -861,6 +878,9 @@ def _apply_slide_update_payload(
 ) -> None:
     changes = request.model_dump(exclude_unset=True)
     effective_variant = request.slide_variant or current_slide.slide_variant
+
+    if "slide_name" in changes:
+        slide.slide_name = request.slide_name
 
     if "slide_variant" in changes:
         slide.slide_variant = effective_variant

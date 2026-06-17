@@ -29,6 +29,7 @@ export interface SlideItem {
   slide_variant: SlideVariant
   media_url: string | null
   media_source: MediaSource | null
+  slide_name: string | null
   alt_text: string | null
   overlay_html: string | null
   created_at: string
@@ -99,6 +100,7 @@ export interface CreateSlideRequest {
   slide_variant: SlideVariant
   media_url?: string | null
   media_source?: MediaSource | null
+  slide_name?: string | null
   alt_text?: string | null
   overlay_html?: string | null
 }
@@ -108,6 +110,7 @@ export interface UpdateSlideRequest {
   slide_variant?: SlideVariant
   media_url?: string | null
   media_source?: MediaSource | null
+  slide_name?: string | null
   alt_text?: string | null
   overlay_html?: string | null
 }

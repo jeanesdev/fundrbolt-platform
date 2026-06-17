@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import type { CauseSectionCard } from '@/services/cause-section-cards'
 import {
   closestCenter,
@@ -9,8 +10,8 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core'
 import {
-  SortableContext,
   arrayMove,
+  SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
@@ -164,6 +165,13 @@ export function CardList({
   onToggle,
   onReorder,
 }: CardListProps) {
+  const [localCards, setLocalCards] = useState(cards)
+
+  // Sync from server when cards change (after API success/failure + refresh)
+  useEffect(() => {
+    setLocalCards(cards)
+  }, [cards])
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -173,11 +181,12 @@ export function CardList({
     const { active, over } = event
     if (!over || active.id === over.id) return
 
-    const oldIndex = cards.findIndex((card) => card.id === active.id)
-    const newIndex = cards.findIndex((card) => card.id === over.id)
+    const oldIndex = localCards.findIndex((card) => card.id === active.id)
+    const newIndex = localCards.findIndex((card) => card.id === over.id)
     if (oldIndex === -1 || newIndex === -1) return
 
-    const nextCards = arrayMove(cards, oldIndex, newIndex)
+    const nextCards = arrayMove(localCards, oldIndex, newIndex)
+    setLocalCards(nextCards) // Optimistic update — stays in place while API call is in-flight
     onReorder(nextCards.map((card) => card.id))
   }
 
@@ -188,11 +197,11 @@ export function CardList({
       onDragEnd={handleDragEnd}
     >
       <SortableContext
-        items={cards.map((card) => card.id)}
+        items={localCards.map((card) => card.id)}
         strategy={verticalListSortingStrategy}
       >
         <div className='space-y-3'>
-          {cards.map((card) => (
+          {localCards.map((card) => (
             <SortableCardRow
               key={card.id}
               card={card}

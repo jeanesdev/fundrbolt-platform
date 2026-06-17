@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import {
   Building2,
   Calendar,
@@ -37,6 +37,7 @@ import { DebugSpoofSheet } from '@/components/debug-spoof-sheet'
 import { SignOutDialog } from '@/components/sign-out-dialog'
 
 export function ProfileDropdown() {
+  const navigate = useNavigate()
   const [open, setOpen] = useDialogState()
   const [menuOpen, setMenuOpen] = useState(false)
   const [eventSearchQuery, setEventSearchQuery] = useState('')
@@ -79,6 +80,22 @@ export function ProfileDropdown() {
           event.name.toLowerCase().includes(eventSearchQuery.toLowerCase())
         )
       : availableEvents
+
+  const handleSelectEvent = (event: {
+    id: string
+    name: string
+    slug: string
+  }) => {
+    selectEvent(event.id, event.name, event.slug)
+    setEventSearchQuery('')
+    setEventListOpen(false)
+    setMenuOpen(false)
+
+    navigate({
+      to: '/events/$eventId/dashboard',
+      params: { eventId: event.id },
+    })
+  }
 
   return (
     <>
@@ -222,11 +239,7 @@ export function ProfileDropdown() {
                       {filteredEvents.map((event) => (
                         <CommandItem
                           key={event.id}
-                          onSelect={() => {
-                            selectEvent(event.id, event.name, event.slug)
-                            setEventSearchQuery('')
-                            setMenuOpen(false)
-                          }}
+                          onSelect={() => handleSelectEvent(event)}
                           className='gap-2 p-2'
                         >
                           <div className='flex size-6 items-center justify-center overflow-hidden rounded-sm border'>
@@ -271,10 +284,7 @@ export function ProfileDropdown() {
                   {availableEvents.map((event) => (
                     <DropdownMenuItem
                       key={event.id}
-                      onClick={() => {
-                        selectEvent(event.id, event.name, event.slug)
-                        setMenuOpen(false)
-                      }}
+                      onClick={() => handleSelectEvent(event)}
                       className='gap-2 p-2'
                     >
                       <div className='flex size-6 items-center justify-center overflow-hidden rounded-sm border'>

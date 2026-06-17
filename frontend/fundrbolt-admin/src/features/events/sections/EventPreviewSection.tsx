@@ -84,11 +84,12 @@ export function EventPreviewSection() {
         <CardHeader>
           <CardTitle className='flex items-center gap-2'>
             <Eye className='h-5 w-5' />
-            Donor PWA Preview
+            Donor Progressive Web App (PWA) Preview
           </CardTitle>
           <CardDescription>
             Open a phone-sized preview of how this event appears in the donor
-            PWA. Works for draft, active, and closed events.
+            Progressive Web App (PWA). Works for draft, active, and closed
+            events.
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
@@ -98,9 +99,9 @@ export function EventPreviewSection() {
               <p className='font-medium'>Preview experience</p>
               <p className='text-muted-foreground'>
                 On desktop, the preview opens in a separate phone-sized window.
-                On mobile or installed PWAs, it opens in the current tab to
-                avoid popup blocking. Interactive donor actions like bidding
-                remain disabled.
+                On mobile or installed Progressive Web Apps (PWAs), it opens in
+                the current tab to avoid popup blocking. Interactive donor
+                actions like bidding remain disabled.
               </p>
             </div>
           </div>

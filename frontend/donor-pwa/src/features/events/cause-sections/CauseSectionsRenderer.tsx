@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { usePreviewMode } from '@/contexts/PreviewContext'
 import { Loader2 } from 'lucide-react'
 import {
   getPublishedCausePageCards,
@@ -106,14 +107,19 @@ export function CauseSectionsRenderer({
   aboutEventHtml,
   fallback = null,
 }: CauseSectionsRendererProps) {
+  const { isPreviewMode, previewData } = usePreviewMode()
+  const previewCards = isPreviewMode
+    ? (previewData?.causePageCards ?? null)
+    : null
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ['cause-page-cards', 'public', eventId],
     queryFn: () => getPublishedCausePageCards(eventId),
-    enabled: !!eventId,
+    enabled: !!eventId && previewCards === null,
     staleTime: 30_000,
   })
 
-  if (isLoading) {
+  if (previewCards === null && isLoading) {
     return (
       fallback ?? (
         <div className='flex items-center justify-center py-8'>
@@ -123,17 +129,19 @@ export function CauseSectionsRenderer({
     )
   }
 
-  if (isError || !data || data.length === 0) {
+  const cards = previewCards ?? data ?? []
+
+  if (previewCards === null && (isError || cards.length === 0)) {
     return <>{fallback}</>
   }
 
-  const cards = data
+  const orderedCards = cards
     .filter((card) => card.is_enabled)
     .sort((a, b) => a.display_order - b.display_order)
 
   return (
     <div className='space-y-4'>
-      {cards.map((card) => {
+      {orderedCards.map((card) => {
         if (card.card_type === 'text') {
           return <TextCard key={card.id} card={card} />
         }

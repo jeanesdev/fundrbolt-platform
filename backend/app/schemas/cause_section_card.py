@@ -46,6 +46,7 @@ class SlideItemResponse(BaseModel):
     slide_variant: SlideVariantEnum
     media_url: str | None = None
     media_source: MediaSourceEnum | None = None
+    slide_name: str | None = None
     alt_text: str | None = None
     overlay_html: str | None = None
     created_at: datetime
@@ -194,10 +195,11 @@ class CreateSlideRequest(BaseModel):
     slide_variant: SlideVariantEnum
     media_url: str | None = Field(default=None, max_length=2048)
     media_source: MediaSourceEnum | None = None
+    slide_name: str | None = Field(default=None, max_length=200)
     alt_text: str | None = Field(default=None, max_length=500)
     overlay_html: str | None = None
 
-    @field_validator("media_url", "alt_text", "overlay_html", mode="before")
+    @field_validator("media_url", "slide_name", "alt_text", "overlay_html", mode="before")
     @classmethod
     def normalize_slide_text(cls, value: Any) -> Any:
         if isinstance(value, str):
@@ -223,10 +225,11 @@ class UpdateSlideRequest(BaseModel):
     slide_variant: SlideVariantEnum | None = None
     media_url: str | None = Field(default=None, max_length=2048)
     media_source: MediaSourceEnum | None = None
+    slide_name: str | None = Field(default=None, max_length=200)
     alt_text: str | None = Field(default=None, max_length=500)
     overlay_html: str | None = None
 
-    @field_validator("media_url", "alt_text", "overlay_html", mode="before")
+    @field_validator("media_url", "slide_name", "alt_text", "overlay_html", mode="before")
     @classmethod
     def normalize_slide_update_text(cls, value: Any) -> Any:
         if isinstance(value, str):

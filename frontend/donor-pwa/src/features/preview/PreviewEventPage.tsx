@@ -13,6 +13,7 @@ import type { EventDetail } from '@/types/event'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { useEventContextStore } from '@/stores/event-context-store'
 import { useEventStore } from '@/stores/event-store'
+import type { PublicCauseSectionCard } from '@/lib/api/cause-section-cards'
 import type { Sponsor } from '@/lib/api/sponsors'
 import apiClient from '@/lib/axios'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -29,6 +30,7 @@ interface PreviewApiResponse {
     Omit<AuctionItemDetail, 'media'> & { media?: AuctionItemDetail['media'] }
   >
   sponsors: Sponsor[]
+  cause_page_cards: PublicCauseSectionCard[]
 }
 
 interface AuctionItemsPage {
@@ -185,6 +187,7 @@ export function PreviewEventPage({ eventId, token }: PreviewPageProps) {
           media: item.media ?? [],
         })),
         sponsors: response.data.sponsors,
+        causePageCards: response.data.cause_page_cards,
       }
 
       const galleryItems = payload.auctionItems.map((item, index) =>
@@ -220,6 +223,10 @@ export function PreviewEventPage({ eventId, token }: PreviewPageProps) {
         total: 0,
       })
       queryClient.setQueryData(['sponsors', payload.event.id], payload.sponsors)
+      queryClient.setQueryData(
+        ['cause-page-cards', 'public', payload.event.id],
+        payload.causePageCards
+      )
       queryClient.setQueryData(
         ['auction-items', payload.event.id, 'all'],
         createInfiniteAuctionData(galleryItems)

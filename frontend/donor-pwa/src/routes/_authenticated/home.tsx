@@ -220,7 +220,9 @@ function DonorHomePage() {
     enabled: !!user,
   })
 
-  const registeredEvents: DisplayEvent[] = registrationsData?.events ?? []
+  const registeredEvents: DisplayEvent[] = (
+    registrationsData?.events ?? []
+  ).filter((event) => !event.is_past)
   const registeredIds = new Set(registeredEvents.map((e) => e.id))
 
   // Admin-only events: present in the context store (has_admin_access=true) but

@@ -27,9 +27,11 @@ from app.models.auction_item import AuctionItemMedia
 from app.models.user import User
 from app.schemas.auction_item import AuctionItemDetail, AuctionItemResponse
 from app.schemas.auction_item_media import MediaResponse
+from app.schemas.cause_section_card import PublicCauseSectionCardResponse
 from app.schemas.event import EventDetailResponse
 from app.schemas.preview import PreviewEventResponse, PreviewTokenResponse
 from app.schemas.sponsor import SponsorResponse
+from app.services import cause_section_card_service
 from app.services.auction_item_media_service import AuctionItemMediaService
 from app.services.auction_item_service import AuctionItemService
 from app.services.event_service import EventService
@@ -384,16 +386,24 @@ async def get_event_preview(
         for s in sponsors_raw
     ]
 
+    cause_page_cards_raw = await cause_section_card_service.list_draft_cards(db, event_id)
+    cause_page_cards = [
+        PublicCauseSectionCardResponse.model_validate(card, from_attributes=True)
+        for card in cause_page_cards_raw
+    ]
+
     logger.info(
-        "Preview data served for event %s (token sub=%s): %d auction items, %d sponsors",
+        "Preview data served for event %s (token sub=%s): %d auction items, %d sponsors, %d cause page cards",
         event_id,
         claims.get("sub"),
         len(auction_items),
         len(sponsors),
+        len(cause_page_cards),
     )
 
     return PreviewEventResponse(
         event=event_response,
         auction_items=auction_items,
         sponsors=sponsors,
+        cause_page_cards=cause_page_cards,
     )

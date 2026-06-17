@@ -74,31 +74,45 @@ export const useEventContextStore = create<EventContextState>()(
         }),
 
       setAvailableEvents: (events) => {
+        const now = new Date()
+        const isAccessibleEvent = (event: EventContextOption) => {
+          if (event.status === 'draft') return false
+          if (!event.event_date) return true
+
+          const eventDate = new Date(event.event_date)
+          if (Number.isNaN(eventDate.getTime())) return true
+
+          return eventDate >= now
+        }
+
+        const filteredEvents = events.filter(isAccessibleEvent)
         const { selectedEventSlug, selectedEventId } = get()
         // Find the event matching the persisted selection by ID (most stable)
         // or by slug. If found by ID but slug changed, update the persisted slug
         // so redirects use the current slug. If not found at all, clear the
         // stale selection so the user isn't redirected to a 404.
-        if (events.length === 0) {
-          set({ availableEvents: events })
+        if (filteredEvents.length === 0) {
+          set({ availableEvents: filteredEvents })
           return
         }
-        const matchById = events.find((e) => e.id === selectedEventId)
-        const matchBySlug = events.find((e) => e.slug === selectedEventSlug)
+        const matchById = filteredEvents.find((e) => e.id === selectedEventId)
+        const matchBySlug = filteredEvents.find(
+          (e) => e.slug === selectedEventSlug
+        )
         if (matchById) {
           // Event still exists — update slug in case it was renamed
           set({
-            availableEvents: events,
+            availableEvents: filteredEvents,
             selectedEventSlug: matchById.slug,
             selectedEventName: matchById.name,
           })
         } else if (matchBySlug) {
           // Found only by slug (no ID stored, or ID changed) — keep as-is
-          set({ availableEvents: events })
+          set({ availableEvents: filteredEvents })
         } else {
           // Event no longer accessible — clear stale selection
           set({
-            availableEvents: events,
+            availableEvents: filteredEvents,
             selectedEventId: null,
             selectedEventName: 'Select Event',
             selectedEventSlug: null,

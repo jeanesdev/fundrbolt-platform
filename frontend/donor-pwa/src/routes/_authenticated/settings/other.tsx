@@ -15,8 +15,8 @@ import {
   Tag,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
 import { useEventContextStore } from '@/stores/event-context-store'
+import { sendSupportMessage } from '@/lib/api/support'
 import { getDonorSurveyStatus } from '@/lib/api/survey'
 import { Button } from '@/components/ui/button'
 import {
@@ -63,8 +63,19 @@ const REASON_OPTIONS = [
   { value: 'other', label: 'Other' },
 ] as const
 
+const supportReasonValues = [
+  'bug',
+  'event-inquiry',
+  'account',
+  'feature-request',
+  'general',
+  'other',
+] as const
+
 const supportFormSchema = z.object({
-  reason: z.string({ message: 'Please select a reason' }),
+  reason: z.enum(supportReasonValues, {
+    message: 'Please select a reason',
+  }),
   subject: z
     .string()
     .min(3, 'Subject must be at least 3 characters')
@@ -79,12 +90,11 @@ type SupportFormValues = z.infer<typeof supportFormSchema>
 
 function SupportForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const user = useAuthStore((s) => s.user)
 
   const form = useForm<SupportFormValues>({
     resolver: zodResolver(supportFormSchema),
     defaultValues: {
-      reason: '',
+      reason: undefined as unknown as SupportFormValues['reason'],
       subject: '',
       message: '',
     },
@@ -93,29 +103,31 @@ function SupportForm() {
   async function onSubmit(values: SupportFormValues) {
     setIsSubmitting(true)
     try {
-      const reasonLabel =
-        REASON_OPTIONS.find((r) => r.value === values.reason)?.label ??
-        values.reason
-      const mailtoSubject = encodeURIComponent(
-        `[${reasonLabel}] ${values.subject}`
-      )
-      const body = [
-        values.message,
-        '',
-        '---',
-        `From: ${user?.first_name ?? ''} ${user?.last_name ?? ''} (${user?.email ?? 'unknown'})`,
-      ].join('\n')
-      const mailtoBody = encodeURIComponent(body)
+      await sendSupportMessage(values)
 
-      window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${mailtoSubject}&body=${mailtoBody}`
-
-      toast.success('Opening your email client...', {
-        description:
-          'If nothing opens, send your message directly to ' + SUPPORT_EMAIL,
+      toast.success('Message sent to support', {
+        description: 'The team will reply by email as soon as possible.',
       })
       form.reset()
-    } catch {
-      toast.error('Something went wrong. Please try again.')
+    } catch (error: unknown) {
+      const axiosError = error as {
+        response?: { status?: number; data?: { detail?: unknown } }
+        message?: string
+      }
+
+      const detail = axiosError.response?.data?.detail
+      const message =
+        axiosError.response?.status === 429
+          ? 'You have sent too many messages recently. Please wait a moment before trying again.'
+          : typeof detail === 'string'
+            ? detail
+            : detail && typeof detail === 'object' && 'error' in detail
+              ? ((detail as { error?: { message?: string } }).error?.message ??
+                axiosError.message)
+              : (axiosError.message ??
+                'Failed to send message. Please try again.')
+
+      toast.error(message)
     } finally {
       setIsSubmitting(false)
     }

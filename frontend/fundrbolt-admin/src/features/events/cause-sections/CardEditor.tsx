@@ -6,6 +6,7 @@ import {
   type ConflictResponse,
   updateCausePageCard,
 } from '@/services/cause-section-cards'
+import type { EventMedia } from '@/types/event'
 import { toast } from 'sonner'
 import { getErrorMessage, isErrorStatus } from '@/lib/error-utils'
 import { Badge } from '@/components/ui/badge'
@@ -39,7 +40,7 @@ const COLOR_OPTIONS: Array<{ label: string; value: ColorToken | null }> = [
   { label: 'Slate 100', value: 'slate-100' },
   { label: 'Slate 200', value: 'slate-200' },
   { label: 'White', value: 'white' },
-  { label: 'Transparent', value: 'transparent' },
+  { label: 'None', value: 'transparent' },
 ]
 
 function builtInLabel(card: CauseSectionCard) {
@@ -49,6 +50,7 @@ function builtInLabel(card: CauseSectionCard) {
 
 interface CardEditorProps {
   eventId: string
+  eventMedia: EventMedia[]
   card: CauseSectionCard | null
   config: CausePageConfig | null
   open: boolean
@@ -63,6 +65,7 @@ interface CardEditorProps {
 
 export function CardEditor({
   eventId,
+  eventMedia,
   card,
   config,
   open,
@@ -128,6 +131,7 @@ export function CardEditor({
       })
       onCardReplaced(saved)
       await onRefresh()
+      onOpenChange(false)
       toast.success('Card saved')
     } catch (error) {
       if (isErrorStatus(error, 409)) {
@@ -147,7 +151,7 @@ export function CardEditor({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className='w-full overflow-hidden sm:max-w-2xl'>
+      <SheetContent className='w-full sm:max-w-2xl'>
         <SheetHeader>
           <SheetTitle>Configure Cause Card</SheetTitle>
           <SheetDescription>
@@ -155,7 +159,7 @@ export function CardEditor({
           </SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className='flex-1 px-4'>
+        <ScrollArea className='min-h-0 flex-1 px-4'>
           <div className='space-y-6 pb-6'>
             <div className='grid gap-4 md:grid-cols-2'>
               <div className='space-y-2'>
@@ -296,6 +300,7 @@ export function CardEditor({
               <SlideshowCardEditor
                 eventId={eventId}
                 card={card}
+                eventMedia={eventMedia}
                 draftVersion={config.draft_version}
                 onConflict={onConflict}
                 onCardReplaced={onCardReplaced}

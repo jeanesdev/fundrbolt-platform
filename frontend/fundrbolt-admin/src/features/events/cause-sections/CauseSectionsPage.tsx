@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createCausePageCard,
@@ -8,11 +8,11 @@ import {
   getCausePageRevisions,
   publishCausePage,
   reorderCausePageCards,
+  updateCausePageCard,
   type CauseSectionCard,
   type ConflictResponse,
   type CreateCardRequest,
   type PublishRequest,
-  updateCausePageCard,
 } from '@/services/cause-section-cards'
 import { Eye, Loader2, Plus, UploadCloud } from 'lucide-react'
 import { toast } from 'sonner'
@@ -64,7 +64,13 @@ interface PendingConflict {
   retry: (draftVersion: number) => Promise<void>
 }
 
-export function CauseSectionsPage() {
+interface CauseSectionsPageProps {
+  embedded?: boolean
+}
+
+export function CauseSectionsPage({
+  embedded = false,
+}: CauseSectionsPageProps) {
   const { currentEvent } = useEventWorkspace()
   const eventId = currentEvent.id
   const queryClient = useQueryClient()
@@ -79,6 +85,10 @@ export function CauseSectionsPage() {
   const [newCardType, setNewCardType] = useState<
     'text' | 'slideshow' | 'video'
   >('text')
+  const [displayCards, setDisplayCards] = useState<CauseSectionCard[]>([])
+  const isReorderInFlightRef = useRef(false)
+  const reorderInFlightPromiseRef = useRef<Promise<void> | null>(null)
+  const reorderSavedDraftVersionRef = useRef<number | null>(null)
   const [pendingConflict, setPendingConflict] =
     useState<PendingConflict | null>(null)
 
@@ -113,6 +123,11 @@ export function CauseSectionsPage() {
 
   const cards = useMemo(() => cardsQuery.data ?? [], [cardsQuery.data])
   const config = configQuery.data ?? null
+
+  useEffect(() => {
+    setDisplayCards(cards)
+  }, [cards])
+
   const selectedCard = useMemo(
     () => cards.find((card) => card.id === selectedCardId) ?? null,
     [cards, selectedCardId]
@@ -284,33 +299,84 @@ export function CauseSectionsPage() {
     const draftVersion = versionOverride ?? config?.draft_version
     if (!draftVersion) return
 
-    try {
-      const reordered = await reorderCausePageCards(eventId, {
-        draft_version: draftVersion,
-        card_ids: cardIds,
-      })
-      if (selectedCardIdentity) {
-        const match = reordered.find(
-          (card) => cardIdentity(card) === selectedCardIdentity
-        )
-        if (match) setSelectedCardId(match.id)
-      }
+    const latestCardIds = cards.map((card) => card.id)
+    const requestedCardIds = [...cardIds]
+    const requestedCardIdSet = new Set(requestedCardIds)
+    const reorderPayloadMatchesLatestDraft =
+      latestCardIds.length === requestedCardIds.length &&
+      requestedCardIdSet.size === requestedCardIds.length &&
+      latestCardIds.every((cardId) => requestedCardIdSet.has(cardId))
+
+    if (!reorderPayloadMatchesLatestDraft) {
       await refreshAll()
-      toast.success('Card order updated')
-    } catch (error) {
-      if (isErrorStatus(error, 409)) {
-        const detail = (
-          error as { response?: { data?: { detail?: ConflictResponse } } }
-        ).response?.data?.detail
-        if (detail) {
-          handleConflict(detail, (nextVersion) =>
-            handleReorderCards(cardIds, nextVersion)
-          )
-          return
-        }
-      }
-      toast.error(getErrorMessage(error, 'Unable to reorder cards'))
+      toast.error('Card order changed. Please try again.')
+      return
     }
+
+    // Keep preview/list in sync with drag-drop intent immediately while request is in-flight.
+    const requestedCardIndex = new Map(
+      requestedCardIds.map((cardId, index) => [cardId, index])
+    )
+    isReorderInFlightRef.current = true
+    setDisplayCards(
+      [...cards].sort(
+        (a, b) =>
+          (requestedCardIndex.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+          (requestedCardIndex.get(b.id) ?? Number.MAX_SAFE_INTEGER)
+      )
+    )
+
+    const reorderOperation = (async () => {
+      try {
+        const reordered = await reorderCausePageCards(eventId, {
+          draft_version: draftVersion,
+          card_ids: requestedCardIds,
+        })
+        reorderSavedDraftVersionRef.current =
+          reordered[0]?.draft_version ?? draftVersion
+
+        if (selectedCardIdentity) {
+          const match = reordered.find(
+            (card) => cardIdentity(card) === selectedCardIdentity
+          )
+          if (match) setSelectedCardId(match.id)
+        }
+        await refreshAll()
+        toast.success('Card order updated')
+      } catch (_error) {
+        // On any failure, refresh to get latest server state and let the user retry.
+        // A reorder has no unsaved text content to preserve, so a conflict retry dialog
+        // is not needed (and the stale card IDs in the closure would cause a second failure).
+        await refreshAll()
+        reorderSavedDraftVersionRef.current = null
+        setDisplayCards(cards)
+        toast.error('Card order changed. Please try again.')
+      } finally {
+        isReorderInFlightRef.current = false
+      }
+    })()
+
+    reorderInFlightPromiseRef.current = reorderOperation
+    await reorderOperation
+    if (reorderInFlightPromiseRef.current === reorderOperation) {
+      reorderInFlightPromiseRef.current = null
+    }
+  }
+
+  const handlePublish = async () => {
+    if (!config) return
+    if (isReorderInFlightRef.current) {
+      toast.info('Saving card order before publishing...')
+      await reorderInFlightPromiseRef.current
+      if (reorderSavedDraftVersionRef.current === null) {
+        return
+      }
+    }
+
+    publishMutation.mutate({
+      draft_version:
+        reorderSavedDraftVersionRef.current ?? config.draft_version,
+    })
   }
 
   if (isLoading) {
@@ -323,14 +389,40 @@ export function CauseSectionsPage() {
 
   return (
     <div className='space-y-6'>
-      <div className='flex flex-wrap items-center justify-between gap-3'>
-        <div>
-          <h1 className='text-2xl font-semibold'>Our Cause</h1>
-          <p className='text-muted-foreground'>
-            Build the donor-facing cause page for {currentEvent.name}.
-          </p>
+      {!embedded ? (
+        <div className='flex flex-wrap items-center justify-between gap-3'>
+          <div>
+            <h1 className='text-2xl font-semibold'>Our Cause</h1>
+            <p className='text-muted-foreground'>
+              Build the donor-facing cause page for {currentEvent.name}.
+            </p>
+          </div>
+          <div className='flex flex-wrap items-center gap-2'>
+            {hasUnsavedDraft && (
+              <Badge variant='secondary'>Unsaved draft</Badge>
+            )}
+            <Button
+              variant='outline'
+              onClick={() => setPreviewOpen((current) => !current)}
+            >
+              <Eye className='mr-2 h-4 w-4' />
+              {previewOpen ? 'Hide Preview' : 'Preview'}
+            </Button>
+            <Button variant='outline' onClick={() => setCreateDialogOpen(true)}>
+              <Plus className='mr-2 h-4 w-4' />
+              Add Card
+            </Button>
+            <Button
+              onClick={() => void handlePublish()}
+              disabled={!config || publishMutation.isPending}
+            >
+              <UploadCloud className='mr-2 h-4 w-4' />
+              Publish
+            </Button>
+          </div>
         </div>
-        <div className='flex flex-wrap items-center gap-2'>
+      ) : (
+        <div className='flex flex-wrap items-center justify-end gap-2'>
           {hasUnsavedDraft && <Badge variant='secondary'>Unsaved draft</Badge>}
           <Button
             variant='outline'
@@ -344,17 +436,14 @@ export function CauseSectionsPage() {
             Add Card
           </Button>
           <Button
-            onClick={() =>
-              config &&
-              publishMutation.mutate({ draft_version: config.draft_version })
-            }
+            onClick={() => void handlePublish()}
             disabled={!config || publishMutation.isPending}
           >
             <UploadCloud className='mr-2 h-4 w-4' />
             Publish
           </Button>
         </div>
-      </div>
+      )}
 
       <div className='grid gap-6 xl:grid-cols-[1.1fr_0.9fr]'>
         <Card>
@@ -363,7 +452,7 @@ export function CauseSectionsPage() {
           </CardHeader>
           <CardContent className='space-y-4'>
             <CardList
-              cards={cards}
+              cards={displayCards}
               onEdit={openEditor}
               onDelete={(card) => void handleDeleteCard(card)}
               onToggle={(card, enabled) => void handleToggleCard(card, enabled)}
@@ -375,8 +464,10 @@ export function CauseSectionsPage() {
         <div className='space-y-6'>
           {previewOpen && (
             <CauseSectionsPreview
-              cards={cards}
-              eventDescription={currentEvent.description}
+              eventId={currentEvent.id}
+              previewKey={displayCards
+                .map((card) => `${card.id}:${card.is_enabled ? '1' : '0'}`)
+                .join('|')}
             />
           )}
 
@@ -488,6 +579,7 @@ export function CauseSectionsPage() {
 
       <CardEditor
         eventId={eventId}
+        eventMedia={currentEvent.media || []}
         card={selectedCard}
         config={config}
         open={editorOpen && !!selectedCard}
