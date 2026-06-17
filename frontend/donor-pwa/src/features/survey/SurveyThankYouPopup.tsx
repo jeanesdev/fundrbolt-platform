@@ -114,9 +114,11 @@ export function SurveyThankYouPopup({
 
               {discountCents > 0 && npoName && !donateClicked && (
                 <>
-                  <div className='text-center text-xs font-medium text-gray-400'>or</div>
+                  <div className='text-center text-xs font-medium text-gray-400'>
+                    or
+                  </div>
                   <Button
-                    className='h-auto w-full gap-2 whitespace-normal py-3 leading-snug'
+                    className='h-auto w-full gap-2 py-3 leading-snug whitespace-normal'
                     onClick={handleDonateBack}
                   >
                     <Heart className='h-4 w-4 shrink-0' />

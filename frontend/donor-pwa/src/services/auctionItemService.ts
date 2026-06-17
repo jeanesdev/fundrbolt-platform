@@ -1,4 +1,3 @@
-import apiClient from '@/lib/axios'
 import type {
   AuctionItem,
   AuctionItemCreate,
@@ -9,6 +8,7 @@ import type {
   BidResponse,
   ItemStatus,
 } from '@/types/auction-item'
+import apiClient from '@/lib/axios'
 
 /**
  * Auction Item Service

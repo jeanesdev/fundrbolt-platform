@@ -15,7 +15,10 @@ interface PasswordResetConfirmProps {
   mode?: 'setup'
 }
 
-export function PasswordResetConfirm({ token, mode }: PasswordResetConfirmProps) {
+export function PasswordResetConfirm({
+  token,
+  mode,
+}: PasswordResetConfirmProps) {
   const isAccountSetup = mode === 'setup'
   return (
     <AuthLayout>

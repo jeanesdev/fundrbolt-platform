@@ -6,6 +6,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 from app.schemas.auction_item import AuctionItemDetail
+from app.schemas.cause_section_card import PublicCauseSectionCardResponse
 from app.schemas.event import EventDetailResponse
 from app.schemas.sponsor import SponsorResponse
 
@@ -41,4 +42,8 @@ class PreviewEventResponse(BaseModel):
     sponsors: list[SponsorResponse] = Field(
         default_factory=list,
         description="Event sponsors",
+    )
+    cause_page_cards: list[PublicCauseSectionCardResponse] = Field(
+        default_factory=list,
+        description="Draft cause page cards for the donor preview",
     )

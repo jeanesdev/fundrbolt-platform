@@ -1,7 +1,7 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useEventContext } from '@/hooks/use-event-context'
-import { useParams } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
+import { useParams } from '@tanstack/react-router'
+import { useEventContext } from '@/hooks/use-event-context'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { BidWarsTab } from './components/BidWarsTab'
 import { DonorLeaderboard } from './components/DonorLeaderboard'
 import { DonorProfilePanel } from './components/DonorProfilePanel'
@@ -29,7 +29,8 @@ export function DonorDashboardPage() {
     [effectiveEventId, scopePreference]
   )
 
-  const eventId = scope === 'event' ? (effectiveEventId ?? undefined) : undefined
+  const eventId =
+    scope === 'event' ? (effectiveEventId ?? undefined) : undefined
 
   // If a donor is selected, show the profile panel
   if (selectedDonorId) {
@@ -49,7 +50,9 @@ export function DonorDashboardPage() {
       <div className='space-y-2 sm:space-y-0'>
         <div className='flex items-start justify-between gap-3 sm:items-center'>
           <div>
-            <h1 className='text-xl font-bold tracking-tight sm:text-2xl'>Donor Dashboard</h1>
+            <h1 className='text-xl font-bold tracking-tight sm:text-2xl'>
+              Donor Dashboard
+            </h1>
             <p className='text-muted-foreground text-sm'>
               Analyze donor giving behavior and engagement.
             </p>

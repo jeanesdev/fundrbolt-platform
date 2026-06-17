@@ -1,3 +1,11 @@
+import { useState } from 'react'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { createFileRoute } from '@tanstack/react-router'
+import { LifeBuoy, Mail, Send } from 'lucide-react'
+import { toast } from 'sonner'
+import { sendSupportMessage } from '@/lib/api/support'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -24,14 +32,6 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { ContentSection } from '@/features/settings/components/content-section'
-import { useAuthStore } from '@/stores/auth-store'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { createFileRoute } from '@tanstack/react-router'
-import { LifeBuoy, Mail, Send } from 'lucide-react'
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
-import { z } from 'zod'
 
 const SUPPORT_EMAIL = 'support@fundrbolt.com'
 
@@ -44,8 +44,19 @@ const REASON_OPTIONS = [
   { value: 'other', label: 'Other' },
 ] as const
 
+const supportReasonValues = [
+  'bug',
+  'event-inquiry',
+  'account',
+  'feature-request',
+  'general',
+  'other',
+] as const
+
 const supportFormSchema = z.object({
-  reason: z.string({ message: 'Please select a reason' }),
+  reason: z.enum(supportReasonValues, {
+    message: 'Please select a reason',
+  }),
   subject: z
     .string()
     .min(3, 'Subject must be at least 3 characters')
@@ -60,12 +71,11 @@ type SupportFormValues = z.infer<typeof supportFormSchema>
 
 function SupportForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const user = useAuthStore((s) => s.user)
 
   const form = useForm<SupportFormValues>({
     resolver: zodResolver(supportFormSchema),
     defaultValues: {
-      reason: '',
+      reason: undefined as unknown as SupportFormValues['reason'],
       subject: '',
       message: '',
     },
@@ -74,29 +84,31 @@ function SupportForm() {
   async function onSubmit(values: SupportFormValues) {
     setIsSubmitting(true)
     try {
-      const reasonLabel =
-        REASON_OPTIONS.find((r) => r.value === values.reason)?.label ??
-        values.reason
-      const mailtoSubject = encodeURIComponent(
-        `[${reasonLabel}] ${values.subject}`
-      )
-      const body = [
-        values.message,
-        '',
-        '---',
-        `From: ${user?.first_name ?? ''} ${user?.last_name ?? ''} (${user?.email ?? 'unknown'})`,
-      ].join('\n')
-      const mailtoBody = encodeURIComponent(body)
+      await sendSupportMessage(values)
 
-      window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${mailtoSubject}&body=${mailtoBody}`
-
-      toast.success('Opening your email client...', {
-        description:
-          'If nothing opens, send your message directly to ' + SUPPORT_EMAIL,
+      toast.success('Message sent to support', {
+        description: 'The team will reply by email as soon as possible.',
       })
       form.reset()
-    } catch {
-      toast.error('Something went wrong. Please try again.')
+    } catch (error: unknown) {
+      const axiosError = error as {
+        response?: { status?: number; data?: { detail?: unknown } }
+        message?: string
+      }
+
+      const detail = axiosError.response?.data?.detail
+      const message =
+        axiosError.response?.status === 429
+          ? 'You have sent too many messages recently. Please wait a moment before trying again.'
+          : typeof detail === 'string'
+            ? detail
+            : detail && typeof detail === 'object' && 'error' in detail
+              ? ((detail as { error?: { message?: string } }).error?.message ??
+                axiosError.message)
+              : (axiosError.message ??
+                'Failed to send message. Please try again.')
+
+      toast.error(message)
     } finally {
       setIsSubmitting(false)
     }

@@ -1,6 +1,13 @@
 /**
  * BidCardSizeDialog — select label size, configure options, and trigger auction item display card PDF download.
  */
+import { useState } from 'react'
+import {
+  type BidCardRequest,
+  type LabelSize,
+  LABEL_SIZE_OPTIONS,
+} from '@/services/reportService'
+import { Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -13,13 +20,6 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import {
-  type BidCardRequest,
-  type LabelSize,
-  LABEL_SIZE_OPTIONS,
-} from '@/services/reportService'
-import { Printer } from 'lucide-react'
-import { useState } from 'react'
 
 interface BidCardSizeDialogProps {
   open: boolean

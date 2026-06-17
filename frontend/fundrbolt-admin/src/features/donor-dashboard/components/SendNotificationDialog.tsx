@@ -1,3 +1,10 @@
+import { useState } from 'react'
+import {
+  eventNotificationService,
+  type RecipientCriteria,
+} from '@/services/eventNotificationService'
+import { Bell, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -10,13 +17,6 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  eventNotificationService,
-  type RecipientCriteria,
-} from '@/services/eventNotificationService'
-import { Bell, Loader2 } from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
 
 const MAX_MESSAGE_LENGTH = 500
 

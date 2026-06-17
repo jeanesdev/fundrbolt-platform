@@ -1,5 +1,19 @@
-import { DebugSpoofSheet } from '@/components/debug-spoof-sheet'
-import { SignOutDialog } from '@/components/sign-out-dialog'
+import { useState } from 'react'
+import { Link, useNavigate } from '@tanstack/react-router'
+import {
+  Building2,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  LogOut,
+  Settings,
+} from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import useDialogState from '@/hooks/use-dialog-state'
+import { useEventContext } from '@/hooks/use-event-context'
+import { useNpoContext } from '@/hooks/use-npo-context'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,24 +33,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { InitialAvatar } from '@/components/ui/initial-avatar'
-import useDialogState from '@/hooks/use-dialog-state'
-import { useEventContext } from '@/hooks/use-event-context'
-import { useNpoContext } from '@/hooks/use-npo-context'
-import { useAuthStore } from '@/stores/auth-store'
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import { Link } from '@tanstack/react-router'
-import {
-  Building2,
-  Calendar,
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  LogOut,
-  Settings,
-} from 'lucide-react'
-import { useState } from 'react'
+import { DebugSpoofSheet } from '@/components/debug-spoof-sheet'
+import { SignOutDialog } from '@/components/sign-out-dialog'
 
 export function ProfileDropdown() {
+  const navigate = useNavigate()
   const [open, setOpen] = useDialogState()
   const [menuOpen, setMenuOpen] = useState(false)
   const [eventSearchQuery, setEventSearchQuery] = useState('')
@@ -76,9 +77,25 @@ export function ProfileDropdown() {
   const filteredEvents =
     shouldShowSearch && eventSearchQuery
       ? availableEvents.filter((event) =>
-        event.name.toLowerCase().includes(eventSearchQuery.toLowerCase())
-      )
+          event.name.toLowerCase().includes(eventSearchQuery.toLowerCase())
+        )
       : availableEvents
+
+  const handleSelectEvent = (event: {
+    id: string
+    name: string
+    slug: string
+  }) => {
+    selectEvent(event.id, event.name, event.slug)
+    setEventSearchQuery('')
+    setEventListOpen(false)
+    setMenuOpen(false)
+
+    navigate({
+      to: '/events/$eventId/dashboard',
+      params: { eventId: event.id },
+    })
+  }
 
   return (
     <>
@@ -101,7 +118,9 @@ export function ProfileDropdown() {
                 {user ? `${user.first_name} ${user.last_name}` : 'User'}
               </p>
               <p className='text-muted-foreground text-xs leading-none'>
-                {user?.communications_email?.trim() || user?.email || 'Not logged in'}
+                {user?.communications_email?.trim() ||
+                  user?.email ||
+                  'Not logged in'}
               </p>
               {timeBaseSpoofMs !== null && (
                 <p className='text-xs leading-none text-amber-600'>
@@ -220,11 +239,7 @@ export function ProfileDropdown() {
                       {filteredEvents.map((event) => (
                         <CommandItem
                           key={event.id}
-                          onSelect={() => {
-                            selectEvent(event.id, event.name, event.slug)
-                            setEventSearchQuery('')
-                            setMenuOpen(false)
-                          }}
+                          onSelect={() => handleSelectEvent(event)}
                           className='gap-2 p-2'
                         >
                           <div className='flex size-6 items-center justify-center overflow-hidden rounded-sm border'>
@@ -269,10 +284,7 @@ export function ProfileDropdown() {
                   {availableEvents.map((event) => (
                     <DropdownMenuItem
                       key={event.id}
-                      onClick={() => {
-                        selectEvent(event.id, event.name, event.slug)
-                        setMenuOpen(false)
-                      }}
+                      onClick={() => handleSelectEvent(event)}
                       className='gap-2 p-2'
                     >
                       <div className='flex size-6 items-center justify-center overflow-hidden rounded-sm border'>

@@ -54,7 +54,11 @@ export function useNotifications(
 /**
  * Poll unread count every 30 seconds
  */
-export function useUnreadCount(eventId: string) {
+export function useUnreadCount(
+  eventId: string,
+  options?: { enabled?: boolean }
+) {
+  const { enabled = true } = options ?? {}
   const setUnreadCount = useNotificationStore((state) => state.setUnreadCount)
 
   return useQuery({
@@ -64,7 +68,7 @@ export function useUnreadCount(eventId: string) {
       setUnreadCount(result.unread_count)
       return result
     },
-    enabled: !!eventId,
+    enabled: !!eventId && enabled,
     refetchInterval: 30_000,
   })
 }

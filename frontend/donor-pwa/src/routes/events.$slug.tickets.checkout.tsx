@@ -2,7 +2,34 @@
  * Multi-package Cart Checkout Route — /events/$slug/tickets/checkout
  * 4-step flow: Cart Review → Sponsorship Info (conditional) → Payment → Success
  */
-import { SponsorshipInfoForm } from '@/components/tickets/SponsorshipInfoForm'
+import { useEffect, useState } from 'react'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import {
+  AlertTriangle,
+  ArrowLeft,
+  CheckCircle,
+  CreditCard,
+  Loader2,
+  Minus,
+  Plus,
+  ShoppingCart,
+  Tag,
+  Trash2,
+  X,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import { useTicketCartStore } from '@/stores/ticket-cart-store'
+import { getEventBySlug } from '@/lib/api/events'
+import {
+  checkout,
+  validateCart,
+  type CartValidationResponse,
+  type CheckoutResponse,
+  type SponsorshipDetails,
+} from '@/lib/api/ticket-purchases'
+import { triggerCelebrationConfetti } from '@/lib/celebration-confetti'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -20,34 +47,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { getEventBySlug } from '@/lib/api/events'
-import {
-  checkout,
-  validateCart,
-  type CartValidationResponse,
-  type CheckoutResponse,
-  type SponsorshipDetails,
-} from '@/lib/api/ticket-purchases'
-import { triggerCelebrationConfetti } from '@/lib/celebration-confetti'
-import { useAuthStore } from '@/stores/auth-store'
-import { useTicketCartStore } from '@/stores/ticket-cart-store'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import {
-  AlertTriangle,
-  ArrowLeft,
-  CheckCircle,
-  CreditCard,
-  Loader2,
-  Minus,
-  Plus,
-  ShoppingCart,
-  Tag,
-  Trash2,
-  X,
-} from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { SponsorshipInfoForm } from '@/components/tickets/SponsorshipInfoForm'
 
 export const Route = createFileRoute('/events/$slug/tickets/checkout')({
   component: TicketsCheckoutPage,
@@ -363,12 +363,14 @@ function TicketsCheckoutPage() {
                   <span>−{fmtCurrency(displaySurveyDiscount)}</span>
                 </div>
               )}
-              {displaySurveyDiscount > 0 && displaySurveyDonateBack && displayNpoName && (
-                <div className='flex justify-between text-sm text-rose-600'>
-                  <span>Donation to {displayNpoName}</span>
-                  <span>+{fmtCurrency(displaySurveyDiscount)}</span>
-                </div>
-              )}
+              {displaySurveyDiscount > 0 &&
+                displaySurveyDonateBack &&
+                displayNpoName && (
+                  <div className='flex justify-between text-sm text-rose-600'>
+                    <span>Donation to {displayNpoName}</span>
+                    <span>+{fmtCurrency(displaySurveyDiscount)}</span>
+                  </div>
+                )}
               <div className='flex justify-between text-lg font-bold'>
                 <span>Total</span>
                 <span>{fmtCurrency(displayTotal)}</span>
@@ -441,12 +443,14 @@ function TicketsCheckoutPage() {
                   <span>−{fmtCurrency(displaySurveyDiscount)}</span>
                 </div>
               )}
-              {displaySurveyDiscount > 0 && displaySurveyDonateBack && displayNpoName && (
-                <div className='flex justify-between text-sm text-rose-600'>
-                  <span>Donation to {displayNpoName}</span>
-                  <span>+{fmtCurrency(displaySurveyDiscount)}</span>
-                </div>
-              )}
+              {displaySurveyDiscount > 0 &&
+                displaySurveyDonateBack &&
+                displayNpoName && (
+                  <div className='flex justify-between text-sm text-rose-600'>
+                    <span>Donation to {displayNpoName}</span>
+                    <span>+{fmtCurrency(displaySurveyDiscount)}</span>
+                  </div>
+                )}
               <div className='flex justify-between border-t pt-2 font-bold'>
                 <span>Total</span>
                 <span>{fmtCurrency(displayTotal)}</span>
@@ -527,12 +531,13 @@ function TicketsCheckoutPage() {
               <CheckCircle className='mx-auto mb-2 h-14 w-14 text-green-500' />
               <DialogTitle className='text-2xl'>Purchase Complete!</DialogTitle>
               <DialogDescription>
-                Your tickets have been confirmed. Check your email for a receipt.
+                Your tickets have been confirmed. Check your email for a
+                receipt.
               </DialogDescription>
             </DialogHeader>
 
             {checkoutResult.purchases.length > 0 && (
-              <div className='space-y-1 rounded-lg bg-muted/50 p-3 text-sm'>
+              <div className='bg-muted/50 space-y-1 rounded-lg p-3 text-sm'>
                 {checkoutResult.purchases.map((p) => (
                   <div key={p.purchase_id} className='flex justify-between'>
                     <span>
@@ -546,7 +551,9 @@ function TicketsCheckoutPage() {
                 <div className='flex justify-between border-t pt-2 font-bold'>
                   <span>Total Charged</span>
                   <span>
-                    {fmtCurrency(Math.round(checkoutResult.total_charged * 100))}
+                    {fmtCurrency(
+                      Math.round(checkoutResult.total_charged * 100)
+                    )}
                   </span>
                 </div>
               </div>
@@ -556,10 +563,13 @@ function TicketsCheckoutPage() {
               <Button asChild size='lg' className='w-full'>
                 <Link to='/tickets'>Register Now</Link>
               </Button>
-              <Button asChild variant='ghost' size='sm' className='w-full text-muted-foreground'>
-                <Link to='/tickets'>
-                  Assign ticket to someone else
-                </Link>
+              <Button
+                asChild
+                variant='ghost'
+                size='sm'
+                className='text-muted-foreground w-full'
+              >
+                <Link to='/tickets'>Assign ticket to someone else</Link>
               </Button>
             </div>
           </DialogContent>

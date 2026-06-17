@@ -21,7 +21,6 @@ import {
   Edit,
   Globe,
   Hash,
-  Heart,
   Mail,
   MapPin,
   Phone,
@@ -266,29 +265,6 @@ export default function NpoDetailPage() {
                 <span>Review Application</span>
               </Button>
             )}
-          {user?.role === 'super_admin' && (
-            <Link
-              to='/npos/$npoId/payment-settings'
-              params={{ npoId: detailNpoId }}
-              className='flex-1 md:flex-none'
-            >
-              <Button variant='outline' className='w-full'>
-                <CreditCard className='mr-2 h-4 w-4' />
-                <span>Payment Settings</span>
-              </Button>
-            </Link>
-          )}
-          <Link
-            to='/npos/$npoId/donate-now'
-            params={{ npoId: detailNpoId }}
-            search={{ tab: 'config' }}
-            className='flex-1 md:flex-none'
-          >
-            <Button variant='outline' className='w-full'>
-              <Heart className='mr-2 h-4 w-4' />
-              <span>Donate Now</span>
-            </Button>
-          </Link>
           <Link
             to='/npos/$npoId/edit'
             params={{ npoId: detailNpoId }}

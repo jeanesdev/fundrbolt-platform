@@ -1,10 +1,5 @@
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Switch } from '@/components/ui/switch'
-import { Textarea } from '@/components/ui/textarea'
-import { useEventWorkspace } from '@/features/events/useEventWorkspace'
-import { useDonorLabels } from '@/features/users/hooks/use-donor-labels'
+import { useEffect, useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { eventApi } from '@/services/event-service'
 import {
   eventSurveyService,
@@ -12,10 +7,15 @@ import {
   type SurveyQuestion,
   type SurveyQuestionInput,
 } from '@/services/eventSurveyService'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus, RefreshCcw, Save, Trash2 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Switch } from '@/components/ui/switch'
+import { Textarea } from '@/components/ui/textarea'
+import { useEventWorkspace } from '@/features/events/useEventWorkspace'
+import { useDonorLabels } from '@/features/users/hooks/use-donor-labels'
 
 const emptyQuestion = (): SurveyQuestionInput => ({
   text: '',
@@ -260,9 +260,7 @@ export function EventSurveyPage() {
               />
             </div>
             <div className='space-y-2'>
-              <label className='text-sm font-medium'>
-                Discount amount ($)
-              </label>
+              <label className='text-sm font-medium'>Discount amount ($)</label>
               <Input
                 type='number'
                 min={0}
@@ -272,11 +270,11 @@ export function EventSurveyPage() {
                   setConfigDraft((prev) =>
                     prev
                       ? {
-                        ...prev,
-                        discount_cents: Math.round(
-                          Number(event.target.value || 0) * 100
-                        ),
-                      }
+                          ...prev,
+                          discount_cents: Math.round(
+                            Number(event.target.value || 0) * 100
+                          ),
+                        }
                       : prev
                   )
                 }
@@ -468,12 +466,19 @@ export function EventSurveyPage() {
                     <label className='text-sm font-medium'>Options</label>
                     <div className='space-y-2'>
                       {draft.options.map((option, index) => (
-                        <div key={option.id ?? index} className='flex flex-wrap gap-2'>
+                        <div
+                          key={option.id ?? index}
+                          className='flex flex-wrap gap-2'
+                        >
                           <div className='flex min-w-0 flex-1 items-center gap-2'>
                             <Input
                               className='min-w-0'
                               value={option.text}
-                              placeholder={option.is_other ? 'Other (label shown to donor)' : ''}
+                              placeholder={
+                                option.is_other
+                                  ? 'Other (label shown to donor)'
+                                  : ''
+                              }
                               onChange={(event) => {
                                 const nextOptions = [...draft.options]
                                 nextOptions[index] = {
@@ -538,9 +543,7 @@ export function EventSurveyPage() {
                           onClick={() =>
                             setQuestionDraft(question.id, {
                               ...draft,
-                              options: draft.options.filter(
-                                (o) => !o.is_other
-                              ),
+                              options: draft.options.filter((o) => !o.is_other),
                             })
                           }
                         >
@@ -618,10 +621,15 @@ export function EventSurveyPage() {
                   <Input
                     className='min-w-0'
                     value={option.text}
-                    placeholder={option.is_other ? 'Other (label shown to donor)' : ''}
+                    placeholder={
+                      option.is_other ? 'Other (label shown to donor)' : ''
+                    }
                     onChange={(event) => {
                       const nextOptions = [...draftQuestion.options]
-                      nextOptions[index] = { ...option, text: event.target.value }
+                      nextOptions[index] = {
+                        ...option,
+                        text: event.target.value,
+                      }
                       setDraftQuestion((prev) => ({
                         ...prev,
                         options: nextOptions,
@@ -713,7 +721,10 @@ export function EventSurveyPage() {
             <Switch
               checked={draftQuestion.allow_multiple ?? false}
               onCheckedChange={(checked) =>
-                setDraftQuestion((prev) => ({ ...prev, allow_multiple: checked }))
+                setDraftQuestion((prev) => ({
+                  ...prev,
+                  allow_multiple: checked,
+                }))
               }
             />
             Allow multiple selections
@@ -731,7 +742,7 @@ export function EventSurveyPage() {
         </CardContent>
       </Card>
 
-      <div className='sticky bottom-0 z-10 flex flex-wrap items-center justify-end gap-3 border-t bg-background px-4 py-3 sm:px-6 sm:gap-4'>
+      <div className='bg-background sticky bottom-0 z-10 flex flex-wrap items-center justify-end gap-3 border-t px-4 py-3 sm:gap-4 sm:px-6'>
         {Object.keys(editingQuestions).length > 0 && (
           <span className='text-muted-foreground text-sm'>
             {Object.keys(editingQuestions).length} question

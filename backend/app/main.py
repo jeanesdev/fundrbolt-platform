@@ -136,6 +136,7 @@ app = FastAPI(
         {"name": "legal", "description": "Legal documents (Terms of Service, Privacy Policy)"},
         {"name": "consent", "description": "User consent management and GDPR compliance"},
         {"name": "cookies", "description": "Cookie consent management (EU Cookie Law)"},
+        {"name": "support", "description": "Authenticated support message submission"},
         {"name": "public-contact", "description": "Public contact form submission"},
         {
             "name": "public-onboarding",

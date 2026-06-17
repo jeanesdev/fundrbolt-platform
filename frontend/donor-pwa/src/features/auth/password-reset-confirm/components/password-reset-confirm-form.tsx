@@ -1,3 +1,13 @@
+import { useState } from 'react'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useNavigate } from '@tanstack/react-router'
+import { ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import apiClient from '@/lib/axios'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -9,16 +19,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import apiClient from '@/lib/axios'
-import { cn } from '@/lib/utils'
-import { useAuthStore } from '@/stores/auth-store'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useNavigate } from '@tanstack/react-router'
-import { ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react'
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
-import { z } from 'zod'
 
 const formSchema = z
   .object({
@@ -53,8 +53,7 @@ interface LoginResponse {
   }
 }
 
-interface PasswordResetConfirmFormProps
-  extends React.HTMLAttributes<HTMLFormElement> {
+interface PasswordResetConfirmFormProps extends React.HTMLAttributes<HTMLFormElement> {
   token?: string
   redirect?: string
 }
@@ -100,7 +99,8 @@ export function PasswordResetConfirmForm({
           last_name: user.last_name,
         })
         toast.success('Account ready!', {
-          description: "You're signed in. Let's finish setting up your profile.",
+          description:
+            "You're signed in. Let's finish setting up your profile.",
         })
         form.reset()
         // Parse the redirect so TanStack Router gets path + search separately

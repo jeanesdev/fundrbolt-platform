@@ -12,10 +12,17 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
-import { type EventContextOption } from '@/stores/event-context-store'
+import {
+  useEventContextStore,
+  type EventContextOption,
+} from '@/stores/event-context-store'
 import { getEventBySlug, type EventMediaUsageTag } from '@/lib/api/events'
 import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
-import { getDonorSurveyStatus, markSurveyDonateBack, submitDonorSurvey } from '@/lib/api/survey'
+import {
+  getDonorSurveyStatus,
+  markSurveyDonateBack,
+  submitDonorSurvey,
+} from '@/lib/api/survey'
 import { getMyInventory } from '@/lib/api/ticket-purchases'
 import apiClient from '@/lib/axios'
 import { hasValidRefreshToken } from '@/lib/storage/tokens'
@@ -112,8 +119,7 @@ function RouteComponent() {
   const isRegisteredInContext = availableEvents.some(
     (eventOption) => eventOption.slug === slug && eventOption.is_registered
   )
-  const npoName =
-    availableEvents.find((e) => e.slug === slug)?.npo_name ?? null
+  const npoName = availableEvents.find((e) => e.slug === slug)?.npo_name ?? null
   const isRegisteredFromQuery =
     registrationsData?.events?.some(
       (registeredEvent) => registeredEvent.slug === slug
@@ -150,7 +156,9 @@ function RouteComponent() {
       !surveyModalOpenedRef.current
     ) {
       surveyModalOpenedRef.current = true
-      setSurveyModalOpen(true)
+      queueMicrotask(() => {
+        setSurveyModalOpen(true)
+      })
     }
   }, [surveyStatusQuery.data, surveyDismissed])
 
@@ -172,7 +180,10 @@ function RouteComponent() {
         queryKey: ['donor-survey-status', event?.id],
       })
       dismissSurvey()
-      if (response.status === 'completed' && response.discount_cents_applied > 0) {
+      if (
+        response.status === 'completed' &&
+        response.discount_cents_applied > 0
+      ) {
         setSurveyThankYou({ discountCents: response.discount_cents_applied })
       } else if (response.status === 'completed') {
         toast.success('Thanks for sharing your preferences!')
@@ -233,13 +244,15 @@ function RouteComponent() {
     if (!isAuthenticated) return
     if (!registrationsData?.events && !ticketInventoryData?.events) return
 
-    // Skip if the store already has the current event as registered
-    if (availableEvents.some((e) => e.slug === slug && e.is_registered)) return
+    // Always merge into the latest store snapshot to avoid clobbering the
+    // full event list when this route loads with stale hook state.
+    const currentAvailableEvents =
+      useEventContextStore.getState().availableEvents
 
     const eventMap = new Map<string, EventContextOption>()
 
     // Preserve existing entries (e.g. admin-access data from authenticated layout)
-    availableEvents.forEach((ev) => eventMap.set(ev.id, { ...ev }))
+    currentAvailableEvents.forEach((ev) => eventMap.set(ev.id, { ...ev }))
 
     if (registrationsData?.events) {
       registrationsData.events.forEach(
@@ -305,7 +318,6 @@ function RouteComponent() {
     })
 
     setAvailableEvents(events)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isAuthenticated,
     registrationsData,

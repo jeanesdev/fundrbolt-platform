@@ -1,24 +1,24 @@
-import { CookieConsentWrapper } from '@/components/legal/cookie-consent-wrapper'
-import { NavigationProgress } from '@/components/navigation-progress'
-import { NotificationToastOverlay } from '@/components/notifications/NotificationToastOverlay'
-import { OfflineStatusBar } from '@/components/pwa/offline-status-bar'
-import { SessionExpirationWarning } from '@/components/session-expiration-warning'
-import { Toaster } from '@/components/ui/sonner'
-import { GeneralError } from '@/features/errors/general-error'
-import { NotFoundError } from '@/features/errors/not-found-error'
-import { useIsMobile } from '@/hooks/use-mobile'
-import { InstallPromptBanner } from '@fundrbolt/shared/pwa/install-prompt-banner'
-import { PullToRefresh } from '@fundrbolt/shared/pwa/pull-to-refresh'
-import { UpdateNotification } from '@fundrbolt/shared/pwa/update-notification'
-import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
-import { useServiceWorker } from '@fundrbolt/shared/pwa/use-service-worker'
+import { useEffect, useState } from 'react'
 import { type QueryClient } from '@tanstack/react-query'
 import {
   createRootRouteWithContext,
   Outlet,
   useRouterState,
 } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { InstallPromptBanner } from '@fundrbolt/shared/pwa/install-prompt-banner'
+import { PullToRefresh } from '@fundrbolt/shared/pwa/pull-to-refresh'
+import { UpdateNotification } from '@fundrbolt/shared/pwa/update-notification'
+import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
+import { useServiceWorker } from '@fundrbolt/shared/pwa/use-service-worker'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { Toaster } from '@/components/ui/sonner'
+import { CookieConsentWrapper } from '@/components/legal/cookie-consent-wrapper'
+import { NavigationProgress } from '@/components/navigation-progress'
+import { NotificationToastOverlay } from '@/components/notifications/NotificationToastOverlay'
+import { OfflineStatusBar } from '@/components/pwa/offline-status-bar'
+import { SessionExpirationWarning } from '@/components/session-expiration-warning'
+import { GeneralError } from '@/features/errors/general-error'
+import { NotFoundError } from '@/features/errors/not-found-error'
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
@@ -53,9 +53,17 @@ function RootComponent() {
         onDismiss={dismissUpdate}
       />
       <Outlet />
-      <Toaster closeButton position='top-center' offset='calc(env(safe-area-inset-top, 0px) + 8px)' mobileOffset='calc(env(safe-area-inset-top, 0px) + 8px)' toastOptions={{ duration: 5000 }} />
+      <Toaster
+        closeButton
+        position='top-center'
+        offset='calc(env(safe-area-inset-top, 0px) + 8px)'
+        mobileOffset='calc(env(safe-area-inset-top, 0px) + 8px)'
+        toastOptions={{ duration: 5000 }}
+      />
       <NotificationToastOverlay />
-      {isMobile && <InstallPromptBanner appId='donor' hidden={cookieConsentShowing} />}
+      {isMobile && (
+        <InstallPromptBanner appId='donor' hidden={cookieConsentShowing} />
+      )}
     </>
   )
 }

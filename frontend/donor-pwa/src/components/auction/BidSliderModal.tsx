@@ -7,6 +7,7 @@
  * - Shows current high bid and minimum required bid
  * - Event branding support
  */
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useMemo, useState } from 'react'
 import { WheelPicker, WheelPickerWrapper } from '@ncdai/react-wheel-picker'
 import '@ncdai/react-wheel-picker/style.css'

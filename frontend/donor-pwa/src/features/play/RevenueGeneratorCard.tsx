@@ -1,3 +1,8 @@
+import { useMemo, useState } from 'react'
+import { type RevenueGeneratorItemSummary } from '@/services/revenueGeneratorService'
+import { WheelPicker, WheelPickerWrapper } from '@ncdai/react-wheel-picker'
+import '@ncdai/react-wheel-picker/style.css'
+import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -7,11 +12,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Slider } from '@/components/ui/slider'
-import { type RevenueGeneratorItemSummary } from '@/services/revenueGeneratorService'
-import { WheelPicker, WheelPickerWrapper } from '@ncdai/react-wheel-picker'
-import '@ncdai/react-wheel-picker/style.css'
-import { ArrowRight } from 'lucide-react'
-import { useMemo, useState } from 'react'
 
 interface Props {
   item: RevenueGeneratorItemSummary
@@ -161,14 +161,14 @@ export function RevenueGeneratorCard({
               style={
                 item.is_open_for_entries
                   ? {
-                    backgroundColor:
-                      'rgba(var(--event-primary, 59, 130, 246), 0.15)',
-                    color: 'rgb(var(--event-primary, 59, 130, 246))',
-                  }
+                      backgroundColor:
+                        'rgba(var(--event-primary, 59, 130, 246), 0.15)',
+                      color: 'rgb(var(--event-primary, 59, 130, 246))',
+                    }
                   : {
-                    backgroundColor: 'rgba(107, 114, 128, 0.1)',
-                    color: 'rgb(107, 114, 128)',
-                  }
+                      backgroundColor: 'rgba(107, 114, 128, 0.1)',
+                      color: 'rgb(107, 114, 128)',
+                    }
               }
             >
               {item.is_open_for_entries ? 'Open' : 'Closed'}
@@ -274,7 +274,9 @@ export function RevenueGeneratorCard({
             </DialogTitle>
             <DialogDescription
               className='line-clamp-2'
-              style={{ color: 'var(--event-card-text-muted, rgba(255,255,255,0.7))' }}
+              style={{
+                color: 'var(--event-card-text-muted, rgba(255,255,255,0.7))',
+              }}
             >
               {item.name}
             </DialogDescription>
@@ -291,7 +293,10 @@ export function RevenueGeneratorCard({
               <div className='mb-2 flex items-center justify-between'>
                 <span
                   className='text-sm font-medium'
-                  style={{ color: 'var(--event-card-text-muted, rgba(255,255,255,0.7))' }}
+                  style={{
+                    color:
+                      'var(--event-card-text-muted, rgba(255,255,255,0.7))',
+                  }}
                 >
                   Price per entry
                 </span>
@@ -305,7 +310,10 @@ export function RevenueGeneratorCard({
               <div className='flex items-center justify-between'>
                 <span
                   className='text-sm font-medium'
-                  style={{ color: 'var(--event-card-text-muted, rgba(255,255,255,0.7))' }}
+                  style={{
+                    color:
+                      'var(--event-card-text-muted, rgba(255,255,255,0.7))',
+                  }}
                 >
                   Entries purchased
                 </span>

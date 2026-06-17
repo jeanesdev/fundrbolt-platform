@@ -423,7 +423,9 @@ export default function AcceptInvitationPage() {
                       {validation.event_name && (
                         <div>
                           <p className='text-muted-foreground text-sm'>Event</p>
-                          <p className='font-semibold'>{validation.event_name}</p>
+                          <p className='font-semibold'>
+                            {validation.event_name}
+                          </p>
                         </div>
                       )}
                       {validation.event_date && (

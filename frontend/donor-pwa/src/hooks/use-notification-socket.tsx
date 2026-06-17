@@ -101,11 +101,9 @@ export function useNotificationSocket(
     ;(window as unknown as Record<string, unknown>).__debugSocket = socket
 
     socket.on('connect', () => {
-      console.log('[SIO] connected, id=', socket.id)
       setStatus('connected')
       setConnectionStatus('connected')
       // Join the event notification room with last_seen_at for catch-up
-      console.log('[SIO] joining event room', eventId)
       socket.emit('notification:join_event', {
         event_id: eventId,
         last_seen_at: lastSeenRef.current ?? undefined,
@@ -123,10 +121,7 @@ export function useNotificationSocket(
       setStatus('reconnecting')
       setConnectionStatus('reconnecting')
     })
-
-    // Handle new notification from server
     socket.on('notification:new', (data: NotificationData) => {
-      console.log('[SIO] notification:new received', data)
       addNotification(data)
       incrementUnreadCount()
       // Track latest notification timestamp for catch-up on reconnect

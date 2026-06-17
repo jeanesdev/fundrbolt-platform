@@ -2,8 +2,8 @@
  * CookieConsentWrapper component
  * Shows cookie consent banner on first visit
  */
-import { hasSetCookiePreferences } from '@/utils/cookie-manager'
 import { useEffect, useState } from 'react'
+import { hasSetCookiePreferences } from '@/utils/cookie-manager'
 import { CookieConsentBanner } from './cookie-consent-banner'
 
 interface CookieConsentWrapperProps {
@@ -11,7 +11,9 @@ interface CookieConsentWrapperProps {
   onOpenChange?: (open: boolean) => void
 }
 
-export function CookieConsentWrapper({ onOpenChange }: CookieConsentWrapperProps = {}) {
+export function CookieConsentWrapper({
+  onOpenChange,
+}: CookieConsentWrapperProps = {}) {
   const [showBanner, setShowBanner] = useState(false)
 
   useEffect(() => {
@@ -36,5 +38,7 @@ export function CookieConsentWrapper({ onOpenChange }: CookieConsentWrapperProps
     onOpenChange?.(open)
   }
 
-  return <CookieConsentBanner open={showBanner} onOpenChange={handleOpenChange} />
+  return (
+    <CookieConsentBanner open={showBanner} onOpenChange={handleOpenChange} />
+  )
 }

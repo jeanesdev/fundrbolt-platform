@@ -15,7 +15,10 @@ interface PasswordResetConfirmProps {
   redirect?: string
 }
 
-export function PasswordResetConfirm({ token, redirect }: PasswordResetConfirmProps) {
+export function PasswordResetConfirm({
+  token,
+  redirect,
+}: PasswordResetConfirmProps) {
   return (
     <AuthLayout>
       <Card className='gap-4'>

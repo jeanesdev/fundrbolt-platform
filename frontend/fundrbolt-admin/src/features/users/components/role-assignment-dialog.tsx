@@ -1,4 +1,8 @@
-import { SelectDropdown } from '@/components/select-dropdown'
+import React from 'react'
+import { z } from 'zod'
+import { useForm, useWatch } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Shield } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -19,11 +23,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Shield } from 'lucide-react'
-import React from 'react'
-import { useForm, useWatch } from 'react-hook-form'
-import { z } from 'zod'
+import { SelectDropdown } from '@/components/select-dropdown'
 import type { User } from '../api/users-api'
 import { roles } from '../data/data'
 import { useUpdateUserRole } from '../hooks/use-users'
@@ -36,7 +36,11 @@ const formSchema = z
   .refine(
     (data) => {
       // npo_admin, event_coordinator, staff, and auctioneer require npo_id
-      if (['npo_admin', 'event_coordinator', 'staff', 'auctioneer'].includes(data.role)) {
+      if (
+        ['npo_admin', 'event_coordinator', 'staff', 'auctioneer'].includes(
+          data.role
+        )
+      ) {
         return data.npo_id && data.npo_id.trim().length > 0
       }
       return true
@@ -81,9 +85,12 @@ export function RoleAssignmentDialog({
   }, [user, form])
 
   const selectedRole = useWatch({ control: form.control, name: 'role' })
-  const requiresNpoId = ['npo_admin', 'event_coordinator', 'staff', 'auctioneer'].includes(
-    selectedRole || ''
-  )
+  const requiresNpoId = [
+    'npo_admin',
+    'event_coordinator',
+    'staff',
+    'auctioneer',
+  ].includes(selectedRole || '')
 
   const onSubmit = async (values: RoleAssignmentForm) => {
     if (!user?.id) {
@@ -166,7 +173,8 @@ export function RoleAssignmentDialog({
                       />
                     </FormControl>
                     <FormDescription>
-                      Required for NPO Admin, Event Coordinator, Staff, and Auctioneer roles
+                      Required for NPO Admin, Event Coordinator, Staff, and
+                      Auctioneer roles
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

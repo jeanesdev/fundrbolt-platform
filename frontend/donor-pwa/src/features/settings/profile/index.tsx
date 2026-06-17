@@ -1,4 +1,14 @@
-import { ProfilePictureUpload } from '@/components/profile/profile-picture-upload'
+import { useEffect } from 'react'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { profileUpdateSchema } from '@/schemas/profile'
+import { Facebook, Globe, Instagram, Linkedin, Youtube } from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import apiClient from '@/lib/axios'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -11,25 +21,25 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
-import apiClient from '@/lib/axios'
-import { profileUpdateSchema } from '@/schemas/profile'
-import { useAuthStore } from '@/stores/auth-store'
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  Facebook,
-  Globe,
-  Instagram,
-  Linkedin,
-  Twitter,
-  Youtube,
-} from 'lucide-react'
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
-import { z } from 'zod'
+import { ProfilePictureUpload } from '@/components/profile/profile-picture-upload'
 import { ContentSection } from '../components/content-section'
+
+type XLogoIconProps = {
+  className?: string
+}
+
+function XLogoIcon({ className }: XLogoIconProps) {
+  return (
+    <svg
+      viewBox='0 0 24 24'
+      aria-hidden='true'
+      fill='currentColor'
+      className={className}
+    >
+      <path d='M18.9 2H22l-6.8 7.8L23 22h-6.2l-4.9-6.3L6.4 22H3.3l7.3-8.4L1 2h6.3l4.4 5.8L18.9 2Zm-1.1 18h1.7L6.1 3.9H4.3L17.8 20Z' />
+    </svg>
+  )
+}
 
 // Social media platform config: prefix shown in UI, URL builder, and username extractor
 const socialPlatforms = {
@@ -274,11 +284,11 @@ export function SettingsProfile() {
   // Derive initials: prefer spoofed user label, fall back to auth user
   const userInitials = spoofedUser
     ? spoofedUser.label
-      .split(' ')
-      .map((n) => n[0] ?? '')
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
+        .split(' ')
+        .map((n) => n[0] ?? '')
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
     : user
       ? `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase()
       : 'U'
@@ -516,8 +526,8 @@ export function SettingsProfile() {
                 },
                 {
                   name: 'twitter' as const,
-                  icon: Twitter,
-                  label: 'Twitter / X',
+                  icon: XLogoIcon,
+                  label: 'X',
                 },
                 {
                   name: 'instagram' as const,

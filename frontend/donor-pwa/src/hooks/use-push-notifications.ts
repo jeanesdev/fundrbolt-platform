@@ -175,7 +175,7 @@ export function usePushNotifications(
 
       setIsSubscribed(true)
     } catch (err) {
-      console.error('Push subscribe failed:', err)
+      void err
       toast.error('Failed to enable push notifications. Please try again.')
     } finally {
       setIsLoading(false)
@@ -201,7 +201,7 @@ export function usePushNotifications(
 
       setIsSubscribed(false)
     } catch (err) {
-      console.error('Push unsubscribe failed:', err)
+      void err
       toast.error('Failed to disable push notifications.')
     } finally {
       setIsLoading(false)

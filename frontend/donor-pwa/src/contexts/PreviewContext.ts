@@ -8,12 +8,14 @@
 import { createContext, useContext } from 'react'
 import type { AuctionItemDetail } from '@/types/auction-item'
 import type { EventDetail } from '@/types/event'
+import type { PublicCauseSectionCard } from '@/lib/api/cause-section-cards'
 import type { Sponsor } from '@/lib/api/sponsors'
 
 export interface PreviewEventData {
   event: EventDetail
   auctionItems: AuctionItemDetail[]
   sponsors: Sponsor[]
+  causePageCards: PublicCauseSectionCard[]
 }
 
 export interface PreviewContextValue {

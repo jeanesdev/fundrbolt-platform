@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import apiClient from '@/lib/axios'
-import { useAuthStore } from '@/stores/auth-store'
 import { Loader2 } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
+import apiClient from '@/lib/axios'
 
 const searchSchema = z.object({
   token: z.string().optional(),
@@ -31,11 +31,12 @@ function MagicLoginRoute() {
   const { token, redirect } = Route.useSearch()
   const navigate = useNavigate()
   const loginWithTokens = useAuthStore((s) => s.loginWithTokens)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(
+    token ? null : 'Invalid magic link — no token found.'
+  )
 
   useEffect(() => {
     if (!token) {
-      setError('Invalid magic link — no token found.')
       return
     }
 

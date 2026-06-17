@@ -1,5 +1,9 @@
 'use client'
 
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import apiClient from '@/lib/axios'
+import { getErrorMessage } from '@/lib/error-utils'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -9,10 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import apiClient from '@/lib/axios'
-import { getErrorMessage } from '@/lib/error-utils'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 import { type User } from '../data/schema'
 
 type UsersResetPasswordDialogProps = {

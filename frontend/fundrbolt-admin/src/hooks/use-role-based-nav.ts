@@ -93,6 +93,11 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   // Change title based on whether a specific NPO is resolved
   const npoTitle = effectiveNpoId ? 'Organization' : 'Organizations'
 
+  // Resolve effective NPO slug for slug-based donate-now URLs.
+  // Falls back to the UUID if no slug is available (e.g. NPO hasn't been slugified yet).
+  const effectiveNpoEntry = availableNpos.find((n) => n.id === effectiveNpoId)
+  const effectiveNpoSlug = effectiveNpoEntry?.slug ?? effectiveNpoId
+
   // Base navigation items available to all authenticated users
   const baseNavItems: NavItem[] = [
     {
@@ -280,11 +285,6 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   const eventNavTitle = selectedEventId
     ? `Event${selectedEventName ? `: ${selectedEventName}` : ''}`
     : null
-
-  // Resolve effective NPO slug for slug-based donate-now URLs.
-  // Falls back to the UUID if no slug is available (e.g. NPO hasn't been slugified yet).
-  const effectiveNpoEntry = availableNpos.find((n) => n.id === effectiveNpoId)
-  const effectiveNpoSlug = effectiveNpoEntry?.slug ?? effectiveNpoId
 
   // Donate Now nav group — visible for super admins and NPO admins always;
   // when no NPO can be resolved, prompt the user to select one first

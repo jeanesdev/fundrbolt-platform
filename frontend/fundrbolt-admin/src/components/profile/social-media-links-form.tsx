@@ -6,14 +6,7 @@
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import {
-  Facebook,
-  Globe,
-  Instagram,
-  Linkedin,
-  Twitter,
-  Youtube,
-} from 'lucide-react'
+import { Facebook, Globe, Instagram, Linkedin, Youtube } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -26,68 +19,80 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 
-// Social media URL validation patterns (matching backend patterns)
-const socialMediaPatterns = {
-  facebook: /^https?:\/\/(www\.)?(facebook|fb)\.com\/[\w-.]+\/?.*$/i,
-  twitter: /^https?:\/\/(www\.)?(twitter|x)\.com\/[\w]+\/?.*$/i,
-  instagram: /^https?:\/\/(www\.)?instagram\.com\/[\w.]+\/?.*$/i,
-  linkedin: /^https?:\/\/(www\.)?linkedin\.com\/(company|in)\/[\w-]+\/?.*$/i,
-  youtube:
-    /^https?:\/\/(www\.)?youtube\.com\/(c\/|@|channel\/|user\/)[\w-]+\/?.*$/i,
-  website: /^https?:\/\/[\w-.]+\.[a-z]{2,}(\/.*)?$/i,
+type XLogoIconProps = {
+  className?: string
 }
 
+function XLogoIcon({ className }: XLogoIconProps) {
+  return (
+    <svg
+      viewBox='0 0 24 24'
+      aria-hidden='true'
+      fill='currentColor'
+      className={className}
+    >
+      <path d='M18.9 2H22l-6.8 7.8L23 22h-6.2l-4.9-6.3L6.4 22H3.3l7.3-8.4L1 2h6.3l4.4 5.8L18.9 2Zm-1.1 18h1.7L6.1 3.9H4.3L17.8 20Z' />
+    </svg>
+  )
+}
+
+const socialPlatforms = {
+  facebook: {
+    prefix: 'facebook.com/',
+    toUrl: (u: string) => `https://facebook.com/${u.replace(/^@/, '')}`,
+    toUsername: (url: string) =>
+      url.match(/(?:facebook|fb)\.com\/([^/?#]+)/)?.[1] ?? '',
+  },
+  twitter: {
+    prefix: 'x.com/',
+    toUrl: (u: string) => `https://x.com/${u.replace(/^@/, '')}`,
+    toUsername: (url: string) =>
+      url.match(/(?:twitter|x)\.com\/@?([^/?#]+)/)?.[1] ?? '',
+  },
+  instagram: {
+    prefix: 'instagram.com/',
+    toUrl: (u: string) => `https://instagram.com/${u.replace(/^@/, '')}`,
+    toUsername: (url: string) =>
+      url.match(/instagram\.com\/([^/?#]+)/)?.[1] ?? '',
+  },
+  linkedin: {
+    prefix: 'linkedin.com/in/',
+    toUrl: (u: string) => `https://linkedin.com/in/${u.replace(/^@/, '')}`,
+    toUsername: (url: string) =>
+      url.match(/linkedin\.com\/(?:in|company)\/([^/?#]+)/)?.[1] ?? '',
+  },
+  youtube: {
+    prefix: 'youtube.com/@',
+    toUrl: (u: string) => `https://youtube.com/@${u.replace(/^@/, '')}`,
+    toUsername: (url: string) =>
+      url.match(/youtube\.com\/@?([^/?#]+)/)?.[1] ?? '',
+  },
+} as const
+
+const websitePattern = /^https?:\/\/[\w-.]+\.[a-z]{2,}(\/.*)?$/i
+
+type SocialPlatform = keyof typeof socialPlatforms
+
+const usernameField = z
+  .string()
+  .optional()
+  .refine(
+    (val) => !val || /^[\w.@-]+$/.test(val),
+    'Usernames can only contain letters, numbers, dots, underscores, and hyphens'
+  )
+
 const socialMediaSchema = z.object({
-  facebook: z
-    .string()
-    .optional()
-    .refine(
-      (val) => !val || val === '' || socialMediaPatterns.facebook.test(val),
-      'Invalid Facebook URL (e.g., https://facebook.com/username)'
-    )
-    .transform((val) => (val === '' ? undefined : val)),
-
-  twitter: z
-    .string()
-    .optional()
-    .refine(
-      (val) => !val || val === '' || socialMediaPatterns.twitter.test(val),
-      'Invalid Twitter/X URL (e.g., https://twitter.com/username or https://x.com/username)'
-    )
-    .transform((val) => (val === '' ? undefined : val)),
-
-  instagram: z
-    .string()
-    .optional()
-    .refine(
-      (val) => !val || val === '' || socialMediaPatterns.instagram.test(val),
-      'Invalid Instagram URL (e.g., https://instagram.com/username)'
-    )
-    .transform((val) => (val === '' ? undefined : val)),
-
-  linkedin: z
-    .string()
-    .optional()
-    .refine(
-      (val) => !val || val === '' || socialMediaPatterns.linkedin.test(val),
-      'Invalid LinkedIn URL (e.g., https://linkedin.com/in/username)'
-    )
-    .transform((val) => (val === '' ? undefined : val)),
-
-  youtube: z
-    .string()
-    .optional()
-    .refine(
-      (val) => !val || val === '' || socialMediaPatterns.youtube.test(val),
-      'Invalid YouTube URL (e.g., https://youtube.com/@username)'
-    )
-    .transform((val) => (val === '' ? undefined : val)),
+  facebook: usernameField,
+  twitter: usernameField,
+  instagram: usernameField,
+  linkedin: usernameField,
+  youtube: usernameField,
 
   website: z
     .string()
     .optional()
     .refine(
-      (val) => !val || val === '' || socialMediaPatterns.website.test(val),
+      (val) => !val || val === '' || websitePattern.test(val),
       'Invalid website URL (e.g., https://example.com)'
     )
     .transform((val) => (val === '' ? undefined : val)),
@@ -109,27 +114,49 @@ export function SocialMediaLinksForm({
   const form = useForm({
     resolver: zodResolver(socialMediaSchema),
     defaultValues: {
-      facebook: initialData?.facebook || '',
-      twitter: initialData?.twitter || '',
-      instagram: initialData?.instagram || '',
-      linkedin: initialData?.linkedin || '',
-      youtube: initialData?.youtube || '',
+      facebook: initialData?.facebook
+        ? socialPlatforms.facebook.toUsername(initialData.facebook)
+        : '',
+      twitter: initialData?.twitter
+        ? socialPlatforms.twitter.toUsername(initialData.twitter)
+        : '',
+      instagram: initialData?.instagram
+        ? socialPlatforms.instagram.toUsername(initialData.instagram)
+        : '',
+      linkedin: initialData?.linkedin
+        ? socialPlatforms.linkedin.toUsername(initialData.linkedin)
+        : '',
+      youtube: initialData?.youtube
+        ? socialPlatforms.youtube.toUsername(initialData.youtube)
+        : '',
       website: initialData?.website || '',
     },
     mode: 'onBlur',
   })
 
   const handleSubmit = (data: SocialMediaLinksFormData) => {
-    // Filter out empty values
-    const filteredData = Object.entries(data).reduce(
+    const socialMediaData = {
+      facebook: data.facebook,
+      twitter: data.twitter,
+      instagram: data.instagram,
+      linkedin: data.linkedin,
+      youtube: data.youtube,
+    }
+
+    const filteredData = Object.entries(socialMediaData).reduce(
       (acc, [key, value]) => {
         if (value && value !== '') {
-          acc[key] = value
+          const platform = key as SocialPlatform
+          acc[key] = socialPlatforms[platform].toUrl(value)
         }
         return acc
       },
       {} as Record<string, string>
     )
+
+    if (data.website && data.website !== '') {
+      filteredData.website = data.website
+    }
 
     onSubmit(filteredData)
   }
@@ -148,15 +175,19 @@ export function SocialMediaLinksForm({
                   Facebook
                 </FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder='https://facebook.com/username'
-                    {...field}
-                    value={field.value || ''}
-                  />
+                  <div className='focus-within:ring-ring flex overflow-hidden rounded-md border focus-within:ring-1'>
+                    <span className='bg-muted text-muted-foreground flex items-center border-r px-3 text-sm'>
+                      {socialPlatforms.facebook.prefix}
+                    </span>
+                    <Input
+                      className='rounded-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0'
+                      placeholder='username'
+                      {...field}
+                      value={field.value || ''}
+                    />
+                  </div>
                 </FormControl>
-                <FormDescription>
-                  Your Facebook profile or page URL
-                </FormDescription>
+                <FormDescription>Your Facebook username</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -168,17 +199,22 @@ export function SocialMediaLinksForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className='flex items-center gap-2'>
-                  <Twitter className='h-4 w-4' />
-                  Twitter / X
+                  <XLogoIcon className='h-4 w-4' />X
                 </FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder='https://twitter.com/username or https://x.com/username'
-                    {...field}
-                    value={field.value || ''}
-                  />
+                  <div className='focus-within:ring-ring flex overflow-hidden rounded-md border focus-within:ring-1'>
+                    <span className='bg-muted text-muted-foreground flex items-center border-r px-3 text-sm'>
+                      {socialPlatforms.twitter.prefix}
+                    </span>
+                    <Input
+                      className='rounded-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0'
+                      placeholder='username'
+                      {...field}
+                      value={field.value || ''}
+                    />
+                  </div>
                 </FormControl>
-                <FormDescription>Your Twitter (X) profile URL</FormDescription>
+                <FormDescription>Your X username</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -194,13 +230,19 @@ export function SocialMediaLinksForm({
                   Instagram
                 </FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder='https://instagram.com/username'
-                    {...field}
-                    value={field.value || ''}
-                  />
+                  <div className='focus-within:ring-ring flex overflow-hidden rounded-md border focus-within:ring-1'>
+                    <span className='bg-muted text-muted-foreground flex items-center border-r px-3 text-sm'>
+                      {socialPlatforms.instagram.prefix}
+                    </span>
+                    <Input
+                      className='rounded-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0'
+                      placeholder='username'
+                      {...field}
+                      value={field.value || ''}
+                    />
+                  </div>
                 </FormControl>
-                <FormDescription>Your Instagram profile URL</FormDescription>
+                <FormDescription>Your Instagram username</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -216,13 +258,19 @@ export function SocialMediaLinksForm({
                   LinkedIn
                 </FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder='https://linkedin.com/in/username'
-                    {...field}
-                    value={field.value || ''}
-                  />
+                  <div className='focus-within:ring-ring flex overflow-hidden rounded-md border focus-within:ring-1'>
+                    <span className='bg-muted text-muted-foreground flex items-center border-r px-3 text-sm'>
+                      {socialPlatforms.linkedin.prefix}
+                    </span>
+                    <Input
+                      className='rounded-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0'
+                      placeholder='username'
+                      {...field}
+                      value={field.value || ''}
+                    />
+                  </div>
                 </FormControl>
-                <FormDescription>Your LinkedIn profile URL</FormDescription>
+                <FormDescription>Your LinkedIn username</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -238,13 +286,19 @@ export function SocialMediaLinksForm({
                   YouTube
                 </FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder='https://youtube.com/@username'
-                    {...field}
-                    value={field.value || ''}
-                  />
+                  <div className='focus-within:ring-ring flex overflow-hidden rounded-md border focus-within:ring-1'>
+                    <span className='bg-muted text-muted-foreground flex items-center border-r px-3 text-sm'>
+                      {socialPlatforms.youtube.prefix}
+                    </span>
+                    <Input
+                      className='rounded-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0'
+                      placeholder='username'
+                      {...field}
+                      value={field.value || ''}
+                    />
+                  </div>
                 </FormControl>
-                <FormDescription>Your YouTube channel URL</FormDescription>
+                <FormDescription>Your YouTube username</FormDescription>
                 <FormMessage />
               </FormItem>
             )}

@@ -8,7 +8,16 @@
  * Detection: localStorage flag `profile_setup_seen_<userId>` is
  * absent on first login; set when user completes or skips the prompt.
  */
-import { ProfilePictureUpload } from '@/components/profile/profile-picture-upload'
+import { useEffect, useState } from 'react'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation } from '@tanstack/react-query'
+import { useNavigate, useSearch } from '@tanstack/react-router'
+import { CheckCircle2, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import apiClient from '@/lib/axios'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -26,22 +35,13 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { ProfilePictureUpload } from '@/components/profile/profile-picture-upload'
 import { AuthLayout } from '@/features/auth/auth-layout'
 import {
   SignUpWizard,
   type WizardStep,
 } from '@/features/auth/sign-up-wizard/SignUpWizard'
 import { PasswordChangeForm } from '@/features/settings/account/components/password-change-form'
-import apiClient from '@/lib/axios'
-import { useAuthStore } from '@/stores/auth-store'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation } from '@tanstack/react-query'
-import { useNavigate, useSearch } from '@tanstack/react-router'
-import { CheckCircle2, Loader2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
-import { z } from 'zod'
 import { markProfileSetupSeen } from './utils'
 
 // ---------------------------------------------------------------------------
@@ -184,10 +184,10 @@ export function CommunicationsEmailSection({
         setUser(
           user
             ? {
-              ...user,
-              communications_email: email,
-              communications_email_verified: true,
-            }
+                ...user,
+                communications_email: email,
+                communications_email_verified: true,
+              }
             : null
         )
         toast.success('Communications email verified!')
@@ -214,10 +214,10 @@ export function CommunicationsEmailSection({
         setUser(
           user
             ? {
-              ...user,
-              communications_email: state.email,
-              communications_email_verified: true,
-            }
+                ...user,
+                communications_email: state.email,
+                communications_email_verified: true,
+              }
             : null
         )
         toast.success('Communications email verified!')

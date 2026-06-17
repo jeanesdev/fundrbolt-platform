@@ -40,9 +40,31 @@ export function ProfileDropdown() {
   const spoofedUser = useDebugSpoofStore((state) => state.spoofedUser)
   const timeBaseSpoofMs = useDebugSpoofStore((state) => state.timeBaseSpoofMs)
   const availableEvents = useEventContextStore((state) => state.availableEvents)
+  const selectedEventId = useEventContextStore((state) => state.selectedEventId)
   const selectedEventSlug = useEventContextStore(
     (state) => state.selectedEventSlug
   )
+  const setSelectedEvent = useEventContextStore(
+    (state) => state.setSelectedEvent
+  )
+
+  const routeEventSlug = (() => {
+    if (typeof window === 'undefined') return null
+    const match = window.location.pathname.match(/^\/events\/([^/]+)/)
+    return match?.[1] ? decodeURIComponent(match[1]) : null
+  })()
+
+  const effectiveSelectedSlug = routeEventSlug ?? selectedEventSlug
+
+  const visibleEvents = availableEvents.filter(
+    (event) =>
+      event.status !== 'draft' &&
+      (event.is_registered || event.has_admin_access)
+  )
+  const selectedEvent =
+    visibleEvents.find((event) => event.slug === effectiveSelectedSlug) ??
+    visibleEvents.find((event) => event.id === selectedEventId) ??
+    null
   const isSuperAdmin = user?.role === 'super_admin'
   const displayEmail =
     user?.communications_email?.trim() || user?.email || 'Not logged in'
@@ -102,7 +124,7 @@ export function ProfileDropdown() {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {availableEvents.length > 0 && (
+          {visibleEvents.length > 0 && (
             <>
               <DropdownMenuItem
                 onSelect={(e) => {
@@ -115,8 +137,7 @@ export function ProfileDropdown() {
                 <div className='flex min-w-0 flex-1 flex-col text-left'>
                   <span>Event</span>
                   <span className='text-muted-foreground truncate text-xs font-normal'>
-                    {availableEvents.find((e) => e.slug === selectedEventSlug)
-                      ?.name ?? 'Select Event'}
+                    {selectedEvent?.name ?? 'Select Event'}
                   </span>
                 </div>
                 {eventListOpen ? (
@@ -127,10 +148,11 @@ export function ProfileDropdown() {
               </DropdownMenuItem>
               {eventListOpen && (
                 <div className='border-muted ml-4 border-l-2 pl-2'>
-                  {availableEvents.map((event) => (
+                  {visibleEvents.map((event) => (
                     <DropdownMenuItem
                       key={event.id}
                       onClick={() => {
+                        setSelectedEvent(event.id, event.name, event.slug)
                         setMenuOpen(false)
                         void navigate({
                           to: '/events/$slug',
@@ -147,7 +169,9 @@ export function ProfileDropdown() {
                           </div>
                         )}
                       </div>
-                      {event.slug === selectedEventSlug && (
+                      {(event.slug === effectiveSelectedSlug ||
+                        (!effectiveSelectedSlug &&
+                          event.id === selectedEventId)) && (
                         <Check className='text-primary size-4 shrink-0' />
                       )}
                     </DropdownMenuItem>

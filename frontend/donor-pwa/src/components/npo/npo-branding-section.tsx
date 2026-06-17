@@ -6,15 +6,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { brandingApi } from '@/services/npo-service'
 import type { BrandingUpdateRequest } from '@/types/npo'
-import {
-  Building2,
-  Facebook,
-  Instagram,
-  Linkedin,
-  Save,
-  Twitter,
-  X,
-} from 'lucide-react'
+import { Building2, Facebook, Instagram, Linkedin, Save, X } from 'lucide-react'
 import { HexColorPicker } from 'react-colorful'
 import { useDropzone } from 'react-dropzone'
 import Cropper, { type Area } from 'react-easy-crop'
@@ -40,6 +32,50 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 
+type XLogoIconProps = {
+  className?: string
+}
+
+function XLogoIcon({ className }: XLogoIconProps) {
+  return (
+    <svg
+      viewBox='0 0 24 24'
+      aria-hidden='true'
+      fill='currentColor'
+      className={className}
+    >
+      <path d='M18.9 2H22l-6.8 7.8L23 22h-6.2l-4.9-6.3L6.4 22H3.3l7.3-8.4L1 2h6.3l4.4 5.8L18.9 2Zm-1.1 18h1.7L6.1 3.9H4.3L17.8 20Z' />
+    </svg>
+  )
+}
+
+const socialPlatforms = {
+  facebook: {
+    prefix: 'facebook.com/',
+    toUrl: (u: string) => `https://facebook.com/${u.replace(/^@/, '')}`,
+    toUsername: (url: string) =>
+      url.match(/(?:facebook|fb)\.com\/([^/?#]+)/)?.[1] ?? '',
+  },
+  twitter: {
+    prefix: 'x.com/',
+    toUrl: (u: string) => `https://x.com/${u.replace(/^@/, '')}`,
+    toUsername: (url: string) =>
+      url.match(/(?:twitter|x)\.com\/@?([^/?#]+)/)?.[1] ?? '',
+  },
+  instagram: {
+    prefix: 'instagram.com/',
+    toUrl: (u: string) => `https://instagram.com/${u.replace(/^@/, '')}`,
+    toUsername: (url: string) =>
+      url.match(/instagram\.com\/([^/?#]+)/)?.[1] ?? '',
+  },
+  linkedin: {
+    prefix: 'linkedin.com/company/',
+    toUrl: (u: string) => `https://linkedin.com/company/${u.replace(/^@/, '')}`,
+    toUsername: (url: string) =>
+      url.match(/linkedin\.com\/(?:company|in)\/([^/?#]+)/)?.[1] ?? '',
+  },
+} as const
+
 // Helper to get full logo URL
 function getLogoUrl(logoPath: string | null): string | null {
   if (!logoPath) return null
@@ -52,14 +88,9 @@ function getLogoUrl(logoPath: string | null): string | null {
 }
 
 // Validation functions
-function isValidUrl(url: string): boolean {
-  if (!url) return true
-  try {
-    const urlObj = new URL(url)
-    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:'
-  } catch {
-    return false
-  }
+function isValidUsername(username: string): boolean {
+  if (!username) return true
+  return /^[\w.@-]+$/.test(username)
 }
 
 // Helper function to calculate contrast ratio
@@ -186,7 +217,7 @@ export function NPOBrandingSection({ npoId, onSave }: NPOBrandingSectionProps) {
   const [urlErrors, setUrlErrors] = useState<Record<string, boolean>>({})
 
   const validateSocialUrl = (key: string, value: string) => {
-    const isValid = isValidUrl(value)
+    const isValid = isValidUsername(value)
     setUrlErrors((prev) => ({
       ...prev,
       [key]: !isValid && value.length > 0,
@@ -213,10 +244,26 @@ export function NPOBrandingSection({ npoId, onSave }: NPOBrandingSectionProps) {
         if (brandingData.logo_url) setLogoUrl(brandingData.logo_url)
         if (brandingData.social_media_links) {
           setSocialLinks({
-            facebook: brandingData.social_media_links.facebook || '',
-            twitter: brandingData.social_media_links.twitter || '',
-            instagram: brandingData.social_media_links.instagram || '',
-            linkedin: brandingData.social_media_links.linkedin || '',
+            facebook: brandingData.social_media_links.facebook
+              ? socialPlatforms.facebook.toUsername(
+                  brandingData.social_media_links.facebook
+                )
+              : '',
+            twitter: brandingData.social_media_links.twitter
+              ? socialPlatforms.twitter.toUsername(
+                  brandingData.social_media_links.twitter
+                )
+              : '',
+            instagram: brandingData.social_media_links.instagram
+              ? socialPlatforms.instagram.toUsername(
+                  brandingData.social_media_links.instagram
+                )
+              : '',
+            linkedin: brandingData.social_media_links.linkedin
+              ? socialPlatforms.linkedin.toUsername(
+                  brandingData.social_media_links.linkedin
+                )
+              : '',
           })
         }
       } catch (_error) {
@@ -336,10 +383,18 @@ export function NPOBrandingSection({ npoId, onSave }: NPOBrandingSectionProps) {
         accent_color: accentColor,
         logo_url: logoUrl || undefined,
         social_media_links: {
-          facebook: socialLinks.facebook || undefined,
-          twitter: socialLinks.twitter || undefined,
-          instagram: socialLinks.instagram || undefined,
-          linkedin: socialLinks.linkedin || undefined,
+          facebook: socialLinks.facebook
+            ? socialPlatforms.facebook.toUrl(socialLinks.facebook)
+            : undefined,
+          twitter: socialLinks.twitter
+            ? socialPlatforms.twitter.toUrl(socialLinks.twitter)
+            : undefined,
+          instagram: socialLinks.instagram
+            ? socialPlatforms.instagram.toUrl(socialLinks.instagram)
+            : undefined,
+          linkedin: socialLinks.linkedin
+            ? socialPlatforms.linkedin.toUrl(socialLinks.linkedin)
+            : undefined,
         },
       }
 
@@ -572,36 +627,53 @@ export function NPOBrandingSection({ npoId, onSave }: NPOBrandingSectionProps) {
               <Facebook className='h-4 w-4' />
               Facebook
             </Label>
-            <Input
-              value={socialLinks.facebook}
-              onChange={(e) => {
-                setSocialLinks({ ...socialLinks, facebook: e.target.value })
-                validateSocialUrl('facebook', e.target.value)
-              }}
-              placeholder='https://facebook.com/yourorg'
-              className={urlErrors.facebook ? 'border-red-500' : ''}
-            />
+            <div className='focus-within:ring-ring flex overflow-hidden rounded-md border focus-within:ring-1'>
+              <span className='bg-muted text-muted-foreground flex items-center border-r px-3 text-sm'>
+                {socialPlatforms.facebook.prefix}
+              </span>
+              <Input
+                className={`rounded-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 ${
+                  urlErrors.facebook ? 'border-red-500' : ''
+                }`}
+                value={socialLinks.facebook}
+                onChange={(e) => {
+                  setSocialLinks({ ...socialLinks, facebook: e.target.value })
+                  validateSocialUrl('facebook', e.target.value)
+                }}
+                placeholder='yourorg'
+              />
+            </div>
             {urlErrors.facebook && (
-              <p className='text-xs text-red-500'>Please enter a valid URL</p>
+              <p className='text-xs text-red-500'>
+                Please enter a valid username
+              </p>
             )}
           </div>
 
           <div className='space-y-2'>
             <Label className='flex items-center gap-2'>
-              <Twitter className='h-4 w-4' />
-              Twitter
+              <XLogoIcon className='h-4 w-4' />X
             </Label>
-            <Input
-              value={socialLinks.twitter}
-              onChange={(e) => {
-                setSocialLinks({ ...socialLinks, twitter: e.target.value })
-                validateSocialUrl('twitter', e.target.value)
-              }}
-              placeholder='https://twitter.com/yourorg'
-              className={urlErrors.twitter ? 'border-red-500' : ''}
-            />
+            <div className='focus-within:ring-ring flex overflow-hidden rounded-md border focus-within:ring-1'>
+              <span className='bg-muted text-muted-foreground flex items-center border-r px-3 text-sm'>
+                {socialPlatforms.twitter.prefix}
+              </span>
+              <Input
+                className={`rounded-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 ${
+                  urlErrors.twitter ? 'border-red-500' : ''
+                }`}
+                value={socialLinks.twitter}
+                onChange={(e) => {
+                  setSocialLinks({ ...socialLinks, twitter: e.target.value })
+                  validateSocialUrl('twitter', e.target.value)
+                }}
+                placeholder='yourorg'
+              />
+            </div>
             {urlErrors.twitter && (
-              <p className='text-xs text-red-500'>Please enter a valid URL</p>
+              <p className='text-xs text-red-500'>
+                Please enter a valid username
+              </p>
             )}
           </div>
 
@@ -610,17 +682,26 @@ export function NPOBrandingSection({ npoId, onSave }: NPOBrandingSectionProps) {
               <Instagram className='h-4 w-4' />
               Instagram
             </Label>
-            <Input
-              value={socialLinks.instagram}
-              onChange={(e) => {
-                setSocialLinks({ ...socialLinks, instagram: e.target.value })
-                validateSocialUrl('instagram', e.target.value)
-              }}
-              placeholder='https://instagram.com/yourorg'
-              className={urlErrors.instagram ? 'border-red-500' : ''}
-            />
+            <div className='focus-within:ring-ring flex overflow-hidden rounded-md border focus-within:ring-1'>
+              <span className='bg-muted text-muted-foreground flex items-center border-r px-3 text-sm'>
+                {socialPlatforms.instagram.prefix}
+              </span>
+              <Input
+                className={`rounded-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 ${
+                  urlErrors.instagram ? 'border-red-500' : ''
+                }`}
+                value={socialLinks.instagram}
+                onChange={(e) => {
+                  setSocialLinks({ ...socialLinks, instagram: e.target.value })
+                  validateSocialUrl('instagram', e.target.value)
+                }}
+                placeholder='yourorg'
+              />
+            </div>
             {urlErrors.instagram && (
-              <p className='text-xs text-red-500'>Please enter a valid URL</p>
+              <p className='text-xs text-red-500'>
+                Please enter a valid username
+              </p>
             )}
           </div>
 
@@ -629,17 +710,26 @@ export function NPOBrandingSection({ npoId, onSave }: NPOBrandingSectionProps) {
               <Linkedin className='h-4 w-4' />
               LinkedIn
             </Label>
-            <Input
-              value={socialLinks.linkedin}
-              onChange={(e) => {
-                setSocialLinks({ ...socialLinks, linkedin: e.target.value })
-                validateSocialUrl('linkedin', e.target.value)
-              }}
-              placeholder='https://linkedin.com/company/yourorg'
-              className={urlErrors.linkedin ? 'border-red-500' : ''}
-            />
+            <div className='focus-within:ring-ring flex overflow-hidden rounded-md border focus-within:ring-1'>
+              <span className='bg-muted text-muted-foreground flex items-center border-r px-3 text-sm'>
+                {socialPlatforms.linkedin.prefix}
+              </span>
+              <Input
+                className={`rounded-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 ${
+                  urlErrors.linkedin ? 'border-red-500' : ''
+                }`}
+                value={socialLinks.linkedin}
+                onChange={(e) => {
+                  setSocialLinks({ ...socialLinks, linkedin: e.target.value })
+                  validateSocialUrl('linkedin', e.target.value)
+                }}
+                placeholder='yourorg'
+              />
+            </div>
             {urlErrors.linkedin && (
-              <p className='text-xs text-red-500'>Please enter a valid URL</p>
+              <p className='text-xs text-red-500'>
+                Please enter a valid username
+              </p>
             )}
           </div>
         </CardContent>

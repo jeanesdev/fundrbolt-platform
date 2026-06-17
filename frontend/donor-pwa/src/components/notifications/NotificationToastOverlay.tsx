@@ -7,13 +7,13 @@
  * for dynamically-created elements outside of the React tree, so we use
  * inline styles + the keyframe animations defined in the global stylesheet).
  */
+import { useEffect } from 'react'
+import type { NotificationData } from '@/services/notification-service'
+import { triggerCelebrationConfetti } from '@/lib/celebration-confetti'
 import {
   getNotificationBodyText,
   getNotificationLink,
 } from '@/components/notifications/notification-link'
-import { triggerCelebrationConfetti } from '@/lib/celebration-confetti'
-import type { NotificationData } from '@/services/notification-service'
-import { useEffect } from 'react'
 
 const TOAST_DURATION = 5000
 const MAX_VISIBLE = 3

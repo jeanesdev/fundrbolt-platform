@@ -35,6 +35,7 @@ from app.api.v1 import (
     auctioneer_run_of_show,
     auth,
     branding,
+    cause_section_cards,
     checkin,
     consent,
     cookies,
@@ -65,6 +66,7 @@ from app.api.v1 import (
     sales_tracking,
     search,
     sponsors,
+    support,
     ticket_assignments,
     ticket_invitations,
     ticket_options,
@@ -108,12 +110,21 @@ api_router.include_router(legal_documents.router, prefix="/legal", tags=["legal"
 api_router.include_router(consent.router, prefix="/consent", tags=["consent"])
 api_router.include_router(cookies.router, prefix="/cookies", tags=["cookies"])
 api_router.include_router(search.router, tags=["search"])
+api_router.include_router(support.router, tags=["support"])
 api_router.include_router(public_contact.router, prefix="/public", tags=["public-contact"])
 api_router.include_router(public_onboarding.router, prefix="/public", tags=["public-onboarding"])
 api_router.include_router(public_testimonials.router, tags=["public-testimonials"])
 api_router.include_router(admin_testimonials.router, tags=["admin-testimonials"])
 api_router.include_router(admin_seating.router, tags=["admin-seating"])
 api_router.include_router(admin_checklist.router, tags=["admin-checklist"])
+api_router.include_router(
+    cause_section_cards.admin_router,
+    tags=["cause-section-cards-admin"],
+)
+api_router.include_router(
+    cause_section_cards.public_router,
+    tags=["cause-section-cards-public"],
+)
 api_router.include_router(admin_auction_bid_import.router)
 api_router.include_router(admin_auction_item_import.router)
 api_router.include_router(admin_registration_import.router)

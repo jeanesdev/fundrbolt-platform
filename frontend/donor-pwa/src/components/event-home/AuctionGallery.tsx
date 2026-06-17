@@ -9,7 +9,27 @@
  * - Empty state with Gavel icon
  * - Loading spinner for scroll trigger
  */
-import { StaleDataIndicator } from '@/components/pwa/stale-data-indicator'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
+import watchListService from '@/services/watchlistService'
+import type {
+  AuctionFilterType,
+  AuctionItemGalleryItem,
+  AuctionSortType,
+} from '@/types/auction-gallery'
+import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
+import { Eye, Gavel, Loader2, RefreshCw, Sparkles } from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import apiClient from '@/lib/axios'
+import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -18,28 +38,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { StaleDataIndicator } from '@/components/pwa/stale-data-indicator'
 import { PlayTab } from '@/features/play/PlayTab'
-import apiClient from '@/lib/axios'
-import { cn } from '@/lib/utils'
-import watchListService from '@/services/watchlistService'
-import { useAuthStore } from '@/stores/auth-store'
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import type {
-  AuctionFilterType,
-  AuctionItemGalleryItem,
-  AuctionSortType,
-} from '@/types/auction-gallery'
-import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQueries,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
-import { Eye, Gavel, Loader2, RefreshCw, Sparkles } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { toast } from 'sonner'
 import { AuctionItemCard } from './AuctionItemCard'
 
 function normalizeIdentifier(value: unknown): string | null {
@@ -222,11 +222,11 @@ const baseFilterOptions: {
   label: string
   icon?: React.ReactNode
 }[] = [
-    { value: 'all', label: 'All' },
-    { value: 'silent', label: 'Silent' },
-    { value: 'live', label: 'Live' },
-    { value: 'my', label: 'My Items' },
-  ]
+  { value: 'all', label: 'All' },
+  { value: 'silent', label: 'Silent' },
+  { value: 'live', label: 'Live' },
+  { value: 'my', label: 'My Items' },
+]
 
 const sortOptions: { value: AuctionSortType; label: string }[] = [
   { value: 'highest_bid', label: 'Highest Bid' },
@@ -257,15 +257,15 @@ export function AuctionGallery({
 }: AuctionGalleryProps) {
   const filterOptions = hasRgItems
     ? [
-      ...baseFilterOptions,
-      {
-        value: 'play' as AuctionFilterType,
-        label: 'Play',
-        icon: (
-          <Sparkles className='mr-1 inline-block h-3.5 w-3.5 align-[-0.1em]' />
-        ),
-      },
-    ]
+        ...baseFilterOptions,
+        {
+          value: 'play' as AuctionFilterType,
+          label: 'Play',
+          icon: (
+            <Sparkles className='mr-1 inline-block h-3.5 w-3.5 align-[-0.1em]' />
+          ),
+        },
+      ]
     : baseFilterOptions
   const authUserId = useAuthStore((state) => state.user?.id)
   const spoofedUserId = useDebugSpoofStore((state) => state.spoofedUser?.id)
@@ -315,14 +315,14 @@ export function AuctionGallery({
         (
           previous:
             | {
-              watch_list?: Array<{
-                id: string
-                user_id: string
-                auction_item_id: string
-                added_at: string
-              }>
-              total?: number
-            }
+                watch_list?: Array<{
+                  id: string
+                  user_id: string
+                  auction_item_id: string
+                  added_at: string
+                }>
+                total?: number
+              }
             | undefined
         ) => {
           const existing = previous?.watch_list ?? []
@@ -356,14 +356,14 @@ export function AuctionGallery({
         (
           previous:
             | {
-              watch_list?: Array<{
-                id: string
-                user_id: string
-                auction_item_id: string
-                added_at: string
-              }>
-              total?: number
-            }
+                watch_list?: Array<{
+                  id: string
+                  user_id: string
+                  auction_item_id: string
+                  added_at: string
+                }>
+                total?: number
+              }
             | undefined
         ) => {
           const existing = previous?.watch_list ?? []
@@ -784,10 +784,10 @@ export function AuctionGallery({
   // My Items: watched + bid on (max bid set)
   const myItemIds = isMyItemsMode
     ? new Set([
-      ...Array.from(watchedItemIds),
-      ...Object.keys(winningItemMap),
-      ...Object.keys(maxBidItemMap),
-    ])
+        ...Array.from(watchedItemIds),
+        ...Object.keys(winningItemMap),
+        ...Object.keys(maxBidItemMap),
+      ])
     : null
   const myItems = myItemIds
     ? items.filter((item) => myItemIds.has(item.id))
@@ -900,13 +900,13 @@ export function AuctionGallery({
               style={
                 filter === option.value
                   ? {
-                    backgroundColor:
-                      'rgb(var(--event-primary, 59, 130, 246))',
-                    color: 'var(--event-text-on-primary, #FFFFFF)',
-                  }
+                      backgroundColor:
+                        'rgb(var(--event-primary, 59, 130, 246))',
+                      color: 'var(--event-text-on-primary, #FFFFFF)',
+                    }
                   : {
-                    color: 'var(--event-text-muted-on-background, #6B7280)',
-                  }
+                      color: 'var(--event-text-muted-on-background, #6B7280)',
+                    }
               }
             >
               {option.icon}
