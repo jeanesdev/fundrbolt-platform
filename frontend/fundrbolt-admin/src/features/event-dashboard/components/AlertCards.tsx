@@ -19,8 +19,10 @@ export function AlertCards({ alerts }: AlertCardsProps) {
             {formatSourceLabel(alert.source)} is below target pacing
           </AlertTitle>
           <AlertDescription>
-            Below {alert.threshold_percent}% target for{' '}
-            {alert.consecutive_refreshes} refreshes.
+            <span className='text-foreground font-medium'>
+              Below {alert.threshold_percent}% target for{' '}
+              {alert.consecutive_refreshes} refreshes.
+            </span>
           </AlertDescription>
         </Alert>
       ))}
