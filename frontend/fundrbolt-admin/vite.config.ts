@@ -38,7 +38,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       devOptions: {
         enabled: false,
         type: 'module',
@@ -52,6 +52,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // 4 MiB
+        skipWaiting: true, // generated SW self-activates on install
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api/, /^\/offline\.html/],
         runtimeCaching: [

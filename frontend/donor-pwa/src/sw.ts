@@ -12,6 +12,17 @@ declare const self: ServiceWorkerGlobalScope
 // before any async work so iOS can dispatch events immediately.
 // ──────────────────────────────────────────────────────────────
 
+// Skip waiting immediately on install so this SW activates as soon as it is
+// installed — without requiring the client to send a SKIP_WAITING message.
+// This is the only reliable way to unblock users whose old SW is stuck in a
+// "waiting" state and whose old HTML never sends the skip message.
+// eslint-disable-next-line no-console
+self.addEventListener('install', () => {
+  // eslint-disable-next-line no-console
+  console.log('[SW] Install event — calling skipWaiting()')
+  self.skipWaiting()
+})
+
 // Claim clients immediately on activation so push subscriptions
 // are associated with the active SW that will receive push events.
 //
