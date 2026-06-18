@@ -1,6 +1,6 @@
-import { Button } from '@/components/ui/button'
-import type { DonationResponse } from '@/lib/api/donateNow'
 import { CheckCircle2 } from 'lucide-react'
+import type { DonationResponse } from '@/lib/api/donateNow'
+import { Button } from '@/components/ui/button'
 
 interface DonationSuccessOverlayProps {
   donation: DonationResponse

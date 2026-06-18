@@ -1,3 +1,8 @@
+import { useMemo, useState } from 'react'
+import { WheelPicker, WheelPickerWrapper } from '@ncdai/react-wheel-picker'
+import '@ncdai/react-wheel-picker/style.css'
+import { ArrowRight } from 'lucide-react'
+import type { DonationTier } from '@/lib/api/donateNow'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -12,11 +17,6 @@ import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import type { useDonateNow } from '@/features/donate-now/useDonateNow'
-import type { DonationTier } from '@/lib/api/donateNow'
-import { WheelPicker, WheelPickerWrapper } from '@ncdai/react-wheel-picker'
-import '@ncdai/react-wheel-picker/style.css'
-import { ArrowRight } from 'lucide-react'
-import { useMemo, useState } from 'react'
 
 interface DonationAmountSelectorProps {
   state: ReturnType<typeof useDonateNow>
@@ -169,9 +169,9 @@ export function DonationAmountSelector({
   const handleSelectCustom = () => {
     const initialAmount = customAmount
       ? Math.max(
-        Math.round(parseFloat(customAmount || '0') * 100),
-        WHEEL_MIN_CENTS
-      )
+          Math.round(parseFloat(customAmount || '0') * 100),
+          WHEEL_MIN_CENTS
+        )
       : Math.max(effectiveAmountCents || selectedAmount, WHEEL_MIN_CENTS)
     setOtherAmountInput((initialAmount / 100).toFixed(2).replace(/\.00$/, ''))
     setIsOtherModalOpen(true)
@@ -268,20 +268,21 @@ export function DonationAmountSelector({
             <button
               key={tier.id}
               onClick={() => handleTierSelect(tier.amount_cents)}
-              className={`rounded-lg border-2 p-3 transition-colors ${hasImpactStatement ? 'col-span-3 text-left' : 'text-center'
-                }`}
+              className={`rounded-lg border-2 p-3 transition-colors ${
+                hasImpactStatement ? 'col-span-3 text-left' : 'text-center'
+              }`}
               style={
                 isSelected
                   ? {
-                    borderColor: 'rgba(255,255,255,0.9)',
-                    backgroundColor: 'rgba(255,255,255,0.25)',
-                    color: 'var(--event-text-on-primary, #FFFFFF)',
-                  }
+                      borderColor: 'rgba(255,255,255,0.9)',
+                      backgroundColor: 'rgba(255,255,255,0.25)',
+                      color: 'var(--event-text-on-primary, #FFFFFF)',
+                    }
                   : {
-                    borderColor: 'rgba(255,255,255,0.35)',
-                    backgroundColor: 'rgba(255,255,255,0.1)',
-                    color: 'var(--event-text-on-primary, #FFFFFF)',
-                  }
+                      borderColor: 'rgba(255,255,255,0.35)',
+                      backgroundColor: 'rgba(255,255,255,0.1)',
+                      color: 'var(--event-text-on-primary, #FFFFFF)',
+                    }
               }
             >
               <div className='text-lg font-bold'>
@@ -301,15 +302,15 @@ export function DonationAmountSelector({
           style={
             isCustomSelected
               ? {
-                borderColor: 'rgba(255,255,255,0.9)',
-                backgroundColor: 'rgba(255,255,255,0.25)',
-                color: 'var(--event-text-on-primary, #FFFFFF)',
-              }
+                  borderColor: 'rgba(255,255,255,0.9)',
+                  backgroundColor: 'rgba(255,255,255,0.25)',
+                  color: 'var(--event-text-on-primary, #FFFFFF)',
+                }
               : {
-                borderColor: 'rgba(255,255,255,0.35)',
-                backgroundColor: 'rgba(255,255,255,0.1)',
-                color: 'var(--event-text-on-primary, #FFFFFF)',
-              }
+                  borderColor: 'rgba(255,255,255,0.35)',
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  color: 'var(--event-text-on-primary, #FFFFFF)',
+                }
           }
         >
           <div className='text-lg font-bold'>
@@ -446,10 +447,11 @@ export function DonationAmountSelector({
             placeholder='Your name'
             maxLength={100}
             disabled={isAnonymous}
-            className={`mt-1 border-white/55 caret-white disabled:cursor-not-allowed disabled:opacity-100 ${isAnonymous
+            className={`mt-1 border-white/55 caret-white disabled:cursor-not-allowed disabled:opacity-100 ${
+              isAnonymous
                 ? 'bg-black/45 text-white/70 placeholder:text-white/55'
                 : 'bg-black/20 text-white placeholder:text-white/75'
-              }`}
+            }`}
           />
         </div>
 

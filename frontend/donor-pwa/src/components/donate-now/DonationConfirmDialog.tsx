@@ -1,3 +1,7 @@
+import { useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import { ArrowRight, Loader2 } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -9,10 +13,6 @@ import {
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import type { useDonateNow } from '@/features/donate-now/useDonateNow'
-import { useAuthStore } from '@/stores/auth-store'
-import { useNavigate } from '@tanstack/react-router'
-import { ArrowRight, Loader2 } from 'lucide-react'
-import { useState } from 'react'
 
 interface DonationConfirmDialogProps {
   state: ReturnType<typeof useDonateNow>

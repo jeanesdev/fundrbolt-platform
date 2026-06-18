@@ -1,17 +1,17 @@
-import { DonateNowHeroSection } from '@/components/donate-now/DonateNowHeroSection'
-import { DonationAmountSelector } from '@/components/donate-now/DonationAmountSelector'
-import { DonationConfirmDialog } from '@/components/donate-now/DonationConfirmDialog'
-import { DonationSuccessOverlay } from '@/components/donate-now/DonationSuccessOverlay'
-import { SupportWall } from '@/components/donate-now/SupportWall'
+import { useEffect } from 'react'
+import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router'
+import { ArrowRight, CalendarDays, MapPin } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
 import {
   getContrastingTextColor,
   getContrastingTextColors,
   hexToRgbTuple,
 } from '@/lib/color-utils'
-import { useAuthStore } from '@/stores/auth-store'
-import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router'
-import { ArrowRight, CalendarDays, MapPin } from 'lucide-react'
-import { useEffect } from 'react'
+import { DonateNowHeroSection } from '@/components/donate-now/DonateNowHeroSection'
+import { DonationAmountSelector } from '@/components/donate-now/DonationAmountSelector'
+import { DonationConfirmDialog } from '@/components/donate-now/DonationConfirmDialog'
+import { DonationSuccessOverlay } from '@/components/donate-now/DonationSuccessOverlay'
+import { SupportWall } from '@/components/donate-now/SupportWall'
 import { useDonateNow } from './useDonateNow'
 
 const DEFAULT_PRIMARY_RGB = '59, 130, 246'
@@ -280,12 +280,12 @@ export function DonateNowPage() {
                     <span>
                       {pageData.upcoming_event.start_date
                         ? new Date(
-                          pageData.upcoming_event.start_date
-                        ).toLocaleDateString(undefined, {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })
+                            pageData.upcoming_event.start_date
+                          ).toLocaleDateString(undefined, {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })
                         : 'Date coming soon'}
                     </span>
                   </div>

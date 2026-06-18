@@ -8,6 +8,8 @@ import {
 } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { useGlobalInputSanitizer } from '@fundrbolt/shared/hooks'
+import { UpdateNotification } from '@fundrbolt/shared/pwa/update-notification'
+import { useServiceWorker } from '@fundrbolt/shared/pwa/use-service-worker'
 import * as Sentry from '@sentry/react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
@@ -103,12 +105,24 @@ function SecurityHardening({ children }: { children: React.ReactNode }) {
   return children
 }
 
+function PWAUpdatePrompt() {
+  const { needRefresh, updateServiceWorker, dismissUpdate } = useServiceWorker()
+  return (
+    <UpdateNotification
+      needRefresh={!import.meta.env.DEV && needRefresh}
+      onRefresh={updateServiceWorker}
+      onDismiss={dismissUpdate}
+    />
+  )
+}
+
 // Render the app
 const rootElement = document.getElementById('root')!
 if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement)
   root.render(
     <StrictMode>
+      <PWAUpdatePrompt />
       <SecurityHardening>
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>

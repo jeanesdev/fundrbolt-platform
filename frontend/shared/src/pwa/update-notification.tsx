@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export interface UpdateNotificationProps {
   /** Whether a new version is waiting to be activated */
@@ -9,9 +9,26 @@ export interface UpdateNotificationProps {
   onDismiss: () => void;
 }
 
+function isStandaloneMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    window.matchMedia?.("(display-mode: standalone)").matches ||
+    (navigator as Navigator & { standalone?: boolean }).standalone === true
+  );
+}
+
 /**
  * Non-blocking toast/banner shown at the top of the viewport
  * when a new app version is available.
+ *
+ * In standalone (installed) PWA mode: shows an explicit banner so the user
+ * can choose when to refresh.
+ *
+ * In browser-tab mode: silently applies the update in the background and
+ * reloads the page as soon as the new SW activates. The user will see a
+ * brief reload, identical to what a normal browser refresh would do, but
+ * this is necessary because Workbox's precache intercepts all navigations
+ * and would otherwise keep serving the old bundle indefinitely.
  */
 export function UpdateNotification({
   needRefresh,
@@ -20,17 +37,21 @@ export function UpdateNotification({
 }: UpdateNotificationProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // In browser-tab mode, silently trigger the update immediately — no banner.
+  useEffect(() => {
+    if (!needRefresh) return;
+    if (isStandaloneMode()) return;
+    // Fire-and-forget: apply the waiting SW so the next navigation loads
+    // the new bundle. We don't reload forcefully here; the page will get
+    // the new SW on the user's next navigation or refresh.
+    void onRefresh();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needRefresh]);
+
   if (!needRefresh) return null;
 
-  // Only show in installed/standalone PWA. In a regular browser tab
-  // the user can just refresh and the new SW takes over on the next
-  // navigation — the banner is just noise.
-  if (typeof window !== "undefined") {
-    const isStandalone =
-      window.matchMedia?.("(display-mode: standalone)").matches ||
-      (navigator as Navigator & { standalone?: boolean }).standalone === true;
-    if (!isStandalone) return null;
-  }
+  // Only show the interactive banner in standalone (installed) mode.
+  if (!isStandaloneMode()) return null;
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
