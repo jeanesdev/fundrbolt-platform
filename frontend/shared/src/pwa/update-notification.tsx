@@ -45,7 +45,7 @@ export function UpdateNotification({
     // the new bundle. We don't reload forcefully here; the page will get
     // the new SW on the user's next navigation or refresh.
     void onRefresh();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [needRefresh]);
 
   if (!needRefresh) return null;
