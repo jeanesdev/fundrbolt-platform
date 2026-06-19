@@ -15,6 +15,7 @@ export interface EventResponse {
   npo_id: string
   npo_name: string | null
   npo_slug?: string | null
+  external_donate_now_url?: string | null
   slug: string
   name: string
   tagline: string | null
@@ -36,6 +37,8 @@ export interface EventResponse {
   secondary_color?: string | null
   background_color?: string | null
   accent_color?: string | null
+  action_card_background_style?: 'solid' | 'gradient' | 'image' | null
+  action_card_background_image_url?: string | null
   banner_url?: string | null
   hero_transition_style: string
   created_at: string
@@ -100,6 +103,7 @@ export interface PublicTicketCustomOption {
 export interface EventDetailResponse extends EventResponse {
   npo_name: string | null
   npo_slug?: string | null
+  external_donate_now_url?: string | null
   timezone: string
   location_name?: string | null
   location_address: string | null
@@ -118,6 +122,8 @@ export interface EventDetailResponse extends EventResponse {
   secondary_color: string | null
   background_color: string | null
   accent_color: string | null
+  action_card_background_style?: 'solid' | 'gradient' | 'image' | null
+  action_card_background_image_url?: string | null
   banner_url?: string | null
   hero_transition_style: string
   food_options: FoodOption[]

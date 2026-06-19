@@ -2,16 +2,7 @@
  * Ticket Package Management - Create Page
  * Form for creating new ticket packages
  */
-import { useState } from 'react'
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import { ArrowLeft } from 'lucide-react'
-import apiClient from '@/lib/axios'
-import { getErrorMessage } from '@/lib/error-utils'
-import { useToast } from '@/hooks/use-toast'
+import { packageImagesApi } from '@/api/packageImages'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -33,6 +24,20 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
+import { useToast } from '@/hooks/use-toast'
+import apiClient from '@/lib/axios'
+import { getErrorMessage } from '@/lib/error-utils'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate, useParams } from '@tanstack/react-router'
+import { ArrowLeft } from 'lucide-react'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
+import {
+  DraftCustomOptionsEditor,
+  type DraftCustomOption,
+} from './components/DraftCustomOptionsEditor'
 import { ImageUploadProgress } from './components/ImageUploadProgress'
 import { ImageUploadZone } from './components/ImageUploadZone'
 
@@ -88,6 +93,9 @@ export function TicketPackageCreatePage() {
     'idle' | 'uploading' | 'success' | 'error'
   >('idle')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [draftCustomOptions, setDraftCustomOptions] = useState<
+    DraftCustomOption[]
+  >([])
 
   const form = useForm<PackageFormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -116,24 +124,86 @@ export function TicketPackageCreatePage() {
       )
       return response.data
     },
-    onSuccess: (pkg) => {
+    onSuccess: async (pkg) => {
       queryClient.invalidateQueries({ queryKey: ['ticket-packages', eventId] })
 
-      // If file selected, upload image before navigating
+      let imageUploadFailed = false
+      let optionsCreateFailed = false
+
       if (selectedFile) {
         setUploadStatus('uploading')
         setUploadProgress(0)
-      } else {
+
+        try {
+          await packageImagesApi.uploadImage(
+            eventId,
+            pkg.id,
+            selectedFile,
+            (p) => setUploadProgress(p)
+          )
+
+          setUploadStatus('success')
+          setUploadProgress(100)
+        } catch (error) {
+          imageUploadFailed = true
+          setUploadStatus('error')
+          toast({
+            title: 'Package created, image upload failed',
+            description: getErrorMessage(
+              error,
+              'You can retry uploading the image on the edit page.'
+            ),
+            variant: 'destructive',
+          })
+        }
+      }
+
+      if (draftCustomOptions.length > 0) {
+        try {
+          for (let index = 0; index < draftCustomOptions.length; index += 1) {
+            const option = draftCustomOptions[index]
+            await apiClient.post(`/admin/packages/${pkg.id}/options`, {
+              option_type: option.option_type,
+              option_label: option.option_label,
+              choices:
+                option.option_type === 'multi_select'
+                  ? option.choices
+                  : undefined,
+              is_required: option.is_required,
+              display_order: index,
+            })
+          }
+        } catch (error) {
+          optionsCreateFailed = true
+          toast({
+            title: 'Package created, custom options failed',
+            description: getErrorMessage(
+              error,
+              'You can add custom options on the edit page.'
+            ),
+            variant: 'destructive',
+          })
+        }
+      }
+
+      if (!imageUploadFailed && !optionsCreateFailed) {
+        const summary =
+          draftCustomOptions.length > 0
+            ? `Package created with ${draftCustomOptions.length} custom option${draftCustomOptions.length === 1 ? '' : 's'}.`
+            : selectedFile
+              ? 'Ticket package created successfully with image uploaded.'
+              : 'Ticket package created successfully.'
+
         toast({
           title: 'Package created',
-          description:
-            'You can now add custom options and finalize your package.',
-        })
-        navigate({
-          to: '/events/$eventId/tickets/$packageId/edit',
-          params: { eventId: routeEventId, packageId: pkg.id },
+          description: summary,
         })
       }
+
+      navigate({
+        to: '/events/$eventId/tickets/$packageId/edit',
+        params: { eventId: routeEventId, packageId: pkg.id },
+      })
     },
     onError: (error) => {
       toast({
@@ -398,38 +468,15 @@ export function TicketPackageCreatePage() {
                 )}
               </div>
 
-              {/* Custom Options Preview (Disabled) */}
+              {/* Custom Options */}
               <div className='mt-6 border-t pt-6'>
-                <Card className='bg-muted/30'>
-                  <CardHeader>
-                    <CardTitle className='text-muted-foreground'>
-                      Custom Options
-                    </CardTitle>
-                    <CardDescription>
-                      Add custom fields like "Dietary Restrictions" or "T-Shirt
-                      Size" after creating the package. You'll be able to manage
-                      these options on the edit page.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className='text-muted-foreground space-y-2 text-sm'>
-                      <div className='flex items-center gap-2'>
-                        <div className='bg-muted-foreground/50 h-2 w-2 rounded-full'></div>
-                        <span>Add up to 4 custom fields</span>
-                      </div>
-                      <div className='flex items-center gap-2'>
-                        <div className='bg-muted-foreground/50 h-2 w-2 rounded-full'></div>
-                        <span>
-                          Choose from boolean, multi-select, or text input types
-                        </span>
-                      </div>
-                      <div className='flex items-center gap-2'>
-                        <div className='bg-muted-foreground/50 h-2 w-2 rounded-full'></div>
-                        <span>Mark fields as required or optional</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <DraftCustomOptionsEditor
+                  options={draftCustomOptions}
+                  onChange={setDraftCustomOptions}
+                  disabled={
+                    createMutation.isPending || uploadStatus === 'uploading'
+                  }
+                />
               </div>
 
               <div className='mt-6 flex justify-end gap-2'>

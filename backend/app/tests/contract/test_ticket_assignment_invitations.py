@@ -129,6 +129,112 @@ async def test_send_ticket_assignment_invitation_attempts_email_delivery(
 
 
 @pytest.mark.asyncio
+async def test_send_ticket_assignment_invitation_returns_503_when_email_fails(
+    donor_client: AsyncClient,
+    db_session: AsyncSession,
+    test_donor_user: Any,
+    test_approved_npo: Any,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Email delivery failures should return a structured 503 for donor invite actions."""
+    from app.models.event import Event, EventStatus
+    from app.models.ticket_management import (
+        AssignedTicket,
+        TicketAssignment,
+        TicketPackage,
+        TicketPurchase,
+    )
+    from app.services import ticket_invitation_service as ticket_invitation_module
+    from app.services.email_service import EmailSendError
+
+    class FailingEmailService:
+        async def send_ticket_assignment_invitation_email(self, **kwargs: Any) -> bool:
+            raise EmailSendError("delivery failed")
+
+    monkeypatch.setattr(
+        ticket_invitation_module,
+        "get_email_service",
+        lambda: FailingEmailService(),
+    )
+
+    event = Event(
+        npo_id=test_approved_npo.id,
+        name="Invite Failure Gala",
+        slug="invite-failure-gala",
+        status=EventStatus.ACTIVE,
+        event_datetime=datetime.now(UTC) + timedelta(days=14),
+        timezone="America/New_York",
+        venue_name="FundrBolt Hall",
+        venue_address="123 Main St",
+        version=1,
+        created_by=test_donor_user.id,
+        updated_by=test_donor_user.id,
+    )
+    db_session.add(event)
+    await db_session.flush()
+
+    package = TicketPackage(
+        event_id=event.id,
+        created_by=test_donor_user.id,
+        name="General Admission",
+        description="Single seat",
+        price=Decimal("125.00"),
+        seats_per_package=1,
+        quantity_limit=None,
+        sold_count=0,
+        display_order=0,
+        is_enabled=True,
+    )
+    db_session.add(package)
+    await db_session.flush()
+
+    purchase = TicketPurchase(
+        user_id=test_donor_user.id,
+        event_id=event.id,
+        ticket_package_id=package.id,
+        quantity=1,
+        total_price=Decimal("125.00"),
+        payment_status="completed",
+        purchaser_name=test_donor_user.full_name,
+        purchaser_email=test_donor_user.email,
+        purchaser_phone=test_donor_user.phone,
+    )
+    db_session.add(purchase)
+    await db_session.flush()
+
+    ticket = AssignedTicket(
+        ticket_purchase_id=purchase.id,
+        ticket_number=1,
+        qr_code="INVITE-FAIL-1",
+        assignment_status="assigned",
+    )
+    db_session.add(ticket)
+    await db_session.flush()
+
+    assignment = TicketAssignment(
+        assigned_ticket_id=ticket.id,
+        ticket_purchase_id=purchase.id,
+        event_id=event.id,
+        assigned_by_user_id=test_donor_user.id,
+        guest_name="Guest Person",
+        guest_email="guest-failure@example.com",
+        status="assigned",
+        is_self_assignment=False,
+    )
+    db_session.add(assignment)
+    await db_session.commit()
+
+    response = await donor_client.post(
+        f"/api/v1/tickets/assignments/{assignment.id}/invite",
+        json={"personal_message": "See you there."},
+    )
+
+    assert response.status_code == 503
+    data = response.json()
+    assert data["detail"]["code"] == "INVITATION_EMAIL_FAILED"
+
+
+@pytest.mark.asyncio
 async def test_resend_invitation_creates_new_token_and_inventory_reports_invited_status(
     donor_client: AsyncClient,
     db_session: AsyncSession,

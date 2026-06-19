@@ -242,6 +242,16 @@ class Event(Base, UUIDMixin, TimestampMixin):
         nullable=True,
         comment="Hex color code for accents (e.g., #FF5733)",
     )
+    action_card_background_style: Mapped[str | None] = mapped_column(
+        String(16),
+        nullable=True,
+        comment="Donor action card background style: solid, gradient, or image",
+    )
+    action_card_background_image_url: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+        comment="Optional image URL used when donor action card background style is image",
+    )
     hero_transition_style: Mapped[str] = mapped_column(
         String(32),
         nullable=False,
@@ -447,6 +457,10 @@ class Event(Base, UUIDMixin, TimestampMixin):
         CheckConstraint(
             "secondary_color IS NULL OR secondary_color ~ '^#[0-9A-Fa-f]{6}$'",
             name="check_secondary_color_format",
+        ),
+        CheckConstraint(
+            "action_card_background_style IS NULL OR action_card_background_style IN ('solid', 'gradient', 'image')",
+            name="check_action_card_background_style",
         ),
     )
 

@@ -2,17 +2,6 @@
  * SelfRegistrationFlow component — assigns a ticket to self and registers
  * the current user as an attendee. Multi-step inline flow.
  */
-import { useMemo, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Loader2, UserCheck } from 'lucide-react'
-import { toast } from 'sonner'
-import {
-  getEventBySlug,
-  getEventCustomOptions,
-  getTicketPackages,
-  type PublicTicketCustomOption,
-} from '@/lib/api/events'
-import { assignTicket, selfRegister } from '@/lib/api/ticket-assignments'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -34,6 +23,17 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  getEventBySlug,
+  getEventCustomOptions,
+  getTicketPackages,
+  type PublicTicketCustomOption,
+} from '@/lib/api/events'
+import { assignTicket, selfRegister } from '@/lib/api/ticket-assignments'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Loader2, UserCheck } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
 type CustomResponseValue = string | string[] | boolean
 
@@ -351,8 +351,11 @@ export function SelfRegistrationFlow({
                         }
                       }}
                     >
-                      <SelectTrigger id='meal-selection'>
-                        <SelectValue placeholder='Select a meal option' />
+                      <SelectTrigger id='meal-selection' className='w-full'>
+                        <SelectValue
+                          className='block w-full truncate'
+                          placeholder='Select a meal option'
+                        />
                       </SelectTrigger>
                       <SelectContent>
                         {foodOptions.map((option) => (

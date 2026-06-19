@@ -84,6 +84,11 @@ class NPO(Base, UUIDMixin, TimestampMixin):
     # Contact Information
     tax_id: Mapped[str | None] = mapped_column(String(50), nullable=True)
     website_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    external_donate_now_url: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+        comment="External donation page URL used when FundrBolt donate-now is not configured",
+    )
     phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
 

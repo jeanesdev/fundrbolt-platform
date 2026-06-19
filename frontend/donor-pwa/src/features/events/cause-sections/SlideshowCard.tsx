@@ -1,17 +1,30 @@
-import type { PublicCauseSectionCard } from '@/lib/api/cause-section-cards'
 import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
+    Carousel,
+    CarouselContent,
+    CarouselItem,
+    CarouselNext,
+    CarouselPrevious,
 } from '@/components/ui/carousel'
+import type { PublicCauseSectionCard } from '@/lib/api/cause-section-cards'
+import Autoplay from 'embla-carousel-autoplay'
+import { useRef } from 'react'
 import { CauseSectionShell } from './CauseSectionShell'
 
 export function SlideshowCard({ card }: { card: PublicCauseSectionCard }) {
+  const autoplay = useRef(
+    Autoplay({ delay: 10_000, stopOnInteraction: true, stopOnMouseEnter: true })
+  )
+
   return (
     <CauseSectionShell card={card}>
       <Carousel
+        plugins={card.slides.length > 1 ? [autoplay.current] : undefined}
+        onMouseEnter={
+          card.slides.length > 1 ? autoplay.current.stop : undefined
+        }
+        onMouseLeave={
+          card.slides.length > 1 ? autoplay.current.reset : undefined
+        }
         opts={{ loop: card.slides.length > 1 }}
         className='mx-auto w-full'
       >

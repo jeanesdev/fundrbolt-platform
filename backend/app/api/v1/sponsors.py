@@ -4,9 +4,10 @@ import logging
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.database import get_db
 from app.middleware.auth import get_current_active_user
 from app.models.user import User
@@ -24,6 +25,7 @@ from app.services.sponsor_logo_service import SponsorLogoService
 from app.services.sponsor_service import SponsorService
 
 logger = logging.getLogger(__name__)
+settings = get_settings()
 
 router = APIRouter(prefix="/events/{event_id}/sponsors", tags=["events", "sponsors"])
 
@@ -353,6 +355,101 @@ async def confirm_logo_upload(
         db=db,
         sponsor_id=sponsor_id,
         logo_blob_name=sponsor.logo_blob_name,
+    )
+
+    return SponsorResponse(
+        id=updated_sponsor.id,
+        event_id=updated_sponsor.event_id,
+        name=updated_sponsor.name,
+        logo_url=updated_sponsor.logo_url,
+        logo_blob_name=updated_sponsor.logo_blob_name,
+        thumbnail_url=updated_sponsor.thumbnail_url,
+        thumbnail_blob_name=updated_sponsor.thumbnail_blob_name,
+        website_url=updated_sponsor.website_url,
+        logo_size=updated_sponsor.logo_size,
+        sponsor_level=updated_sponsor.sponsor_level,
+        contact_name=updated_sponsor.contact_name,
+        contact_email=updated_sponsor.contact_email,
+        contact_phone=updated_sponsor.contact_phone,
+        address_line1=updated_sponsor.address_line1,
+        address_line2=updated_sponsor.address_line2,
+        city=updated_sponsor.city,
+        state=updated_sponsor.state,
+        postal_code=updated_sponsor.postal_code,
+        country=updated_sponsor.country,
+        donation_amount=updated_sponsor.donation_amount,
+        notes=updated_sponsor.notes,
+        display_order=updated_sponsor.display_order,
+        created_at=updated_sponsor.created_at.isoformat(),
+        updated_at=updated_sponsor.updated_at.isoformat(),
+        created_by=updated_sponsor.created_by,
+    )
+
+
+@router.post(
+    "/{sponsor_id}/logo/upload",
+    response_model=SponsorResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def upload_logo_file(
+    event_id: uuid.UUID,
+    sponsor_id: uuid.UUID,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> SponsorResponse:
+    """
+    Upload/replace sponsor logo via backend multipart upload.
+
+    This avoids browser-to-blob upload failures (for example CORS/network issues)
+    by streaming the file through the backend.
+    """
+    # Verify event exists
+    event = await EventService.get_event_by_id(db, event_id)
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event with ID {event_id} not found",
+        )
+
+    # Verify sponsor exists and belongs to event
+    sponsor = await SponsorService.get_sponsor_by_id(db, sponsor_id, event_id)
+    if not sponsor:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sponsor not found",
+        )
+
+    file_content = await file.read()
+    file_name = file.filename or "logo.png"
+    file_type = file.content_type or "application/octet-stream"
+    file_size = len(file_content)
+
+    is_valid, error_msg = SponsorLogoService.validate_logo_file(file_type, file_size)
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error_msg,
+        )
+
+    logo_blob_name = SponsorLogoService.generate_blob_name(
+        npo_id=event.npo_id,
+        sponsor_id=sponsor_id,
+        file_name=file_name,
+    )
+
+    blob_service_client = SponsorLogoService._get_blob_client()
+    container_name = settings.azure_storage_container_name or "event-media"
+    blob_client = blob_service_client.get_blob_client(
+        container=container_name,
+        blob=logo_blob_name,
+    )
+    blob_client.upload_blob(file_content, overwrite=True)
+
+    updated_sponsor = await SponsorLogoService.confirm_upload(
+        db=db,
+        sponsor_id=sponsor_id,
+        logo_blob_name=logo_blob_name,
     )
 
     return SponsorResponse(

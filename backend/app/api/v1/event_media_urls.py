@@ -125,8 +125,8 @@ def resolve_event_card_thumbnail_url(event: Any) -> str | None:
         event,
         (
             EventMediaUsageTag.EVENT_LOGO_ICON.value,
-            EventMediaUsageTag.NPO_LOGO_ICON.value,
             EventMediaUsageTag.EVENT_LOGO.value,
+            EventMediaUsageTag.NPO_LOGO_ICON.value,
             EventMediaUsageTag.NPO_LOGO.value,
         ),
     )

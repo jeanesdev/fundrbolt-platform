@@ -10,7 +10,7 @@ import uuid
 from decimal import Decimal
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -33,12 +33,23 @@ from app.schemas.ticket_purchasing import (
     SelfRegisterResponse,
     TicketInventoryResponse,
 )
+from app.services.email_service import EmailSendError
 from app.services.ticket_assignment_service import TicketAssignmentService
 from app.services.ticket_invitation_service import TicketInvitationService
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["ticket-purchasing"])
+
+
+def _invitation_email_failure() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail={
+            "code": "INVITATION_EMAIL_FAILED",
+            "message": "Invitation email could not be sent. Please try again shortly.",
+        },
+    )
 
 
 # ── Assignment CRUD ───────────────────────────────────────────────────────
@@ -267,12 +278,15 @@ async def send_invitation(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ) -> InvitationSendResponse:
     """Send an invitation email for a ticket assignment."""
-    response = await TicketInvitationService.send_invitation(
-        db=db,
-        assignment_id=assignment_id,
-        personal_message=body.personal_message,
-        user_id=current_user.id,
-    )
+    try:
+        response = await TicketInvitationService.send_invitation(
+            db=db,
+            assignment_id=assignment_id,
+            personal_message=body.personal_message,
+            user_id=current_user.id,
+        )
+    except EmailSendError as exc:
+        raise _invitation_email_failure() from exc
     await db.commit()
     return response
 
@@ -287,10 +301,13 @@ async def resend_invitation(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ) -> InvitationSendResponse:
     """Resend the invitation email for a ticket assignment."""
-    response = await TicketInvitationService.resend_invitation(
-        db=db,
-        assignment_id=assignment_id,
-        user_id=current_user.id,
-    )
+    try:
+        response = await TicketInvitationService.resend_invitation(
+            db=db,
+            assignment_id=assignment_id,
+            user_id=current_user.id,
+        )
+    except EmailSendError as exc:
+        raise _invitation_email_failure() from exc
     await db.commit()
     return response

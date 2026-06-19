@@ -33,6 +33,12 @@ class RegisteredEventWithBranding(BaseModel):
     secondary_color: str = Field(default="#9333EA", description="Secondary branding color (hex)")
     background_color: str = Field(default="#FFFFFF", description="Background color (hex)")
     accent_color: str = Field(default="#3B82F6", description="Accent color (hex)")
+    action_card_background_style: str = Field(
+        default="gradient", description="Donor action card background style"
+    )
+    action_card_background_image_url: str | None = Field(
+        default=None, description="Optional image URL used for donor action card backgrounds"
+    )
 
     # NPO Info
     npo_name: str

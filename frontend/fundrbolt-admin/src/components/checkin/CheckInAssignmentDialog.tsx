@@ -1,7 +1,3 @@
-import { useEffect, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { checkinService } from '@/services/checkin-service'
-import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -13,11 +9,18 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { checkinService } from '@/services/checkin-service'
+import { useQuery } from '@tanstack/react-query'
+import { Loader2, Lock } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface CheckInAssignmentDialogProps {
   open: boolean
   eventId: string
   attendeeName: string
+  initialBidderNumber?: number | null
+  initialTableNumber?: number | null
+  requireEditToChange?: boolean
   onConfirm: (bidderNumber: number, tableNumber: number | null) => void
   onCancel: () => void
 }
@@ -26,11 +29,15 @@ export function CheckInAssignmentDialog({
   open,
   eventId,
   attendeeName,
+  initialBidderNumber,
+  initialTableNumber,
+  requireEditToChange = false,
   onConfirm,
   onCancel,
 }: CheckInAssignmentDialogProps) {
   const [bidderInput, setBidderInput] = useState('')
   const [tableInput, setTableInput] = useState('')
+  const [isEditingAssignments, setIsEditingAssignments] = useState(false)
 
   const { data, isPending, isFetching, isError, error, refetch } = useQuery({
     queryKey: ['next-assignment', eventId],
@@ -41,7 +48,7 @@ export function CheckInAssignmentDialog({
     refetchOnWindowFocus: false,
   })
 
-  // Pre-fill when data arrives — only if the user hasn't already typed anything
+  // Pre-fill suggestions when data arrives, but do not overwrite existing values.
   useEffect(() => {
     if (data) {
       setBidderInput((prev) =>
@@ -57,13 +64,25 @@ export function CheckInAssignmentDialog({
     }
   }, [data])
 
-  // Reset on close
+  // Initialize dialog values on open and reset on close.
   useEffect(() => {
+    if (open) {
+      setBidderInput(
+        initialBidderNumber != null ? String(initialBidderNumber) : ''
+      )
+      setTableInput(
+        initialTableNumber != null ? String(initialTableNumber) : ''
+      )
+      setIsEditingAssignments(!requireEditToChange)
+      return
+    }
+
     if (!open) {
       setBidderInput('')
       setTableInput('')
+      setIsEditingAssignments(false)
     }
-  }, [open])
+  }, [open, initialBidderNumber, initialTableNumber, requireEditToChange])
 
   const bidderNumber = parseInt(bidderInput, 10)
   const tableNumber = tableInput.trim() !== '' ? parseInt(tableInput, 10) : null
@@ -75,6 +94,7 @@ export function CheckInAssignmentDialog({
 
   const canSubmit = bidderValid && tableValid
   const isInitialLoading = open && isPending && !data
+  const assignmentsLocked = requireEditToChange && !isEditingAssignments
 
   const handleConfirm = () => {
     if (!canSubmit) return
@@ -104,6 +124,23 @@ export function CheckInAssignmentDialog({
             <span className='text-foreground font-medium'>{attendeeName}</span>
           </DialogDescription>
         </DialogHeader>
+
+        {requireEditToChange && (
+          <div className='flex items-center justify-between rounded-md border px-3 py-2 text-sm'>
+            <span className='text-muted-foreground'>
+              Existing bidder/table assignments are locked.
+            </span>
+            <Button
+              type='button'
+              size='sm'
+              variant='outline'
+              onClick={() => setIsEditingAssignments(true)}
+              disabled={isEditingAssignments}
+            >
+              {isEditingAssignments ? 'Editing Enabled' : 'Edit'}
+            </Button>
+          </div>
+        )}
 
         <div className='space-y-3 py-2'>
           {isInitialLoading && (
@@ -148,13 +185,19 @@ export function CheckInAssignmentDialog({
                   <span className='text-muted-foreground font-normal'>
                     (100-999)
                   </span>
+                  {assignmentsLocked && (
+                    <span className='text-muted-foreground ml-2 inline-flex items-center gap-1 text-xs font-normal'>
+                      <Lock className='h-3 w-3' />
+                      Locked
+                    </span>
+                  )}
                 </Label>
                 <Button
                   type='button'
                   variant='outline'
                   size='sm'
                   onClick={handleAutoAssignBidder}
-                  disabled={!data || isFetching}
+                  disabled={!data || isFetching || assignmentsLocked}
                 >
                   Auto Assign
                 </Button>
@@ -166,6 +209,7 @@ export function CheckInAssignmentDialog({
                 max={999}
                 value={bidderInput}
                 onChange={(e) => setBidderInput(e.target.value)}
+                disabled={assignmentsLocked}
                 className={
                   bidderInput && !bidderValid ? 'border-destructive' : ''
                 }
@@ -184,13 +228,19 @@ export function CheckInAssignmentDialog({
                   <span className='text-muted-foreground font-normal'>
                     (optional)
                   </span>
+                  {assignmentsLocked && (
+                    <span className='text-muted-foreground ml-2 inline-flex items-center gap-1 text-xs font-normal'>
+                      <Lock className='h-3 w-3' />
+                      Locked
+                    </span>
+                  )}
                 </Label>
                 <Button
                   type='button'
                   variant='outline'
                   size='sm'
                   onClick={handleAutoAssignTable}
-                  disabled={!data || isFetching}
+                  disabled={!data || isFetching || assignmentsLocked}
                 >
                   Auto Assign
                 </Button>
@@ -201,6 +251,7 @@ export function CheckInAssignmentDialog({
                 min={1}
                 value={tableInput}
                 onChange={(e) => setTableInput(e.target.value)}
+                disabled={assignmentsLocked}
                 placeholder='Auto assign if blank'
                 className={
                   tableInput && !tableValid ? 'border-destructive' : ''

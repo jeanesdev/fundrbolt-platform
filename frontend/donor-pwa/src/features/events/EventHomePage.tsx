@@ -1174,6 +1174,34 @@ export function EventHomePage() {
   const aboutEventHtml = renderMarkdownToSafeHtml(
     currentEvent.description ?? ''
   )
+  const actionCardBackground = useMemo(() => {
+    const style = currentEvent.action_card_background_style || 'gradient'
+
+    if (
+      style === 'image' &&
+      currentEvent.action_card_background_image_url?.trim()
+    ) {
+      return {
+        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${currentEvent.action_card_background_image_url})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }
+    }
+
+    if (style === 'solid') {
+      return {
+        background: 'rgb(var(--event-primary, 59, 130, 246))',
+      }
+    }
+
+    return {
+      background:
+        'linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)',
+    }
+  }, [
+    currentEvent.action_card_background_image_url,
+    currentEvent.action_card_background_style,
+  ])
 
   // ─── Tab content ─────────────────────────────────────────────────────────────
 
@@ -1308,9 +1336,7 @@ export function EventHomePage() {
             >
               <button
                 className='w-full rounded-2xl p-4 text-left transition-all hover:shadow-md active:scale-[0.98]'
-                style={{
-                  background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
-                }}
+                style={actionCardBackground}
               >
                 <div className='flex items-center gap-3'>
                   <Ticket className='h-5 w-5 text-white' />
@@ -1336,9 +1362,7 @@ export function EventHomePage() {
             >
               <button
                 className='w-full rounded-2xl p-4 text-left transition-all hover:shadow-md active:scale-[0.98]'
-                style={{
-                  background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
-                }}
+                style={actionCardBackground}
               >
                 <div className='flex items-center gap-3'>
                   <Ticket className='h-5 w-5 text-white' />
@@ -1357,9 +1381,7 @@ export function EventHomePage() {
             <button
               onClick={() => setActiveTab('auction')}
               className='w-full rounded-2xl p-4 text-left transition-all hover:shadow-md active:scale-[0.98]'
-              style={{
-                background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
-              }}
+              style={actionCardBackground}
             >
               <p className='text-lg font-black text-white'>
                 Browse Auction Items

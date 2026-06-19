@@ -19,6 +19,21 @@ def test_email_template_defaults_to_fundrbolt_logo() -> None:
     assert ">FundrBolt</h1>" not in html
 
 
+def test_email_template_header_logo_has_max_size_constraints() -> None:
+    """Header logo should include explicit max-size constraints for email clients."""
+    html = _create_email_html_template(
+        heading="Logo Size Test",
+        body_paragraphs=["Body copy"],
+        logo_url="https://cdn.example.com/some-very-large-logo.png",
+        logo_alt="Large Logo",
+    )
+
+    assert 'width="240"' in html
+    assert 'height="60"' in html
+    assert "max-width: 240px" in html
+    assert "max-height: 60px" in html
+
+
 @pytest.mark.asyncio
 async def test_send_welcome_email_includes_logo_in_html_body() -> None:
     """Welcome emails should render with the FundrBolt logo header."""
@@ -146,3 +161,48 @@ async def test_email_service_raises_when_real_delivery_is_unconfigured_in_stagin
             body="Use this link to reset your password.",
             email_type="password_reset",
         )
+
+
+@pytest.mark.asyncio
+async def test_ticket_assignment_invitation_retries_with_default_sender_when_branded_sender_fails() -> (
+    None
+):
+    """Ticket invite should fall back to default sender if branded sender is rejected."""
+    from app.services import email_service as email_module
+
+    service = EmailService()
+    calls: list[dict[str, str | None]] = []
+    default_sender = email_module.settings.email_from_address
+    default_sender_name = email_module.settings.email_from_name
+    sender_domain = default_sender.split("@")[-1]
+
+    async def fake_send(*args: object, **kwargs: str | None) -> bool:
+        calls.append(
+            {
+                "from_address": kwargs.get("from_address"),
+                "from_name": kwargs.get("from_name"),
+            }
+        )
+        if kwargs.get("from_address") != default_sender:
+            raise EmailSendError("sender rejected")
+        return True
+
+    service._send_email_with_retry = AsyncMock(side_effect=fake_send)  # type: ignore[method-assign]
+
+    await service.send_ticket_assignment_invitation_email(
+        to_email="guest@example.com",
+        guest_name="Guest",
+        event_name="Connect and Celebrate",
+        event_datetime_text="June 27, 2026 at 06:00 PM (America/New_York)",
+        venue_name="FundrBolt Hall",
+        venue_address="123 Main St",
+        invitation_url="https://app.fundrbolt.com/invitations/accept?token=abc",
+        inviter_name="Host User",
+        inviter_email="host@example.com",
+        npo_slug="silver-sponsor",
+    )
+
+    assert len(calls) == 2
+    assert calls[0]["from_address"] == f"silver-sponsor@{sender_domain}"
+    assert calls[1]["from_address"] == default_sender
+    assert calls[1]["from_name"] == default_sender_name

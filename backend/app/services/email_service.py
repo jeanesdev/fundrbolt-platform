@@ -155,7 +155,7 @@ def _create_email_html_template(
                               text-align: center;
                               border-top-left-radius: 8px;
                               border-top-right-radius: 8px;">
-                    <img src="{resolved_logo_url}" alt="{logo_alt}" style="height: 60px; width: auto; display: inline-block;" />
+                    <img src="{resolved_logo_url}" alt="{logo_alt}" width="240" height="60" style="display: inline-block; width: auto; height: auto; max-width: 240px; max-height: 60px; object-fit: contain;" />
                   </div>
                 </td>
               </tr>
@@ -694,15 +694,41 @@ Best regards,
             npo_name=npo_name,
         )
 
-        return await self._send_email_with_retry(
-            to_email,
-            subject,
-            body,
-            "ticket_assignment_invitation",
-            html_body,
-            from_address=sender_address,
-            from_name=sender_name,
-        )
+        try:
+            return await self._send_email_with_retry(
+                to_email,
+                subject,
+                body,
+                "ticket_assignment_invitation",
+                html_body,
+                from_address=sender_address,
+                from_name=sender_name,
+            )
+        except EmailSendError:
+            # Some providers reject dynamic local-part senders even when the domain
+            # is valid. Retry with the default verified sender before failing.
+            if sender_address == settings.email_from_address:
+                raise
+
+            logger.warning(
+                "Ticket invitation email failed with branded sender; retrying with default sender",
+                extra={
+                    "to": to_email,
+                    "event_name": event_name,
+                    "branded_sender": sender_address,
+                    "fallback_sender": settings.email_from_address,
+                },
+            )
+
+            return await self._send_email_with_retry(
+                to_email,
+                subject,
+                body,
+                "ticket_assignment_invitation",
+                html_body,
+                from_address=settings.email_from_address,
+                from_name=settings.email_from_name,
+            )
 
     async def send_ticket_registration_cancelled_email(
         self,

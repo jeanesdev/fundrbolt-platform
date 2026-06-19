@@ -2,12 +2,7 @@
  * NPOLegalAgreementModal component
  * Modal for accepting legal agreements before NPO submission
  */
-import { useState } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { consentService } from '@/services/consent-service'
-import { legalService } from '@/services/legal-service'
-import { Check, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
+import { LegalDocumentViewer } from '@/components/legal/legal-document-viewer'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -21,7 +16,12 @@ import {
 import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { LegalDocumentViewer } from '@/components/legal/legal-document-viewer'
+import { consentService } from '@/services/consent-service'
+import { legalService } from '@/services/legal-service'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { Check, Loader2 } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
 interface NPOLegalAgreementModalProps {
   open: boolean
@@ -94,7 +94,7 @@ export function NPOLegalAgreementModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className='flex max-h-[90vh] max-w-4xl flex-col'>
+      <DialogContent className='flex h-[90vh] max-h-[90vh] max-w-4xl flex-col overflow-hidden'>
         <DialogHeader>
           <DialogTitle>Legal Agreements Required</DialogTitle>
           <DialogDescription>
@@ -108,7 +108,7 @@ export function NPOLegalAgreementModal({
             <Loader2 className='text-muted-foreground h-8 w-8 animate-spin' />
           </div>
         ) : (
-          <ScrollArea className='flex-1 pr-4'>
+          <ScrollArea className='min-h-0 flex-1 pr-4'>
             <div className='space-y-6'>
               {/* Terms of Service */}
               {termsDocument && (

@@ -2,23 +2,6 @@
  * MediaUploader Component
  * Drag-and-drop file uploader with progress tracking
  */
-import { useCallback, useEffect, useId, useMemo, useState } from 'react'
-import type {
-  EventMedia,
-  EventMediaUsageTag,
-  MediaUpdateRequest,
-} from '@/types/event'
-import {
-  ArrowDown,
-  ArrowUp,
-  ChevronLeft,
-  ChevronRight,
-  FileImage,
-  Trash2,
-  Upload,
-  X,
-} from 'lucide-react'
-import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
@@ -34,6 +17,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import type {
+  EventMedia,
+  EventMediaUsageTag,
+  MediaUpdateRequest,
+} from '@/types/event'
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronLeft,
+  ChevronRight,
+  FileImage,
+  Trash2,
+  Upload,
+  X,
+} from 'lucide-react'
+import { useCallback, useEffect, useId, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
 interface MediaUploaderProps {
   media: EventMedia[]
@@ -117,16 +117,16 @@ export function MediaUploader({
     { value: 'main_event_page_hero', label: 'Main Event Page Hero' },
     { value: 'event_layout_map', label: 'Event Layout Map' },
     { value: 'npo_logo', label: 'NPO Logo Full' },
-    { value: 'npo_logo_icon', label: 'NPO Logo Icon' },
+    { value: 'npo_logo_icon', label: 'NPO Logo Icon (Square)' },
     { value: 'event_logo', label: 'Event Logo Full' },
-    { value: 'event_logo_icon', label: 'Event Logo Icon' },
+    { value: 'event_logo_icon', label: 'Event Logo Icon (Square)' },
   ]
 
   const uploadTagOptions =
     allowedUploadUsageTags && allowedUploadUsageTags.length > 0
       ? usageTagOptions.filter((option) =>
-          allowedUploadUsageTags.includes(option.value)
-        )
+        allowedUploadUsageTags.includes(option.value)
+      )
       : usageTagOptions
 
   const filteredMedia = media.filter(Boolean).filter((item) => {
@@ -373,9 +373,8 @@ export function MediaUploader({
     <div className='space-y-4'>
       {/* Upload Zone */}
       <Card
-        className={`border-2 border-dashed transition-colors ${
-          dragActive ? 'border-primary bg-primary/5' : 'border-muted'
-        }`}
+        className={`border-2 border-dashed transition-colors ${dragActive ? 'border-primary bg-primary/5' : 'border-muted'
+          }`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
@@ -395,7 +394,7 @@ export function MediaUploader({
           </p>
 
           {showUsageTagSelector && (
-            <div className='mb-4 w-full max-w-xs text-left'>
+            <div className='mb-4 w-full max-w-xs text-center'>
               <p className='text-muted-foreground mb-2 text-xs font-medium'>
                 Usage Tag
               </p>
@@ -405,8 +404,8 @@ export function MediaUploader({
                   setUploadUsageTag(value as EventMediaUsageTag)
                 }
               >
-                <SelectTrigger>
-                  <SelectValue />
+                <SelectTrigger className='justify-center text-center'>
+                  <SelectValue className='text-center' />
                 </SelectTrigger>
                 <SelectContent>
                   {uploadTagOptions.map((option) => (

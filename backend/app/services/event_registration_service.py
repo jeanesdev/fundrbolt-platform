@@ -339,6 +339,8 @@ class EventRegistrationService:
                     secondary_color=secondary_color,
                     background_color=background_color,
                     accent_color=accent_color,
+                    action_card_background_style=event.action_card_background_style or "gradient",
+                    action_card_background_image_url=event.action_card_background_image_url,
                     npo_name=npo.name if npo else "Unknown Organization",
                     npo_logo_url=npo_branding.logo_url if npo_branding else None,
                 )

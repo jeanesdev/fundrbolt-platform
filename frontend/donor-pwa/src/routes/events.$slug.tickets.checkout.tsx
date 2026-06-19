@@ -2,34 +2,7 @@
  * Multi-package Cart Checkout Route — /events/$slug/tickets/checkout
  * 4-step flow: Cart Review → Sponsorship Info (conditional) → Payment → Success
  */
-import { useEffect, useState } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import {
-  AlertTriangle,
-  ArrowLeft,
-  CheckCircle,
-  CreditCard,
-  Loader2,
-  Minus,
-  Plus,
-  ShoppingCart,
-  Tag,
-  Trash2,
-  X,
-} from 'lucide-react'
-import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import { useTicketCartStore } from '@/stores/ticket-cart-store'
-import { getEventBySlug } from '@/lib/api/events'
-import {
-  checkout,
-  validateCart,
-  type CartValidationResponse,
-  type CheckoutResponse,
-  type SponsorshipDetails,
-} from '@/lib/api/ticket-purchases'
-import { triggerCelebrationConfetti } from '@/lib/celebration-confetti'
+import { SponsorshipInfoForm } from '@/components/tickets/SponsorshipInfoForm'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -47,7 +20,34 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { SponsorshipInfoForm } from '@/components/tickets/SponsorshipInfoForm'
+import { getEventBySlug } from '@/lib/api/events'
+import {
+  checkout,
+  validateCart,
+  type CartValidationResponse,
+  type CheckoutResponse,
+  type SponsorshipDetails,
+} from '@/lib/api/ticket-purchases'
+import { triggerCelebrationConfetti } from '@/lib/celebration-confetti'
+import { useAuthStore } from '@/stores/auth-store'
+import { useTicketCartStore } from '@/stores/ticket-cart-store'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import {
+  AlertTriangle,
+  ArrowLeft,
+  CheckCircle,
+  CreditCard,
+  Loader2,
+  Minus,
+  Plus,
+  ShoppingCart,
+  Tag,
+  Trash2,
+  X,
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 export const Route = createFileRoute('/events/$slug/tickets/checkout')({
   component: TicketsCheckoutPage,
@@ -524,6 +524,7 @@ function TicketsCheckoutPage() {
         <Dialog open>
           <DialogContent
             className='max-w-sm'
+            showCloseButton={false}
             onPointerDownOutside={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => e.preventDefault()}
           >

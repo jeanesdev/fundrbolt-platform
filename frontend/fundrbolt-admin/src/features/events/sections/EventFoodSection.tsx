@@ -9,8 +9,12 @@ import { FoodOptionSelector } from '../components/FoodOptionSelector'
 import { useEventWorkspace } from '../useEventWorkspace'
 
 export function EventFoodSection() {
-  const { currentEvent, handleFoodOptionCreate, handleFoodOptionDelete } =
-    useEventWorkspace()
+  const {
+    currentEvent,
+    handleFoodOptionCreate,
+    handleFoodOptionUpdate,
+    handleFoodOptionDelete,
+  } = useEventWorkspace()
 
   return (
     <Card>
@@ -24,6 +28,7 @@ export function EventFoodSection() {
         <FoodOptionSelector
           options={currentEvent.food_options || []}
           onCreate={handleFoodOptionCreate}
+          onUpdate={handleFoodOptionUpdate}
           onDelete={handleFoodOptionDelete}
         />
       </CardContent>

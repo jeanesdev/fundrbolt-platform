@@ -15,6 +15,7 @@ import type {
   EventMediaUsageTag,
   EventUpdateRequest,
   FoodOptionCreateRequest,
+  FoodOptionUpdateRequest,
   MediaUpdateRequest,
 } from '@/types/event'
 import { Clock } from 'lucide-react'
@@ -51,6 +52,7 @@ export function EventEditPage() {
     createLink,
     deleteLink,
     createFoodOption,
+    updateFoodOption,
     deleteFoodOption,
     uploadProgress,
     uploadingFiles,
@@ -218,6 +220,20 @@ export function EventEditPage() {
     }
   }
 
+  const handleFoodOptionUpdate = async (
+    optionId: string,
+    data: FoodOptionUpdateRequest
+  ) => {
+    try {
+      await updateFoodOption(apiEventId, optionId, data)
+      toast.success('Food option updated successfully!')
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to update food option'
+      toast.error(message)
+    }
+  }
+
   if (loadError && !currentEvent) {
     return (
       <div className='flex h-96 flex-col items-center justify-center gap-4'>
@@ -266,6 +282,7 @@ export function EventEditPage() {
     handleLinkCreate,
     handleLinkDelete,
     handleFoodOptionCreate,
+    handleFoodOptionUpdate,
     handleFoodOptionDelete,
     updateEvent,
     loadEventById,

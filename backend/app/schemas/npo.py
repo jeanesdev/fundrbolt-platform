@@ -28,6 +28,7 @@ class NPOCreateRequest(BaseModel):
     mission_statement: str | None = Field(default=None, max_length=5000)
     tax_id: str | None = Field(default=None, max_length=50)
     website_url: HttpUrl | None = Field(default=None)
+    external_donate_now_url: HttpUrl | None = Field(default=None)
     phone: str | None = Field(default=None, max_length=20)
     email: EmailStr = Field(...)
     address: dict[str, str] | None = Field(
@@ -36,7 +37,7 @@ class NPOCreateRequest(BaseModel):
     )
     registration_number: str | None = Field(default=None, max_length=100)
 
-    @field_validator("website_url")
+    @field_validator("website_url", "external_donate_now_url")
     @classmethod
     def convert_url_to_string(cls, v: HttpUrl | None) -> str | None:
         """Convert HttpUrl to string for database storage."""
@@ -93,12 +94,13 @@ class NPOUpdateRequest(BaseModel):
     mission_statement: str | None = Field(default=None, max_length=5000)
     tax_id: str | None = Field(default=None, max_length=50)
     website_url: HttpUrl | None = Field(default=None)
+    external_donate_now_url: HttpUrl | None = Field(default=None)
     phone: str | None = Field(default=None, max_length=20)
     email: EmailStr | None = Field(default=None)
     address: dict[str, str] | None = Field(default=None)
     registration_number: str | None = Field(default=None, max_length=100)
 
-    @field_validator("website_url")
+    @field_validator("website_url", "external_donate_now_url")
     @classmethod
     def convert_url_to_string(cls, v: HttpUrl | None) -> str | None:
         """Convert HttpUrl to string for database storage."""
@@ -175,6 +177,7 @@ class NPOResponse(BaseModel):
     mission_statement: str | None
     tax_id: str | None
     website_url: str | None
+    external_donate_now_url: str | None
     phone: str | None
     email: str
     address: dict[str, str] | None
