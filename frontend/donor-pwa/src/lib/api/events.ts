@@ -39,6 +39,7 @@ export interface EventResponse {
   accent_color?: string | null
   action_card_background_style?: 'solid' | 'gradient' | 'image' | null
   action_card_background_image_url?: string | null
+  action_card_background_opacity?: number | null
   banner_url?: string | null
   hero_transition_style: string
   created_at: string
@@ -124,6 +125,7 @@ export interface EventDetailResponse extends EventResponse {
   accent_color: string | null
   action_card_background_style?: 'solid' | 'gradient' | 'image' | null
   action_card_background_image_url?: string | null
+  action_card_background_opacity?: number | null
   banner_url?: string | null
   hero_transition_style: string
   food_options: FoodOption[]

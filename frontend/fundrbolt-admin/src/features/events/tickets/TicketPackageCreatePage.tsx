@@ -2,7 +2,17 @@
  * Ticket Package Management - Create Page
  * Form for creating new ticket packages
  */
+import { useState } from 'react'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate, useParams } from '@tanstack/react-router'
+import { ArrowLeft } from 'lucide-react'
 import { packageImagesApi } from '@/api/packageImages'
+import apiClient from '@/lib/axios'
+import { getErrorMessage } from '@/lib/error-utils'
+import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -24,16 +34,6 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
-import { useToast } from '@/hooks/use-toast'
-import apiClient from '@/lib/axios'
-import { getErrorMessage } from '@/lib/error-utils'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import { ArrowLeft } from 'lucide-react'
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 import {
   DraftCustomOptionsEditor,
   type DraftCustomOption,

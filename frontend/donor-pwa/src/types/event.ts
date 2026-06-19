@@ -59,6 +59,7 @@ export interface Event {
   accent_color: string | null
   action_card_background_style?: ActionCardBackgroundStyle | null
   action_card_background_image_url?: string | null
+  action_card_background_opacity?: number | null
   hero_transition_style: HeroTransitionStyle
   status: EventStatus
   version: number
@@ -104,6 +105,7 @@ export interface EventCreateRequest {
   accent_color?: string
   action_card_background_style?: ActionCardBackgroundStyle
   action_card_background_image_url?: string
+  action_card_background_opacity?: number
 }
 
 export interface EventUpdateRequest {
@@ -128,6 +130,7 @@ export interface EventUpdateRequest {
   accent_color?: string
   action_card_background_style?: ActionCardBackgroundStyle
   action_card_background_image_url?: string
+  action_card_background_opacity?: number
   hero_transition_style?: HeroTransitionStyle
   version?: number
 }

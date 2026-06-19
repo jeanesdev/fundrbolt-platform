@@ -39,6 +39,9 @@ class RegisteredEventWithBranding(BaseModel):
     action_card_background_image_url: str | None = Field(
         default=None, description="Optional image URL used for donor action card backgrounds"
     )
+    action_card_background_opacity: float = Field(
+        default=1.0, description="Opacity for donor action card backgrounds"
+    )
 
     # NPO Info
     npo_name: str

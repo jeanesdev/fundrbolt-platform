@@ -1,4 +1,3 @@
-import apiClient from '@/lib/axios'
 import type {
   LogoUploadRequest,
   LogoUploadResponse,
@@ -8,6 +7,7 @@ import type {
   SponsorCreateResponse,
   SponsorUpdateRequest,
 } from '@/types/sponsor'
+import apiClient from '@/lib/axios'
 
 /**
  * Sponsor Service

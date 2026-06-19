@@ -1174,15 +1174,19 @@ export function EventHomePage() {
   const aboutEventHtml = renderMarkdownToSafeHtml(
     currentEvent.description ?? ''
   )
-  const actionCardBackground = useMemo(() => {
+  const actionCardBackground = (() => {
     const style = currentEvent.action_card_background_style || 'gradient'
+    const opacity = Math.max(
+      0,
+      Math.min(1, currentEvent.action_card_background_opacity ?? 1)
+    )
 
     if (
       style === 'image' &&
       currentEvent.action_card_background_image_url?.trim()
     ) {
       return {
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${currentEvent.action_card_background_image_url})`,
+        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), linear-gradient(rgba(255, 255, 255, ${1 - opacity}), rgba(255, 255, 255, ${1 - opacity})), url(${currentEvent.action_card_background_image_url})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }
@@ -1190,18 +1194,14 @@ export function EventHomePage() {
 
     if (style === 'solid') {
       return {
-        background: 'rgb(var(--event-primary, 59, 130, 246))',
+        background: `rgb(var(--event-primary, 59, 130, 246) / ${opacity})`,
       }
     }
 
     return {
-      background:
-        'linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)',
+      background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246) / ${opacity}) 0%, rgb(var(--event-secondary, 147, 51, 234) / ${opacity}) 100%)`,
     }
-  }, [
-    currentEvent.action_card_background_image_url,
-    currentEvent.action_card_background_style,
-  ])
+  })()
 
   // ─── Tab content ─────────────────────────────────────────────────────────────
 

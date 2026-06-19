@@ -2,7 +2,12 @@
  * NPOLegalAgreementModal component
  * Modal for accepting legal agreements before NPO submission
  */
-import { LegalDocumentViewer } from '@/components/legal/legal-document-viewer'
+import { useState } from 'react'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { consentService } from '@/services/consent-service'
+import { legalService } from '@/services/legal-service'
+import { Check, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -16,12 +21,7 @@ import {
 import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { consentService } from '@/services/consent-service'
-import { legalService } from '@/services/legal-service'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { Check, Loader2 } from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
+import { LegalDocumentViewer } from '@/components/legal/legal-document-viewer'
 
 interface NPOLegalAgreementModalProps {
   open: boolean

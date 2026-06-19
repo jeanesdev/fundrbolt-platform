@@ -11,6 +11,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     Enum,
+    Float,
     ForeignKey,
     Integer,
     Numeric,
@@ -252,6 +253,11 @@ class Event(Base, UUIDMixin, TimestampMixin):
         nullable=True,
         comment="Optional image URL used when donor action card background style is image",
     )
+    action_card_background_opacity: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+        comment="Opacity for donor action card backgrounds (0.0 transparent - 1.0 opaque)",
+    )
     hero_transition_style: Mapped[str] = mapped_column(
         String(32),
         nullable=False,
@@ -461,6 +467,10 @@ class Event(Base, UUIDMixin, TimestampMixin):
         CheckConstraint(
             "action_card_background_style IS NULL OR action_card_background_style IN ('solid', 'gradient', 'image')",
             name="check_action_card_background_style",
+        ),
+        CheckConstraint(
+            "action_card_background_opacity IS NULL OR (action_card_background_opacity >= 0 AND action_card_background_opacity <= 1)",
+            name="check_action_card_background_opacity",
         ),
     )
 

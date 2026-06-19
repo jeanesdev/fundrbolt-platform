@@ -1,3 +1,8 @@
+import { useMemo, useState } from 'react'
+import { z } from 'zod'
+import { useForm, useWatch } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Pencil, Plus, Trash2, X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -32,11 +37,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Pencil, Plus, Trash2, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { useForm, useWatch } from 'react-hook-form'
-import { z } from 'zod'
 
 const draftOptionSchema = z
   .object({
@@ -241,7 +241,7 @@ export function DraftCustomOptionsEditor({
                     {getOptionTypeBadge(option.option_type)}
                   </div>
                   {option.option_type === 'multi_select' &&
-                    option.choices?.length ? (
+                  option.choices?.length ? (
                     <div className='mt-2 flex flex-wrap gap-1'>
                       {option.choices.map((choice, idx) => (
                         <Badge key={idx} variant='outline' className='text-xs'>

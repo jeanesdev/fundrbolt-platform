@@ -57,6 +57,7 @@ export interface Event {
   accent_color: string | null
   action_card_background_style?: ActionCardBackgroundStyle | null
   action_card_background_image_url?: string | null
+  action_card_background_opacity?: number | null
   hero_transition_style: HeroTransitionStyle
   table_count: number | null
   max_guests_per_table: number | null
@@ -110,6 +111,7 @@ export interface EventCreateRequest {
   accent_color?: string
   action_card_background_style?: ActionCardBackgroundStyle
   action_card_background_image_url?: string
+  action_card_background_opacity?: number
   hero_transition_style?: HeroTransitionStyle
   table_count?: number | null
   max_guests_per_table?: number | null
@@ -140,6 +142,7 @@ export interface EventUpdateRequest {
   accent_color?: string
   action_card_background_style?: ActionCardBackgroundStyle
   action_card_background_image_url?: string
+  action_card_background_opacity?: number
   hero_transition_style?: HeroTransitionStyle
   table_count?: number | null
   max_guests_per_table?: number | null

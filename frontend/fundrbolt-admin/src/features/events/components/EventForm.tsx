@@ -2,6 +2,21 @@
  * EventForm Component
  * Comprehensive form for creating and editing events with all fields
  */
+import { useEffect, useRef, useState } from 'react'
+import { z } from 'zod'
+import { format, parse } from 'date-fns'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import type { NPOBranding } from '@/services/event-service'
+import type {
+  ActionCardBackgroundStyle,
+  EventCreateRequest,
+  EventDetail,
+  EventUpdateRequest,
+} from '@/types/event'
+import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
+import { CalendarIcon, MapPin } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Calendar as CalendarPicker } from '@/components/ui/calendar'
 import {
@@ -27,21 +42,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { cn } from '@/lib/utils'
-import type { NPOBranding } from '@/services/event-service'
-import type {
-  ActionCardBackgroundStyle,
-  EventCreateRequest,
-  EventDetail,
-  EventUpdateRequest,
-} from '@/types/event'
-import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { format, parse } from 'date-fns'
-import { CalendarIcon, MapPin } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 import { ColorPicker } from './ColorPicker.tsx'
 import { RichTextEditor } from './RichTextEditor.tsx'
 
@@ -70,6 +70,23 @@ const formatGoalCurrency = (value: number | null | undefined): string => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value)
+}
+
+const clampOpacity = (value: number | null | undefined): number => {
+  if (value === null || value === undefined || Number.isNaN(value)) return 1
+  return Math.max(0, Math.min(1, value))
+}
+
+const hexToRgba = (hex: string, alpha: number): string | null => {
+  const normalized = hex.trim()
+  const match = /^#([0-9A-Fa-f]{6})$/.exec(normalized)
+  if (!match) return null
+
+  const [, value] = match
+  const r = Number.parseInt(value.slice(0, 2), 16)
+  const g = Number.parseInt(value.slice(2, 4), 16)
+  const b = Number.parseInt(value.slice(4, 6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
 // Phone number formatting helper
@@ -150,6 +167,11 @@ const eventFormSchema = z.object({
     .url('Enter a valid image URL')
     .optional()
     .or(z.literal('')),
+  action_card_background_opacity: z
+    .number()
+    .min(0, 'Opacity must be at least 0%')
+    .max(1, 'Opacity cannot exceed 100%')
+    .optional(),
   table_count: z.number().nullable().optional(),
 })
 
@@ -241,6 +263,8 @@ export function EventForm({
         event?.action_card_background_style || 'gradient',
       action_card_background_image_url:
         event?.action_card_background_image_url || '',
+      action_card_background_opacity:
+        event?.action_card_background_opacity ?? 1,
       table_count: event?.table_count ?? null,
     },
   })
@@ -251,6 +275,9 @@ export function EventForm({
     form.watch('action_card_background_style') || 'gradient'
   const actionCardBackgroundImageUrl =
     form.watch('action_card_background_image_url') || ''
+  const actionCardBackgroundOpacity = clampOpacity(
+    form.watch('action_card_background_opacity')
+  )
 
   const generateSlug = (name: string): string => {
     return name
@@ -453,7 +480,7 @@ export function EventForm({
     if (
       style === 'gradient' &&
       primaryColorValue.trim().toLowerCase() ===
-      secondaryColorValue.trim().toLowerCase()
+        secondaryColorValue.trim().toLowerCase()
     ) {
       const restoreColor =
         lastDistinctSecondaryColor || secondaryColorValue || primaryColorValue
@@ -482,6 +509,9 @@ export function EventForm({
         values.action_card_background_style === 'image'
           ? values.action_card_background_image_url?.trim() || undefined
           : undefined,
+      action_card_background_opacity: clampOpacity(
+        values.action_card_background_opacity
+      ),
       live_auction_start_datetime: values.live_auction_start_datetime
         ? new Date(values.live_auction_start_datetime).toISOString()
         : null,
@@ -1612,6 +1642,36 @@ export function EventForm({
             />
           )}
 
+          <FormField
+            control={form.control}
+            name='action_card_background_opacity'
+            render={({ field }) => (
+              <FormItem>
+                <Label>
+                  Card Background Opacity (
+                  {Math.round(actionCardBackgroundOpacity * 100)}%)
+                </Label>
+                <FormControl>
+                  <Input
+                    type='range'
+                    min='0'
+                    max='1'
+                    step='0.05'
+                    value={field.value ?? 1}
+                    onChange={(event) => {
+                      const nextValue = Number(event.target.value)
+                      field.onChange(nextValue)
+                    }}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Controls how strong the action-card background appears.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           <div className='space-y-2'>
             <p className='text-muted-foreground text-xs'>
               Preview: donor action cards currently render as{' '}
@@ -1622,11 +1682,15 @@ export function EventForm({
               style={{
                 background:
                   actionCardBackgroundStyle === 'image' &&
-                    actionCardBackgroundImageUrl
-                    ? `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${actionCardBackgroundImageUrl})`
+                  actionCardBackgroundImageUrl
+                    ? `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), linear-gradient(rgba(255, 255, 255, ${1 - actionCardBackgroundOpacity}), rgba(255, 255, 255, ${1 - actionCardBackgroundOpacity})), url(${actionCardBackgroundImageUrl})`
                     : actionCardBackgroundStyle === 'solid'
-                      ? primaryColorValue || secondaryColorValue
-                      : `linear-gradient(135deg, ${primaryColorValue} 0%, ${secondaryColorValue} 100%)`,
+                      ? hexToRgba(
+                          primaryColorValue || secondaryColorValue,
+                          actionCardBackgroundOpacity
+                        ) ||
+                        `rgba(59, 130, 246, ${actionCardBackgroundOpacity})`
+                      : `linear-gradient(135deg, ${hexToRgba(primaryColorValue, actionCardBackgroundOpacity) || `rgba(59, 130, 246, ${actionCardBackgroundOpacity})`} 0%, ${hexToRgba(secondaryColorValue, actionCardBackgroundOpacity) || `rgba(147, 51, 234, ${actionCardBackgroundOpacity})`} 100%)`,
                 backgroundSize:
                   actionCardBackgroundStyle === 'image' ? 'cover' : undefined,
                 backgroundPosition:

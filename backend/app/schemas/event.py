@@ -65,6 +65,7 @@ class EventCreateRequest(BaseModel):
     accent_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     action_card_background_style: ActionCardBackgroundStyle | None = Field(default=None)
     action_card_background_image_url: str | None = Field(default=None, max_length=500)
+    action_card_background_opacity: float | None = Field(default=None, ge=0, le=1)
     hero_transition_style: HeroTransitionStyle = Field(
         default="documentary_style",
         pattern=r"^(documentary_style|fade|swipe|simple)$",
@@ -155,6 +156,7 @@ class EventUpdateRequest(BaseModel):
     accent_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     action_card_background_style: ActionCardBackgroundStyle | None = Field(default=None)
     action_card_background_image_url: str | None = Field(default=None, max_length=500)
+    action_card_background_opacity: float | None = Field(default=None, ge=0, le=1)
     hero_transition_style: HeroTransitionStyle | None = Field(
         default=None,
         pattern=r"^(documentary_style|fade|swipe|simple)$",
@@ -463,6 +465,7 @@ class EventDetailResponse(BaseModel):
     accent_color: str | None
     action_card_background_style: ActionCardBackgroundStyle | None = None
     action_card_background_image_url: str | None = None
+    action_card_background_opacity: float | None = None
     hero_transition_style: HeroTransitionStyle
     table_count: int | None = None
     max_guests_per_table: int | None = None
@@ -544,6 +547,7 @@ class EventPublicResponse(BaseModel):
     accent_color: str | None
     action_card_background_style: ActionCardBackgroundStyle | None = None
     action_card_background_image_url: str | None = None
+    action_card_background_opacity: float | None = None
     hero_transition_style: HeroTransitionStyle
     media: list[EventMediaResponse]
     links: list[EventLinkResponse]
