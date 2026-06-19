@@ -213,6 +213,13 @@ const npoFormSchema = z.object({
     })
     .optional()
     .or(z.literal('')),
+  external_donate_now_url: z
+    .string()
+    .refine((value) => !value || isValidUrl(value), {
+      message: 'Please enter a valid URL (e.g., donate.yourorg.org)',
+    })
+    .optional()
+    .or(z.literal('')),
   phone: z
     .string()
     .max(20, 'Phone must not exceed 20 characters')
@@ -269,6 +276,9 @@ export function NPOCreationForm({
   // Validation state for real-time feedback
   const [emailError, setEmailError] = useState<string | null>(null)
   const [websiteError, setWebsiteError] = useState<string | null>(null)
+  const [externalDonateError, setExternalDonateError] = useState<string | null>(
+    null
+  )
 
   // Google Places Autocomplete
   const addressInputRef = useRef<HTMLInputElement>(null)
@@ -303,6 +313,7 @@ export function NPOCreationForm({
       description: defaultValues?.description || '',
       mission_statement: defaultValues?.mission_statement || '',
       website_url: defaultValues?.website_url || '',
+      external_donate_now_url: defaultValues?.external_donate_now_url || '',
       phone: defaultValues?.phone || '',
       tax_id: defaultValues?.tax_id || '',
       registration_number: defaultValues?.registration_number || '',
@@ -466,6 +477,11 @@ export function NPOCreationForm({
     }
     if (values.website_url?.trim()) {
       cleanData.website_url = normalizeWebsiteUrl(values.website_url)
+    }
+    if (values.external_donate_now_url?.trim()) {
+      cleanData.external_donate_now_url = normalizeWebsiteUrl(
+        values.external_donate_now_url
+      )
     }
     if (values.phone?.trim()) {
       cleanData.phone = values.phone.trim()
@@ -684,6 +700,47 @@ export function NPOCreationForm({
                     <p className='flex items-center gap-1 text-xs text-red-500'>
                       <AlertCircle className='h-3 w-3' />
                       {websiteError}
+                    </p>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='external_donate_now_url'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>External Donate Now URL</FormLabel>
+                  <FormControl>
+                    <Input
+                      type='text'
+                      placeholder='donate.yourorg.org'
+                      {...field}
+                      onBlur={(e) => {
+                        field.onBlur()
+                        const value = e.target.value
+                        if (value && !isValidUrl(value)) {
+                          setExternalDonateError(
+                            'Please enter a valid external donation URL'
+                          )
+                        } else {
+                          setExternalDonateError(null)
+                        }
+                      }}
+                      className={externalDonateError ? 'border-red-500' : ''}
+                      disabled={isLoading}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Optional fallback used when your FundrBolt Donate Now page
+                    is not configured.
+                  </FormDescription>
+                  {externalDonateError && (
+                    <p className='flex items-center gap-1 text-xs text-red-500'>
+                      <AlertCircle className='h-3 w-3' />
+                      {externalDonateError}
                     </p>
                   )}
                   <FormMessage />

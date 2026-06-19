@@ -415,6 +415,8 @@ class EventService:
             secondary_color=source_event.secondary_color,
             background_color=source_event.background_color,
             accent_color=source_event.accent_color,
+            action_card_background_style=source_event.action_card_background_style,
+            action_card_background_image_url=source_event.action_card_background_image_url,
             hero_transition_style=source_event.hero_transition_style,
             table_count=source_event.table_count,
             max_guests_per_table=source_event.max_guests_per_table,

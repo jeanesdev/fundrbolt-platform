@@ -2,15 +2,6 @@
  * SponsorForm
  * Form for creating or editing a sponsor with logo upload
  */
-import { useEffect, useRef, useState } from 'react'
-import {
-  LogoSize,
-  type Sponsor,
-  type SponsorCreateRequest,
-  type SponsorUpdateRequest,
-} from '@/types/sponsor'
-import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
-import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -22,6 +13,15 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  LogoSize,
+  type Sponsor,
+  type SponsorCreateRequest,
+  type SponsorUpdateRequest,
+} from '@/types/sponsor'
+import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
+import { X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 // US States for dropdown
 const US_STATES = [
@@ -138,12 +138,27 @@ const isValidEmail = (email: string): boolean => {
 
 const isValidUrl = (url: string): boolean => {
   if (!url) return true // Empty is valid (optional field)
+
+  const trimmed = url.trim()
+  const candidate = /^https?:\/\//i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`
+
   try {
-    const urlObj = new URL(url)
+    const urlObj = new URL(candidate)
     return urlObj.protocol === 'http:' || urlObj.protocol === 'https:'
   } catch {
     return false
   }
+}
+
+const normalizeWebsiteUrl = (url: string): string => {
+  if (!url) return ''
+
+  const trimmed = url.trim()
+  if (!trimmed) return ''
+
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
 }
 
 const isValidPostalCode = (postalCode: string): boolean => {
@@ -324,7 +339,7 @@ export function SponsorForm({
 
   const handleWebsiteBlur = () => {
     if (formData.website_url && !isValidUrl(formData.website_url)) {
-      setWebsiteError('Please enter a valid URL (e.g., https://example.com)')
+      setWebsiteError('Please enter a valid URL (e.g., example.com)')
     } else {
       setWebsiteError(null)
     }
@@ -359,7 +374,7 @@ export function SponsorForm({
     let hasErrors = false
 
     if (formData.website_url && !isValidUrl(formData.website_url)) {
-      setWebsiteError('Please enter a valid URL (e.g., https://example.com)')
+      setWebsiteError('Please enter a valid URL (e.g., example.com)')
       hasErrors = true
     }
 
@@ -378,48 +393,50 @@ export function SponsorForm({
       return
     }
 
+    const normalizedWebsiteUrl = normalizeWebsiteUrl(formData.website_url)
+
     const data = isEdit
       ? ({
-          name: formData.name || undefined,
-          website_url: formData.website_url || null,
-          logo_size: formData.logo_size,
-          sponsor_level: formData.sponsor_level || null,
-          contact_name: formData.contact_name || null,
-          contact_email: formData.contact_email || null,
-          contact_phone: formData.contact_phone || null,
-          address_line1: formData.address_line1 || null,
-          address_line2: formData.address_line2 || null,
-          city: formData.city || null,
-          state: formData.state || null,
-          postal_code: formData.postal_code || null,
-          country: formData.country || null,
-          donation_amount: formData.donation_amount
-            ? parseFloat(formData.donation_amount)
-            : null,
-          notes: formData.notes || null,
-        } as SponsorUpdateRequest)
+        name: formData.name || undefined,
+        website_url: normalizedWebsiteUrl || null,
+        logo_size: formData.logo_size,
+        sponsor_level: formData.sponsor_level || null,
+        contact_name: formData.contact_name || null,
+        contact_email: formData.contact_email || null,
+        contact_phone: formData.contact_phone || null,
+        address_line1: formData.address_line1 || null,
+        address_line2: formData.address_line2 || null,
+        city: formData.city || null,
+        state: formData.state || null,
+        postal_code: formData.postal_code || null,
+        country: formData.country || null,
+        donation_amount: formData.donation_amount
+          ? parseFloat(formData.donation_amount)
+          : null,
+        notes: formData.notes || null,
+      } as SponsorUpdateRequest)
       : ({
-          name: formData.name,
-          logo_file_name: logoFile?.name || 'logo.png',
-          logo_file_type: logoFile?.type || 'image/png',
-          logo_file_size: logoFile?.size || 0,
-          website_url: formData.website_url || undefined,
-          logo_size: formData.logo_size,
-          sponsor_level: formData.sponsor_level || undefined,
-          contact_name: formData.contact_name || undefined,
-          contact_email: formData.contact_email || undefined,
-          contact_phone: formData.contact_phone || undefined,
-          address_line1: formData.address_line1 || undefined,
-          address_line2: formData.address_line2 || undefined,
-          city: formData.city || undefined,
-          state: formData.state || undefined,
-          postal_code: formData.postal_code || undefined,
-          country: formData.country || undefined,
-          donation_amount: formData.donation_amount
-            ? parseFloat(formData.donation_amount)
-            : undefined,
-          notes: formData.notes || undefined,
-        } as SponsorCreateRequest)
+        name: formData.name,
+        logo_file_name: logoFile?.name || 'logo.png',
+        logo_file_type: logoFile?.type || 'image/png',
+        logo_file_size: logoFile?.size || 0,
+        website_url: normalizedWebsiteUrl || undefined,
+        logo_size: formData.logo_size,
+        sponsor_level: formData.sponsor_level || undefined,
+        contact_name: formData.contact_name || undefined,
+        contact_email: formData.contact_email || undefined,
+        contact_phone: formData.contact_phone || undefined,
+        address_line1: formData.address_line1 || undefined,
+        address_line2: formData.address_line2 || undefined,
+        city: formData.city || undefined,
+        state: formData.state || undefined,
+        postal_code: formData.postal_code || undefined,
+        country: formData.country || undefined,
+        donation_amount: formData.donation_amount
+          ? parseFloat(formData.donation_amount)
+          : undefined,
+        notes: formData.notes || undefined,
+      } as SponsorCreateRequest)
 
     await onSubmit(data, logoFile || undefined)
   }
@@ -489,14 +506,14 @@ export function SponsorForm({
           <Label htmlFor='website_url'>Website URL</Label>
           <Input
             id='website_url'
-            type='url'
+            type='text'
             value={formData.website_url}
             onChange={(e) =>
               setFormData({ ...formData, website_url: e.target.value })
             }
             onBlur={handleWebsiteBlur}
             disabled={isSubmitting}
-            placeholder='https://example.com'
+            placeholder='example.com'
             className={websiteError ? 'border-red-500' : ''}
           />
           {websiteError && (
@@ -546,14 +563,14 @@ export function SponsorForm({
           <Input
             id='donation_amount'
             type='number'
-            step='0.01'
+            step='100'
             min='0'
             value={formData.donation_amount}
             onChange={(e) =>
               setFormData({ ...formData, donation_amount: e.target.value })
             }
             disabled={isSubmitting}
-            placeholder='5000.00'
+            placeholder='5000'
           />
         </div>
       </div>

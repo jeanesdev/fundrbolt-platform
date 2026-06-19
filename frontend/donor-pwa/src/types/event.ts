@@ -15,6 +15,7 @@ export type HeroTransitionStyle =
   | 'fade'
   | 'swipe'
   | 'simple'
+export type ActionCardBackgroundStyle = 'solid' | 'gradient' | 'image'
 export type EventMediaUsageTag =
   | 'main_event_page_hero'
   | 'event_layout_map'
@@ -56,6 +57,8 @@ export interface Event {
   secondary_color: string | null
   background_color: string | null
   accent_color: string | null
+  action_card_background_style?: ActionCardBackgroundStyle | null
+  action_card_background_image_url?: string | null
   hero_transition_style: HeroTransitionStyle
   status: EventStatus
   version: number
@@ -99,6 +102,8 @@ export interface EventCreateRequest {
   secondary_color?: string
   background_color?: string
   accent_color?: string
+  action_card_background_style?: ActionCardBackgroundStyle
+  action_card_background_image_url?: string
 }
 
 export interface EventUpdateRequest {
@@ -121,6 +126,8 @@ export interface EventUpdateRequest {
   secondary_color?: string
   background_color?: string
   accent_color?: string
+  action_card_background_style?: ActionCardBackgroundStyle
+  action_card_background_image_url?: string
   hero_transition_style?: HeroTransitionStyle
   version?: number
 }

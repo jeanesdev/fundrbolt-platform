@@ -7,6 +7,7 @@ import type {
   EventMediaUsageTag,
   EventUpdateRequest,
   FoodOptionCreateRequest,
+  FoodOptionUpdateRequest,
   MediaUpdateRequest,
 } from '@/types/event'
 
@@ -31,6 +32,10 @@ export interface EventWorkspaceContextValue {
   handleLinkCreate: (data: EventLinkCreateRequest) => Promise<void>
   handleLinkDelete: (linkId: string) => Promise<void>
   handleFoodOptionCreate: (data: FoodOptionCreateRequest) => Promise<void>
+  handleFoodOptionUpdate: (
+    optionId: string,
+    data: FoodOptionUpdateRequest
+  ) => Promise<void>
   handleFoodOptionDelete: (optionId: string) => Promise<void>
   updateEvent: (eventId: string, data: EventUpdateRequest) => Promise<unknown>
   loadEventById: (eventId: string) => Promise<void>

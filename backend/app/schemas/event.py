@@ -3,13 +3,14 @@
 import re
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, HttpUrl, field_validator
 
 from app.models.event import EventLinkType, EventMediaStatus, EventMediaUsageTag, EventStatus
 
 HeroTransitionStyle = str
+ActionCardBackgroundStyle = Literal["solid", "gradient", "image"]
 
 # ================================
 # Request Schemas
@@ -62,6 +63,8 @@ class EventCreateRequest(BaseModel):
     secondary_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     background_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     accent_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
+    action_card_background_style: ActionCardBackgroundStyle | None = Field(default=None)
+    action_card_background_image_url: str | None = Field(default=None, max_length=500)
     hero_transition_style: HeroTransitionStyle = Field(
         default="documentary_style",
         pattern=r"^(documentary_style|fade|swipe|simple)$",
@@ -150,6 +153,8 @@ class EventUpdateRequest(BaseModel):
     secondary_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     background_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     accent_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
+    action_card_background_style: ActionCardBackgroundStyle | None = Field(default=None)
+    action_card_background_image_url: str | None = Field(default=None, max_length=500)
     hero_transition_style: HeroTransitionStyle | None = Field(
         default=None,
         pattern=r"^(documentary_style|fade|swipe|simple)$",
@@ -403,6 +408,7 @@ class EventSummaryResponse(BaseModel):
     npo_id: uuid.UUID
     npo_name: str | None
     npo_slug: str | None = None
+    external_donate_now_url: str | None = None
     name: str
     slug: str
     tagline: str | None
@@ -430,6 +436,7 @@ class EventDetailResponse(BaseModel):
     npo_id: uuid.UUID
     npo_name: str | None = None  # Set after validation from npo relationship
     npo_slug: str | None = None
+    external_donate_now_url: str | None = None
     name: str
     slug: str
     tagline: str | None
@@ -454,6 +461,8 @@ class EventDetailResponse(BaseModel):
     secondary_color: str | None
     background_color: str | None
     accent_color: str | None
+    action_card_background_style: ActionCardBackgroundStyle | None = None
+    action_card_background_image_url: str | None = None
     hero_transition_style: HeroTransitionStyle
     table_count: int | None = None
     max_guests_per_table: int | None = None
@@ -533,6 +542,8 @@ class EventPublicResponse(BaseModel):
     secondary_color: str | None
     background_color: str | None
     accent_color: str | None
+    action_card_background_style: ActionCardBackgroundStyle | None = None
+    action_card_background_image_url: str | None = None
     hero_transition_style: HeroTransitionStyle
     media: list[EventMediaResponse]
     links: list[EventLinkResponse]

@@ -271,15 +271,15 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   // Grouped nav: Event, Guests, Auctions
   const eventNavGroups: EventNavGroup[] = selectedEventId
     ? EVENT_NAV_GROUPS.filter((group) => {
-        // Only show Auctioneer section for auctioneers and super admins
-        if (group.title === 'Auctioneer') {
-          return isAuctioneer || isSuperAdmin
-        }
-        return true
-      }).map((group) => ({
-        title: group.title,
-        items: group.sections.map(buildEventNavItem),
-      }))
+      // Only show Auctioneer section for auctioneers and super admins
+      if (group.title === 'Auctioneer') {
+        return isAuctioneer || isSuperAdmin
+      }
+      return true
+    }).map((group) => ({
+      title: group.title,
+      items: group.sections.map(buildEventNavItem),
+    }))
     : []
 
   const eventNavTitle = selectedEventId
@@ -292,35 +292,35 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
     isSuperAdmin || isNpoAdmin
       ? effectiveNpoSlug
         ? {
-            title: 'Donate',
-            items: [
-              {
-                title: 'Dashboard',
-                href: `/npos/${effectiveNpoSlug}/donate-now/dashboard`,
-                icon: 'BarChart3',
-              },
-              {
-                title: 'Setup',
-                href: `/npos/${effectiveNpoSlug}/donate-now/setup`,
-                icon: 'Settings',
-              },
-              {
-                title: 'Support Wall',
-                href: `/npos/${effectiveNpoSlug}/donate-now/wall`,
-                icon: 'MessageSquare',
-              },
-            ],
-          }
+          title: 'Donate',
+          items: [
+            {
+              title: 'Dashboard',
+              href: `/npos/${effectiveNpoSlug}/donate-now/dashboard`,
+              icon: 'BarChart3',
+            },
+            {
+              title: 'Setup',
+              href: `/npos/${effectiveNpoSlug}/donate-now/setup`,
+              icon: 'Settings',
+            },
+            {
+              title: 'Support Wall',
+              href: `/npos/${effectiveNpoSlug}/donate-now/wall`,
+              icon: 'MessageSquare',
+            },
+          ],
+        }
         : {
-            title: 'Donate',
-            items: [
-              {
-                title: 'Select an organization first',
-                href: '/npos',
-                icon: 'Building2',
-              },
-            ],
-          }
+          title: 'Donate',
+          items: [
+            {
+              title: 'Select an organization first',
+              href: '/npos',
+              icon: 'Building2',
+            },
+          ],
+        }
       : null
 
   return {
@@ -352,13 +352,13 @@ const EVENT_SECTION_CONFIG: EventSectionConfig[] = [
   { title: 'Event Dashboard', path: 'dashboard', icon: 'BarChart3' },
   { title: 'Donor Dashboard', path: 'donor-dashboard', icon: 'HeartHandshake' },
   { title: 'Auction Dashboard', path: 'auction-dashboard', icon: 'Gavel' },
-  { title: 'Details', path: 'details', icon: 'FileText' },
+  { title: 'Event Details', path: 'details', icon: 'FileText' },
+  { title: 'Images & Video', path: 'media', icon: 'Image', statKey: 'media_count' },
   { title: 'Planning Checklist', path: 'checklist', icon: 'ClipboardList' },
-  { title: 'Survey', path: 'survey', icon: 'MessageSquare' },
+  { title: 'Guest Survey', path: 'survey', icon: 'MessageSquare' },
   { title: 'Run of Show', path: 'run-of-show', icon: 'CalendarClock' },
-  { title: 'Preview', path: 'preview', icon: 'Eye' },
-  { title: 'Media', path: 'media', icon: 'Image', statKey: 'media_count' },
-  { title: 'Links', path: 'links', icon: 'Link2', statKey: 'links_count' },
+  { title: 'Preview Event', path: 'preview', icon: 'Eye' },
+  { title: 'Event Links', path: 'links', icon: 'Link2', statKey: 'links_count' },
   {
     title: 'Food Options',
     path: 'food',
@@ -374,7 +374,7 @@ const EVENT_SECTION_CONFIG: EventSectionConfig[] = [
   },
   { title: 'Check-in', path: 'checkin', icon: 'ClipboardCheck' },
   { title: 'Seating', path: 'seating', icon: 'LayoutGrid' },
-  { title: 'Tickets', path: 'tickets', icon: 'Ticket' },
+  { title: 'Event Tickets', path: 'tickets', icon: 'Ticket' },
   {
     title: 'Ticket Sales',
     path: 'tickets/sales',
@@ -386,7 +386,7 @@ const EVENT_SECTION_CONFIG: EventSectionConfig[] = [
     icon: 'Tag',
   },
   {
-    title: 'Sponsors',
+    title: 'Sponsorships',
     path: 'sponsors',
     icon: 'Award',
     statKey: 'sponsors_count',
@@ -408,7 +408,7 @@ const EVENT_SECTION_CONFIG: EventSectionConfig[] = [
     icon: 'Zap',
   },
   {
-    title: 'Notifications',
+    title: 'Event Notifications',
     path: 'notifications',
     icon: 'Bell',
   },
@@ -451,54 +451,54 @@ const EVENT_NAV_GROUPS: Array<{
   title: string
   sections: EventSectionConfig[]
 }> = [
-  {
-    title: 'Event',
-    sections: [
-      sectionByPath('preview'),
-      sectionByPath('details'),
-      sectionByPath('checklist'),
-      sectionByPath('run-of-show'),
-      sectionByPath('survey'),
-      sectionByPath('media'),
-      sectionByPath('links'),
-      sectionByPath('food'),
-      sectionByPath('tickets'),
-      sectionByPath('tickets/sales'),
-      sectionByPath('tickets/promos'),
-      sectionByPath('sponsors'),
-      sectionByPath('notifications'),
-    ],
-  },
-  {
-    title: 'Guests',
-    sections: [
-      sectionByPath('registrations'),
-      sectionByPath('checkin'),
-      sectionByPath('seating'),
-    ],
-  },
-  {
-    title: 'Auctions',
-    sections: [
-      sectionByPath('auction-items'),
-      sectionByPath('auction-bids'),
-      sectionByPath('quick-entry'),
-    ],
-  },
-  {
-    title: 'Finance',
-    sections: [sectionByPath('checkout')],
-  },
-  {
-    title: 'Data',
-    sections: [
-      sectionByPath('dashboard'),
-      sectionByPath('donor-dashboard'),
-      sectionByPath('auction-dashboard'),
-    ],
-  },
-  {
-    title: 'Auctioneer',
-    sections: [sectionByPath('auctioneer')],
-  },
-]
+    {
+      title: 'Event',
+      sections: [
+        sectionByPath('preview'),
+        sectionByPath('details'),
+        sectionByPath('media'),
+        sectionByPath('checklist'),
+        sectionByPath('run-of-show'),
+        sectionByPath('survey'),
+        sectionByPath('links'),
+        sectionByPath('food'),
+        sectionByPath('tickets'),
+        sectionByPath('tickets/sales'),
+        sectionByPath('tickets/promos'),
+        sectionByPath('sponsors'),
+        sectionByPath('notifications'),
+      ],
+    },
+    {
+      title: 'Guests',
+      sections: [
+        sectionByPath('registrations'),
+        sectionByPath('checkin'),
+        sectionByPath('seating'),
+      ],
+    },
+    {
+      title: 'Auctions',
+      sections: [
+        sectionByPath('auction-items'),
+        sectionByPath('auction-bids'),
+        sectionByPath('quick-entry'),
+      ],
+    },
+    {
+      title: 'Finance',
+      sections: [sectionByPath('checkout')],
+    },
+    {
+      title: 'Data',
+      sections: [
+        sectionByPath('dashboard'),
+        sectionByPath('donor-dashboard'),
+        sectionByPath('auction-dashboard'),
+      ],
+    },
+    {
+      title: 'Auctioneer',
+      sections: [sectionByPath('auctioneer')],
+    },
+  ]

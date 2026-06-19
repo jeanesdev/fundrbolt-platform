@@ -2,20 +2,6 @@
  * EventForm Component
  * Comprehensive form for creating and editing events with all fields
  */
-import { useEffect, useRef, useState } from 'react'
-import { z } from 'zod'
-import { format, parse } from 'date-fns'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import type { NPOBranding } from '@/services/event-service'
-import type {
-  EventCreateRequest,
-  EventDetail,
-  EventUpdateRequest,
-} from '@/types/event'
-import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
-import { CalendarIcon, MapPin } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Calendar as CalendarPicker } from '@/components/ui/calendar'
 import {
@@ -41,6 +27,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { cn } from '@/lib/utils'
+import type { NPOBranding } from '@/services/event-service'
+import type {
+  ActionCardBackgroundStyle,
+  EventCreateRequest,
+  EventDetail,
+  EventUpdateRequest,
+} from '@/types/event'
+import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { format, parse } from 'date-fns'
+import { CalendarIcon, MapPin } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 import { ColorPicker } from './ColorPicker.tsx'
 import { RichTextEditor } from './RichTextEditor.tsx'
 
@@ -141,6 +142,14 @@ const eventFormSchema = z.object({
   secondary_color: z.string().optional(),
   background_color: z.string().optional(),
   accent_color: z.string().optional(),
+  action_card_background_style: z
+    .enum(['solid', 'gradient', 'image'])
+    .optional(),
+  action_card_background_image_url: z
+    .string()
+    .url('Enter a valid image URL')
+    .optional()
+    .or(z.literal('')),
   table_count: z.number().nullable().optional(),
 })
 
@@ -185,6 +194,10 @@ export function EventForm({
   )
   const [lastYearTotalInputValue, setLastYearTotalInputValue] =
     useState<string>(formatGoalCurrency(event?.last_year_total ?? null))
+  const [lastDistinctSecondaryColor, setLastDistinctSecondaryColor] =
+    useState<string>(
+      event?.secondary_color || npoBranding?.secondary_color || ''
+    )
 
   // Initialize form with existing event data or NPO branding defaults
   const form = useForm<EventFormValues>({
@@ -224,9 +237,20 @@ export function EventForm({
       background_color:
         event?.background_color || npoBranding?.background_color || '',
       accent_color: event?.accent_color || npoBranding?.accent_color || '',
+      action_card_background_style:
+        event?.action_card_background_style || 'gradient',
+      action_card_background_image_url:
+        event?.action_card_background_image_url || '',
       table_count: event?.table_count ?? null,
     },
   })
+
+  const primaryColorValue = form.watch('primary_color') || ''
+  const secondaryColorValue = form.watch('secondary_color') || ''
+  const actionCardBackgroundStyle =
+    form.watch('action_card_background_style') || 'gradient'
+  const actionCardBackgroundImageUrl =
+    form.watch('action_card_background_image_url') || ''
 
   const generateSlug = (name: string): string => {
     return name
@@ -394,10 +418,53 @@ export function EventForm({
           }
         }
       }
+
+      if (name === 'secondary_color' || name === 'primary_color') {
+        const primary = (values.primary_color || '').trim().toLowerCase()
+        const secondary = (values.secondary_color || '').trim()
+        if (secondary && secondary.toLowerCase() !== primary) {
+          setLastDistinctSecondaryColor(secondary)
+        }
+      }
     })
 
     return () => subscription.unsubscribe()
   }, [form])
+
+  const handleActionCardBackgroundStyleChange = (
+    style: ActionCardBackgroundStyle
+  ) => {
+    form.setValue('action_card_background_style', style, {
+      shouldDirty: true,
+      shouldValidate: true,
+    })
+
+    if (style === 'solid') {
+      const solidColor = primaryColorValue || secondaryColorValue
+      if (solidColor) {
+        form.setValue('secondary_color', solidColor, {
+          shouldDirty: true,
+          shouldValidate: true,
+        })
+      }
+      return
+    }
+
+    if (
+      style === 'gradient' &&
+      primaryColorValue.trim().toLowerCase() ===
+      secondaryColorValue.trim().toLowerCase()
+    ) {
+      const restoreColor =
+        lastDistinctSecondaryColor || secondaryColorValue || primaryColorValue
+      if (restoreColor) {
+        form.setValue('secondary_color', restoreColor, {
+          shouldDirty: true,
+          shouldValidate: true,
+        })
+      }
+    }
+  }
 
   const handleSubmit = async (values: EventFormValues) => {
     const baseData = {
@@ -409,6 +476,12 @@ export function EventForm({
       table_count: values.table_count,
       fundraising_goal: values.fundraising_goal ?? null,
       last_year_total: values.last_year_total ?? null,
+      action_card_background_style:
+        values.action_card_background_style || 'gradient',
+      action_card_background_image_url:
+        values.action_card_background_style === 'image'
+          ? values.action_card_background_image_url?.trim() || undefined
+          : undefined,
       live_auction_start_datetime: values.live_auction_start_datetime
         ? new Date(values.live_auction_start_datetime).toISOString()
         : null,
@@ -1483,6 +1556,90 @@ export function EventForm({
                 </FormItem>
               )}
             />
+          </div>
+
+          <FormField
+            control={form.control}
+            name='action_card_background_style'
+            render={({ field }) => (
+              <FormItem>
+                <Label>Action Card Background</Label>
+                <Select
+                  value={field.value || 'gradient'}
+                  onValueChange={(value) =>
+                    handleActionCardBackgroundStyleChange(
+                      value as ActionCardBackgroundStyle
+                    )
+                  }
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder='Choose background style' />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value='gradient'>Gradient</SelectItem>
+                    <SelectItem value='solid'>Solid Color</SelectItem>
+                    <SelectItem value='image'>Image</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {actionCardBackgroundStyle === 'image' && (
+            <FormField
+              control={form.control}
+              name='action_card_background_image_url'
+              render={({ field }) => (
+                <FormItem>
+                  <Label>Action Card Background Image URL</Label>
+                  <FormControl>
+                    <Input
+                      type='url'
+                      placeholder='https://images.example.org/background.jpg'
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Use a direct image URL. A dark overlay is added to keep text
+                    readable.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          <div className='space-y-2'>
+            <p className='text-muted-foreground text-xs'>
+              Preview: donor action cards currently render as{' '}
+              {actionCardBackgroundStyle}.
+            </p>
+            <div
+              className='w-full rounded-2xl p-3'
+              style={{
+                background:
+                  actionCardBackgroundStyle === 'image' &&
+                    actionCardBackgroundImageUrl
+                    ? `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${actionCardBackgroundImageUrl})`
+                    : actionCardBackgroundStyle === 'solid'
+                      ? primaryColorValue || secondaryColorValue
+                      : `linear-gradient(135deg, ${primaryColorValue} 0%, ${secondaryColorValue} 100%)`,
+                backgroundSize:
+                  actionCardBackgroundStyle === 'image' ? 'cover' : undefined,
+                backgroundPosition:
+                  actionCardBackgroundStyle === 'image' ? 'center' : undefined,
+              }}
+            >
+              <p className='text-sm font-black text-white'>
+                Purchase Additional Tickets
+              </p>
+              <p className='text-xs text-white/80'>
+                Buy more tickets for guests or sponsorships →
+              </p>
+            </div>
           </div>
         </div>
 

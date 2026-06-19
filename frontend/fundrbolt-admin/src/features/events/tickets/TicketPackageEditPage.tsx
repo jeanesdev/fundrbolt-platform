@@ -42,7 +42,7 @@ import { ImageUploadZone } from './components/ImageUploadZone'
 const packageSchema = z.object({
   name: z.string().min(1, 'Package name is required').max(100).optional(),
   description: z.string().max(5000).optional().nullable(),
-  price: z
+  price: z.coerce
     .string()
     .regex(/^\d+(\.\d{1,2})?$/, 'Invalid price format')
     .optional(),

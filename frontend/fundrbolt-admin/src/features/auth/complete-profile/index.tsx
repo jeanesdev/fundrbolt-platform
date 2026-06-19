@@ -8,16 +8,7 @@
  * Detection: localStorage flag `profile_setup_seen_<userId>` is
  * absent on first login; set when user completes or skips the prompt.
  */
-import { useEffect, useState } from 'react'
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation } from '@tanstack/react-query'
-import { useNavigate, useSearch } from '@tanstack/react-router'
-import { CheckCircle2, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import apiClient from '@/lib/axios'
+import { ProfilePictureUpload } from '@/components/profile/profile-picture-upload'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -35,13 +26,22 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { ProfilePictureUpload } from '@/components/profile/profile-picture-upload'
 import { AuthLayout } from '@/features/auth/auth-layout'
 import {
   SignUpWizard,
   type WizardStep,
 } from '@/features/auth/sign-up-wizard/SignUpWizard'
 import { PasswordChangeForm } from '@/features/settings/account/components/password-change-form'
+import apiClient from '@/lib/axios'
+import { useAuthStore } from '@/stores/auth-store'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation } from '@tanstack/react-query'
+import { useNavigate, useSearch } from '@tanstack/react-router'
+import { CheckCircle2, Loader2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
+import { z } from 'zod'
 import { markProfileSetupSeen } from './utils'
 
 // ---------------------------------------------------------------------------
@@ -88,11 +88,19 @@ function formatPhoneNumber(value: string): string {
   return `+${digits.slice(0, digits.length - 10)} (${digits.slice(-10, -7)}) ${digits.slice(-7, -4)}-${digits.slice(-4)}`
 }
 
+function normalizePhoneForPayload(value: string): string {
+  const digits = value.replace(/\D/g, '')
+  if (!digits) return ''
+  if (digits.length === 10) return `+1${digits}`
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`
+  return `+${digits}`
+}
+
 // ---------------------------------------------------------------------------
 // Schema
 // ---------------------------------------------------------------------------
 
-const phoneRegex = /^\+[1-9]\d{1,14}$/
+const phoneDigitsRegex = /^\d{10,15}$/
 
 const completeProfileSchema = z.object({
   organization_name: z.string().max(255).trim().optional(),
@@ -100,8 +108,8 @@ const completeProfileSchema = z.object({
   phone: z
     .string()
     .refine(
-      (val) => !val || phoneRegex.test(val),
-      'Phone must be a valid number (e.g., +14155552671)'
+      (val) => !val || phoneDigitsRegex.test(val.replace(/\D/g, '')),
+      'Phone must be a valid number (e.g., (415) 555-2671 or +14155552671)'
     )
     .optional(),
 
@@ -397,7 +405,7 @@ export function CompleteProfile() {
       }
       if (data.organization_name)
         payload['organization_name'] = data.organization_name
-      if (data.phone) payload['phone'] = data.phone
+      if (data.phone) payload['phone'] = normalizePhoneForPayload(data.phone)
       if (Object.keys(socialLinks).length > 0) {
         payload['social_media_links'] = socialLinks
       }
@@ -538,19 +546,9 @@ export function CompleteProfile() {
                               field.value ? formatPhoneNumber(field.value) : ''
                             }
                             onChange={(e) => {
-                              const raw = e.target.value.replace(/\D/g, '')
-                              if (!raw) {
-                                field.onChange('')
-                              } else if (raw.length === 10) {
-                                field.onChange(`+1${raw}`)
-                              } else if (
-                                raw.startsWith('1') &&
-                                raw.length === 11
-                              ) {
-                                field.onChange(`+${raw}`)
-                              } else {
-                                field.onChange(`+${raw}`)
-                              }
+                              field.onChange(
+                                e.target.value.replace(/\D/g, '').slice(0, 15)
+                              )
                             }}
                             inputMode='tel'
                           />

@@ -185,6 +185,7 @@ export default function EditNPOPage() {
     tax_id: currentNPO.tax_id || undefined,
     registration_number: currentNPO.registration_number || undefined,
     website_url: currentNPO.website_url || undefined,
+    external_donate_now_url: currentNPO.external_donate_now_url || undefined,
     phone: currentNPO.phone || undefined,
     address: currentNPO.address || undefined,
   }

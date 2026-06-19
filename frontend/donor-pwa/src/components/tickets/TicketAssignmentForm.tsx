@@ -1,15 +1,16 @@
 /**
  * TicketAssignmentForm — form for assigning a ticket to a guest.
  */
-import { useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
-import { Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
-import { assignTicket } from '@/lib/api/ticket-assignments'
-import { sendInvitation } from '@/lib/api/ticket-invitations'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { assignTicket } from '@/lib/api/ticket-assignments'
+import { sendInvitation } from '@/lib/api/ticket-invitations'
+import { getErrorMessage } from '@/lib/error-utils'
+import { useMutation } from '@tanstack/react-query'
+import { Loader2 } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
 interface TicketAssignmentFormProps {
   ticketId: string
@@ -18,10 +19,6 @@ interface TicketAssignmentFormProps {
   isSelfAssignment?: boolean
   defaultName?: string
   defaultEmail?: string
-}
-
-function getErrorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback
 }
 
 export function TicketAssignmentForm({

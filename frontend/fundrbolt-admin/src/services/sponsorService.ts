@@ -1,3 +1,4 @@
+import apiClient from '@/lib/axios'
 import type {
   LogoUploadRequest,
   LogoUploadResponse,
@@ -7,7 +8,6 @@ import type {
   SponsorCreateResponse,
   SponsorUpdateRequest,
 } from '@/types/sponsor'
-import apiClient from '@/lib/axios'
 
 /**
  * Sponsor Service
@@ -163,22 +163,20 @@ class SponsorService {
     sponsorId: string,
     file: File
   ): Promise<Sponsor> {
-    // Step 1: Request upload URL
-    const uploadResponse = await this.requestLogoUploadUrl(eventId, sponsorId, {
-      file_name: file.name,
-      file_type: file.type,
-      file_size: file.size,
-    })
+    const formData = new FormData()
+    formData.append('file', file)
 
-    // Step 2: Upload file to Azure Blob Storage
-    await this.uploadLogoToBlob(uploadResponse.upload_url, file)
-
-    // Step 3: Confirm upload (generates thumbnail)
-    return await this.confirmLogoUpload(
-      eventId,
-      sponsorId,
-      uploadResponse.blob_name
+    const response = await apiClient.post<Sponsor>(
+      `/events/${eventId}/sponsors/${sponsorId}/logo/upload`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
     )
+
+    return response.data
   }
 }
 

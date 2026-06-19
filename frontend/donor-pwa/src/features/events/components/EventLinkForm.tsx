@@ -2,10 +2,6 @@
  * EventLinkForm Component
  * Form for adding/editing event links (video, website, social)
  */
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import type { EventLink, EventLinkType } from '@/types/event'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -23,10 +19,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import type { EventLink, EventLinkType } from '@/types/event'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 
 const linkFormSchema = z.object({
   link_type: z.enum(['video', 'website', 'social_media']),
-  url: z.string().url('Must be a valid URL'),
+  url: z
+    .string()
+    .min(1, 'URL is required')
+    .transform((url) => {
+      // If URL doesn't start with http:// or https://, prepend https://
+      if (!url.match(/^https?:\/\//i)) {
+        return `https://${url}`
+      }
+      return url
+    })
+    .pipe(z.string().url('Must be a valid URL')),
   label: z.string().optional(),
   platform: z.string().optional(),
   display_order: z.number().int().min(0).optional(),
@@ -91,7 +101,7 @@ export function EventLinkForm({
             <FormItem>
               <FormLabel>URL</FormLabel>
               <FormControl>
-                <Input placeholder='https://example.com' {...field} />
+                <Input placeholder='example.com or www.example.com' {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

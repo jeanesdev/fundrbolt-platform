@@ -41,6 +41,7 @@ export interface NPO {
   mission_statement: string | null
   tax_id: string | null
   website_url: string | null
+  external_donate_now_url: string | null
   phone: string | null
   email: string
   address: {
@@ -73,6 +74,7 @@ export interface NPOCreateRequest {
   mission_statement?: string
   tax_id?: string
   website_url?: string
+  external_donate_now_url?: string
   phone?: string
   email: string
   address?: {
@@ -94,6 +96,7 @@ export interface NPOUpdateRequest {
   mission_statement?: string
   tax_id?: string
   website_url?: string
+  external_donate_now_url?: string
   phone?: string
   email?: string
   address?: {

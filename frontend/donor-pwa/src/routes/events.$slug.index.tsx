@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
@@ -16,6 +16,7 @@ import {
   useEventContextStore,
   type EventContextOption,
 } from '@/stores/event-context-store'
+import { donateNowApi } from '@/lib/api/donateNow'
 import { getEventBySlug, type EventMediaUsageTag } from '@/lib/api/events'
 import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
 import {
@@ -97,6 +98,13 @@ function RouteComponent() {
     retry: false,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
+  })
+
+  const { data: donateNowPageConfig } = useQuery({
+    queryKey: ['donate-now-page', event?.npo_slug],
+    queryFn: () => donateNowApi.getPage(event!.npo_slug!).then((r) => r.data),
+    enabled: Boolean(event?.npo_slug),
+    retry: false,
   })
 
   const { data: registrationsData, isLoading: isLoadingRegistrations } =
@@ -555,6 +563,38 @@ function RouteComponent() {
     isRegisteredFromQuery ||
     hasTicketAccessFromQuery
   )
+  const donateNowSlug =
+    Boolean(event.npo_slug) && donateNowPageConfig?.is_enabled === true
+      ? (event.npo_slug as string)
+      : null
+  const externalDonateNowUrl = donateNowSlug
+    ? null
+    : (event.external_donate_now_url ?? null)
+  const actionCardBackground = useMemo(() => {
+    const style = event.action_card_background_style || 'gradient'
+
+    if (style === 'image' && event.action_card_background_image_url?.trim()) {
+      return {
+        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${event.action_card_background_image_url})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }
+    }
+
+    if (style === 'solid') {
+      return {
+        background: 'rgb(var(--event-primary, 59, 130, 246))',
+      }
+    }
+
+    return {
+      background:
+        'linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)',
+    }
+  }, [
+    event.action_card_background_image_url,
+    event.action_card_background_style,
+  ])
 
   return (
     <div
@@ -621,25 +661,49 @@ function RouteComponent() {
             >
               This event has already taken place. Thank you for your interest!
             </p>
-            {event.npo_slug && (
-              <Link
-                to='/npo/$slug/donate-now'
-                params={{ slug: event.npo_slug }}
-                className='block'
-              >
-                <button
-                  className='w-full rounded-2xl p-4 text-left transition-all hover:shadow-md active:scale-[0.98]'
-                  style={{
-                    background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
-                  }}
+            {(donateNowSlug || externalDonateNowUrl) &&
+              (donateNowSlug ? (
+                <Link
+                  to='/npo/$slug/donate-now'
+                  params={{ slug: donateNowSlug }}
+                  className='block'
                 >
-                  <p className='text-lg font-black text-white'>Donate Now</p>
-                  <p className='text-sm text-white/80'>
-                    Support this cause with a direct donation →
-                  </p>
-                </button>
-              </Link>
-            )}
+                  <button
+                    className='flex w-full justify-center rounded-2xl p-4 text-center transition-all hover:shadow-md active:scale-[0.98]'
+                    style={actionCardBackground}
+                  >
+                    <div>
+                      <p className='text-lg font-black text-white'>
+                        Donate Now
+                      </p>
+                      <p className='text-sm text-white/80'>
+                        Support this cause with a direct donation →
+                      </p>
+                    </div>
+                  </button>
+                </Link>
+              ) : (
+                <a
+                  href={externalDonateNowUrl ?? '#'}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='block'
+                >
+                  <button
+                    className='flex w-full justify-center rounded-2xl p-4 text-center transition-all hover:shadow-md active:scale-[0.98]'
+                    style={actionCardBackground}
+                  >
+                    <div>
+                      <p className='text-lg font-black text-white'>
+                        Donate Now
+                      </p>
+                      <p className='text-sm text-white/80'>
+                        Support this cause with a direct donation →
+                      </p>
+                    </div>
+                  </button>
+                </a>
+              ))}
           </div>
         ) : isAuthenticated ? (
           // Authenticated but not registered — show ticket purchase CTA
@@ -650,40 +714,54 @@ function RouteComponent() {
               borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
             }}
           >
-            <p
-              className='text-sm font-medium'
-              style={{ color: 'var(--event-text-on-background, #374151)' }}
-            >
-              {canPurchaseAdditionalTickets
-                ? 'You can purchase more tickets for this event.'
-                : 'You are not yet registered for this event.'}
-            </p>
-            {event.npo_slug && (
-              <Link
-                to='/npo/$slug/donate-now'
-                params={{ slug: event.npo_slug }}
-                className='block'
-              >
-                <button
-                  className='w-full rounded-2xl p-4 text-left transition-all hover:shadow-md active:scale-[0.98]'
-                  style={{
-                    background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
-                  }}
+            {(donateNowSlug || externalDonateNowUrl) &&
+              (donateNowSlug ? (
+                <Link
+                  to='/npo/$slug/donate-now'
+                  params={{ slug: donateNowSlug }}
+                  className='block'
                 >
-                  <p className='text-lg font-black text-white'>Donate Now</p>
-                  <p className='text-sm text-white/80'>
-                    Support this cause with a direct donation →
-                  </p>
-                </button>
-              </Link>
-            )}
+                  <button
+                    className='flex w-full justify-center rounded-2xl p-4 text-center transition-all hover:shadow-md active:scale-[0.98]'
+                    style={actionCardBackground}
+                  >
+                    <div>
+                      <p className='text-lg font-black text-white'>
+                        Donate Now
+                      </p>
+                      <p className='text-sm text-white/80'>
+                        Support this cause with a direct donation →
+                      </p>
+                    </div>
+                  </button>
+                </Link>
+              ) : (
+                <a
+                  href={externalDonateNowUrl ?? '#'}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='block'
+                >
+                  <button
+                    className='flex w-full justify-center rounded-2xl p-4 text-center transition-all hover:shadow-md active:scale-[0.98]'
+                    style={actionCardBackground}
+                  >
+                    <div>
+                      <p className='text-lg font-black text-white'>
+                        Donate Now
+                      </p>
+                      <p className='text-sm text-white/80'>
+                        Support this cause with a direct donation →
+                      </p>
+                    </div>
+                  </button>
+                </a>
+              ))}
             {/* Link to ticket purchase page */}
             <Link to='/events/$slug/tickets' params={{ slug }}>
               <button
                 className='flex w-full items-center justify-center gap-3 rounded-2xl p-4 transition-all hover:shadow-md active:scale-[0.98]'
-                style={{
-                  background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
-                }}
+                style={actionCardBackground}
               >
                 <Ticket className='h-5 w-5 text-white' />
                 <span className='text-lg font-black text-white'>
@@ -696,32 +774,54 @@ function RouteComponent() {
           </div>
         ) : (
           <div className='space-y-4'>
-            {event.npo_slug && (
-              <Link
-                to='/npo/$slug/donate-now'
-                params={{ slug: event.npo_slug }}
-                className='block'
-              >
-                <button
-                  className='w-full rounded-2xl p-4 text-left transition-all hover:shadow-md active:scale-[0.98]'
-                  style={{
-                    background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
-                  }}
+            {(donateNowSlug || externalDonateNowUrl) &&
+              (donateNowSlug ? (
+                <Link
+                  to='/npo/$slug/donate-now'
+                  params={{ slug: donateNowSlug }}
+                  className='block'
                 >
-                  <p className='text-lg font-black text-white'>Donate Now</p>
-                  <p className='text-sm text-white/80'>
-                    Support this cause with a direct donation →
-                  </p>
-                </button>
-              </Link>
-            )}
+                  <button
+                    className='flex w-full justify-center rounded-2xl p-4 text-center transition-all hover:shadow-md active:scale-[0.98]'
+                    style={actionCardBackground}
+                  >
+                    <div>
+                      <p className='text-lg font-black text-white'>
+                        Donate Now
+                      </p>
+                      <p className='text-sm text-white/80'>
+                        Support this cause with a direct donation →
+                      </p>
+                    </div>
+                  </button>
+                </Link>
+              ) : (
+                <a
+                  href={externalDonateNowUrl ?? '#'}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='block'
+                >
+                  <button
+                    className='flex w-full justify-center rounded-2xl p-4 text-center transition-all hover:shadow-md active:scale-[0.98]'
+                    style={actionCardBackground}
+                  >
+                    <div>
+                      <p className='text-lg font-black text-white'>
+                        Donate Now
+                      </p>
+                      <p className='text-sm text-white/80'>
+                        Support this cause with a direct donation →
+                      </p>
+                    </div>
+                  </button>
+                </a>
+              ))}
 
             <Link to='/sign-in' className='block'>
               <button
                 className='w-full rounded-2xl p-4 text-left transition-all hover:shadow-md active:scale-[0.98]'
-                style={{
-                  background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
-                }}
+                style={actionCardBackground}
               >
                 <p className='text-lg font-black text-white'>
                   Login to Register
