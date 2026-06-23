@@ -1,7 +1,7 @@
 """Add display fields to auction items.
 
 Revision ID: auction_001_add_display_fields
-Revises: survey_005
+Revises: 9e1a7a4bb2c1
 Create Date: 2026-06-22 09:00:00.000000
 """
 
@@ -11,7 +11,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "auction_001_add_display_fields"
-down_revision = "survey_005"
+down_revision = "9e1a7a4bb2c1"
 branch_labels = None
 depends_on = None
 
