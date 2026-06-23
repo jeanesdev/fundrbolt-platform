@@ -60,8 +60,10 @@ export interface AuctionItemDetail extends AuctionItem {
   // Sponsor will be added when we integrate sponsor display
 }
 
-export interface AuctionItemCreate
-  extends Omit<AuctionItemBase, 'starting_bid' | 'bid_increment'> {
+export interface AuctionItemCreate extends Omit<
+  AuctionItemBase,
+  'starting_bid' | 'bid_increment'
+> {
   starting_bid?: number
   bid_increment?: number
 }

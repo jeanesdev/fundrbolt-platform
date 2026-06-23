@@ -2,6 +2,25 @@
  * EventForm Component
  * Comprehensive form for creating and editing events with all fields
  */
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { z } from 'zod'
+import { format, parse } from 'date-fns'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { brandingThemeTemplateApi } from '@/services/branding-theme-template-service'
+import type { NPOBranding } from '@/services/event-service'
+import type {
+  BrandingThemeTemplate,
+  BrandingThemeTemplateCreateRequest,
+  EventCreateRequest,
+  EventDetail,
+  EventUpdateRequest,
+  PageBackgroundStyle,
+} from '@/types/event'
+import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
+import { CalendarIcon, MapPin } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Calendar as CalendarPicker } from '@/components/ui/calendar'
 import {
@@ -27,25 +46,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { cn } from '@/lib/utils'
-import { brandingThemeTemplateApi } from '@/services/branding-theme-template-service'
-import type { NPOBranding } from '@/services/event-service'
-import { useAuthStore } from '@/stores/auth-store'
-import type {
-  BrandingThemeTemplate,
-  BrandingThemeTemplateCreateRequest,
-  EventCreateRequest,
-  EventDetail,
-  EventUpdateRequest,
-  PageBackgroundStyle,
-} from '@/types/event'
-import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { format, parse } from 'date-fns'
-import { CalendarIcon, MapPin } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 import { ColorPicker } from './ColorPicker.tsx'
 import { RichTextEditor } from './RichTextEditor.tsx'
 
@@ -2343,9 +2343,7 @@ export function EventForm({
               name='cause_section_border_width'
               render={({ field }) => (
                 <FormItem>
-                  <Label>
-                    Card Border Width ({causeSectionBorderWidth}px)
-                  </Label>
+                  <Label>Card Border Width ({causeSectionBorderWidth}px)</Label>
                   <FormControl>
                     <Input
                       type='range'
@@ -2378,12 +2376,12 @@ export function EventForm({
                   background:
                     actionCardBackgroundStyle === 'solid'
                       ? hexToRgba(
-                        actionCardGradientStartColor ||
-                        primaryColorValue ||
-                        secondaryColorValue,
-                        actionCardBackgroundOpacity
-                      ) ||
-                      `rgba(59, 130, 246, ${actionCardBackgroundOpacity})`
+                          actionCardGradientStartColor ||
+                            primaryColorValue ||
+                            secondaryColorValue,
+                          actionCardBackgroundOpacity
+                        ) ||
+                        `rgba(59, 130, 246, ${actionCardBackgroundOpacity})`
                       : `linear-gradient(135deg, ${hexToRgba(actionCardGradientStartColor || primaryColorValue, actionCardBackgroundOpacity) || `rgba(59, 130, 246, ${actionCardBackgroundOpacity})`} 0%, ${hexToRgba(actionCardGradientEndColor || secondaryColorValue, actionCardBackgroundOpacity) || `rgba(147, 51, 234, ${actionCardBackgroundOpacity})`} 100%)`,
                 }}
               >

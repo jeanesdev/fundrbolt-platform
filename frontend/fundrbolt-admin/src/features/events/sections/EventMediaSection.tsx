@@ -1,3 +1,11 @@
+import { useEffect, useMemo, useState } from 'react'
+import type {
+  EventMedia,
+  EventMediaUsageTag,
+  HeroTransitionStyle,
+} from '@/types/event'
+import { ImageIcon, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -19,14 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type {
-  EventMedia,
-  EventMediaUsageTag,
-  HeroTransitionStyle,
-} from '@/types/event'
-import { ImageIcon, Loader2 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
-import { toast } from 'sonner'
 import { MediaUploader } from '../components/MediaUploader'
 import { useEventWorkspace } from '../useEventWorkspace'
 

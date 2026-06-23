@@ -1,7 +1,3 @@
-import { BidderAvatar } from '@/components/bidder-avatar'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import { Trash2 } from 'lucide-react'
 import {
   type FormEvent,
   type KeyboardEvent,
@@ -10,6 +6,10 @@ import {
   useRef,
   useState,
 } from 'react'
+import { Trash2 } from 'lucide-react'
+import { useViewPreference } from '@/hooks/use-view-preference'
+import { BidderAvatar } from '@/components/bidder-avatar'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import type {
   QuickEntryDonationLabel,
   QuickEntryPaddleDonationResponse,
@@ -573,9 +573,9 @@ export function PaddleRaiseEntryForm({
                   <td className='px-3 py-2'>
                     {donation.labels.length
                       ? donation.labels
-                        .map((label) => normalizeLabelName(label.label))
-                        .filter(isVisibleLabel)
-                        .join(', ') || '—'
+                          .map((label) => normalizeLabelName(label.label))
+                          .filter(isVisibleLabel)
+                          .join(', ') || '—'
                       : '—'}
                   </td>
                   <td className='px-3 py-2'>

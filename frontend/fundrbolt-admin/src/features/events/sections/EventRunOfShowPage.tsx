@@ -2,60 +2,60 @@
  * EventRunOfShowPage — Full-page view of the run-of-show for an event.
  * Accessible via /events/:eventId/run-of-show
  */
+import React, { useCallback, useMemo, useState } from 'react'
+import { format } from 'date-fns'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  applyRosTemplate,
+  createRosItem,
+  deleteRosItem,
+  getRunOfShow,
+  listRosTemplates,
+  markRosItemComplete,
+  markRosItemIncomplete,
+  saveAsRosTemplate,
+  updateRosItem,
+} from '@/services/runOfShowService'
+import type {
+  RunOfShowItemCreate,
+  RunOfShowItemUpdate,
+  RunOfShowTemplate,
+} from '@/types/run-of-show'
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import {
+  CalendarClock,
+  Clock,
+  ListPlus,
+  Loader2,
+  Plus,
+  Save,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { getErrorMessage } from '@/lib/error-utils'
 import { Button } from '@/components/ui/button'
 import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
-import { getErrorMessage } from '@/lib/error-utils'
-import {
-    applyRosTemplate,
-    createRosItem,
-    deleteRosItem,
-    getRunOfShow,
-    listRosTemplates,
-    markRosItemComplete,
-    markRosItemIncomplete,
-    saveAsRosTemplate,
-    updateRosItem,
-} from '@/services/runOfShowService'
-import type {
-    RunOfShowItemCreate,
-    RunOfShowItemUpdate,
-    RunOfShowTemplate,
-} from '@/types/run-of-show'
-import {
-    closestCenter,
-    DndContext,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors,
-    type DragEndEvent,
-} from '@dnd-kit/core'
-import {
-    SortableContext,
-    sortableKeyboardCoordinates,
-    verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { format } from 'date-fns'
-import {
-    CalendarClock,
-    Clock,
-    ListPlus,
-    Loader2,
-    Plus,
-    Save,
-} from 'lucide-react'
-import React, { useCallback, useMemo, useState } from 'react'
-import { toast } from 'sonner'
 import { RunOfShowItemForm } from '../components/RunOfShowItemForm'
 import { SortableRunOfShowItem } from '../components/SortableRunOfShowItem'
 

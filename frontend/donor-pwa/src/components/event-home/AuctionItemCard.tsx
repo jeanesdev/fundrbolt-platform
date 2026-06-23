@@ -276,7 +276,9 @@ export function AuctionItemCard({
             ? 'rgb(22, 163, 74)'
             : !isCurrentUserWinning && hasCurrentBid && isWatched
               ? 'rgb(245, 158, 11)'
-              : 'var(--event-cause-border-color, #3B82F6)',
+              : !hasCurrentBid
+                ? 'transparent'
+                : 'var(--event-cause-border-color, #3B82F6)',
         borderWidth: 'var(--event-cause-border-width, 1px)',
       }}
     >

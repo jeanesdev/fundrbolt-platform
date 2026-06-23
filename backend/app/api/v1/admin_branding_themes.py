@@ -7,7 +7,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError, ProgrammingError
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -27,20 +27,15 @@ router = APIRouter(tags=["admin-branding-themes"])
     "/admin/branding-theme-templates",
     response_model=list[BrandingThemeTemplateResponse],
 )
-@require_role("super_admin", "npo_admin", "event_coordinator", "npo_staff", "donor")
+@require_role("super_admin", "npo_admin", "event_coordinator", "npo_staff")
 async def list_branding_theme_templates(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> list[BrandingThemeTemplateResponse]:
     del current_user
-    try:
-        result = await db.execute(
-            select(BrandingThemeTemplate).order_by(BrandingThemeTemplate.name.asc())
-        )
-    except ProgrammingError as exc:
-        if 'relation "branding_theme_templates" does not exist' in str(exc):
-            return []
-        raise
+    result = await db.execute(
+        select(BrandingThemeTemplate).order_by(BrandingThemeTemplate.name.asc())
+    )
 
     return [BrandingThemeTemplateResponse.model_validate(theme) for theme in result.scalars().all()]
 

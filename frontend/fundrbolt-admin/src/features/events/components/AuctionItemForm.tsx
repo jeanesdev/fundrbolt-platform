@@ -2,6 +2,16 @@
  * AuctionItemForm
  * Form for creating or editing an auction item
  */
+import { useEffect, useState } from 'react'
+import auctionItemMediaService from '@/services/auctionItemMediaService'
+import {
+  AuctionType,
+  SlidePresentationLayout,
+  type AuctionItem,
+  type AuctionItemCreate,
+  type AuctionItemMedia,
+  type AuctionItemUpdate,
+} from '@/types/auction-item'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,16 +24,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import auctionItemMediaService from '@/services/auctionItemMediaService'
-import {
-  AuctionType,
-  SlidePresentationLayout,
-  type AuctionItem,
-  type AuctionItemCreate,
-  type AuctionItemMedia,
-  type AuctionItemUpdate,
-} from '@/types/auction-item'
-import { useEffect, useState } from 'react'
 import { MediaGallery } from './MediaGallery'
 import { MediaUploadZone } from './MediaUploadZone'
 
@@ -264,14 +264,14 @@ export function AuctionItemForm({
 
     // Validate starting_bid and bid_increment for silent auctions
     if (formData.auction_type === AuctionType.SILENT) {
-      if (!formData.starting_bid) {
+      if (formData.starting_bid.trim() === '') {
         setNumericErrors((prev) => ({
           ...prev,
           starting_bid: 'Starting bid is required for silent auctions',
         }))
         return
       }
-      if (!formData.bid_increment) {
+      if (formData.bid_increment.trim() === '') {
         setNumericErrors((prev) => ({
           ...prev,
           bid_increment: 'Bid increment is required for silent auctions',
@@ -282,68 +282,68 @@ export function AuctionItemForm({
 
     const data = isEdit
       ? ({
-        title: formData.title || undefined,
-        description: formData.description || undefined,
-        auction_type: formData.auction_type,
-        starting_bid: formData.starting_bid
-          ? parseFloat(formData.starting_bid)
-          : undefined,
-        bid_increment: formData.bid_increment
-          ? parseFloat(formData.bid_increment)
-          : undefined,
-        donor_value: formData.donor_value
-          ? parseFloat(formData.donor_value)
-          : null,
-        cost: formData.cost ? parseFloat(formData.cost) : null,
-        buy_now_price: formData.buy_now_price
-          ? parseFloat(formData.buy_now_price)
-          : null,
-        buy_now_enabled: formData.buy_now_enabled,
-        quantity_available: formData.quantity_available
-          ? parseInt(formData.quantity_available, 10)
-          : undefined,
-        donated_by: formData.donated_by || null,
-        sponsor_id: formData.sponsor_id || null,
-        item_webpage: formData.item_webpage || null,
-        display_priority: formData.display_priority
-          ? parseInt(formData.display_priority, 10)
-          : null,
-        slide_presentation_html: formData.slide_presentation_html || null,
-        slide_presentation_layout: formData.slide_presentation_layout,
-        display_starting_bid: formData.display_starting_bid,
-        display_fair_market_value: formData.display_fair_market_value,
-      } as AuctionItemUpdate)
+          title: formData.title || undefined,
+          description: formData.description || undefined,
+          auction_type: formData.auction_type,
+          starting_bid: formData.starting_bid
+            ? parseFloat(formData.starting_bid)
+            : undefined,
+          bid_increment: formData.bid_increment
+            ? parseFloat(formData.bid_increment)
+            : undefined,
+          donor_value: formData.donor_value
+            ? parseFloat(formData.donor_value)
+            : null,
+          cost: formData.cost ? parseFloat(formData.cost) : null,
+          buy_now_price: formData.buy_now_price
+            ? parseFloat(formData.buy_now_price)
+            : null,
+          buy_now_enabled: formData.buy_now_enabled,
+          quantity_available: formData.quantity_available
+            ? parseInt(formData.quantity_available, 10)
+            : undefined,
+          donated_by: formData.donated_by || null,
+          sponsor_id: formData.sponsor_id || null,
+          item_webpage: formData.item_webpage || null,
+          display_priority: formData.display_priority
+            ? parseInt(formData.display_priority, 10)
+            : null,
+          slide_presentation_html: formData.slide_presentation_html || null,
+          slide_presentation_layout: formData.slide_presentation_layout,
+          display_starting_bid: formData.display_starting_bid,
+          display_fair_market_value: formData.display_fair_market_value,
+        } as AuctionItemUpdate)
       : ({
-        title: formData.title,
-        description: formData.description,
-        auction_type: formData.auction_type,
-        starting_bid: formData.starting_bid
-          ? parseFloat(formData.starting_bid)
-          : undefined,
-        bid_increment: formData.bid_increment
-          ? parseFloat(formData.bid_increment)
-          : undefined,
-        donor_value: formData.donor_value
-          ? parseFloat(formData.donor_value)
-          : null,
-        cost: formData.cost ? parseFloat(formData.cost) : null,
-        buy_now_price: formData.buy_now_price
-          ? parseFloat(formData.buy_now_price)
-          : null,
-        buy_now_enabled: formData.buy_now_enabled,
-        quantity_available: parseInt(formData.quantity_available, 10),
-        donated_by: formData.donated_by || undefined,
-        sponsor_id: formData.sponsor_id || undefined,
-        item_webpage: formData.item_webpage || undefined,
-        display_priority: formData.display_priority
-          ? parseInt(formData.display_priority, 10)
-          : undefined,
-        slide_presentation_html:
-          formData.slide_presentation_html || undefined,
-        slide_presentation_layout: formData.slide_presentation_layout,
-        display_starting_bid: formData.display_starting_bid,
-        display_fair_market_value: formData.display_fair_market_value,
-      } as AuctionItemCreate)
+          title: formData.title,
+          description: formData.description,
+          auction_type: formData.auction_type,
+          starting_bid: formData.starting_bid
+            ? parseFloat(formData.starting_bid)
+            : undefined,
+          bid_increment: formData.bid_increment
+            ? parseFloat(formData.bid_increment)
+            : undefined,
+          donor_value: formData.donor_value
+            ? parseFloat(formData.donor_value)
+            : null,
+          cost: formData.cost ? parseFloat(formData.cost) : null,
+          buy_now_price: formData.buy_now_price
+            ? parseFloat(formData.buy_now_price)
+            : null,
+          buy_now_enabled: formData.buy_now_enabled,
+          quantity_available: parseInt(formData.quantity_available, 10),
+          donated_by: formData.donated_by || undefined,
+          sponsor_id: formData.sponsor_id || undefined,
+          item_webpage: formData.item_webpage || undefined,
+          display_priority: formData.display_priority
+            ? parseInt(formData.display_priority, 10)
+            : undefined,
+          slide_presentation_html:
+            formData.slide_presentation_html || undefined,
+          slide_presentation_layout: formData.slide_presentation_layout,
+          display_starting_bid: formData.display_starting_bid,
+          display_fair_market_value: formData.display_fair_market_value,
+        } as AuctionItemCreate)
 
     await onSubmit(data)
   }
@@ -443,7 +443,7 @@ export function AuctionItemForm({
             <Input
               id='starting_bid'
               type='number'
-              step='100'
+              step='0.01'
               min='0'
               value={formData.starting_bid}
               onChange={(e) => handleStartingBidChange(e.target.value)}
@@ -474,7 +474,7 @@ export function AuctionItemForm({
             <Input
               id='bid_increment'
               type='number'
-              step='100'
+              step='0.01'
               min='0.01'
               value={formData.bid_increment}
               onChange={(e) =>
@@ -502,7 +502,7 @@ export function AuctionItemForm({
             <Input
               id='donor_value'
               type='number'
-              step='100'
+              step='0.01'
               min='0'
               value={formData.donor_value}
               onChange={(e) =>
@@ -527,7 +527,7 @@ export function AuctionItemForm({
             <Input
               id='cost'
               type='number'
-              step='100'
+              step='0.01'
               min='0'
               value={formData.cost}
               onChange={(e) =>
@@ -572,7 +572,7 @@ export function AuctionItemForm({
             <Input
               id='buy_now_price'
               type='number'
-              step='100'
+              step='0.01'
               min='0'
               value={formData.buy_now_price}
               onChange={(e) =>
