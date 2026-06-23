@@ -16,6 +16,7 @@ export type HeroTransitionStyle =
   | 'swipe'
   | 'simple'
 export type ActionCardBackgroundStyle = 'solid' | 'gradient' | 'image'
+export type PageBackgroundStyle = 'solid' | 'gradient' | 'image'
 export type EventMediaUsageTag =
   | 'main_event_page_hero'
   | 'event_layout_map'
@@ -57,9 +58,17 @@ export interface Event {
   secondary_color: string | null
   background_color: string | null
   accent_color: string | null
+  page_background_style?: PageBackgroundStyle | null
+  page_background_image_url?: string | null
+  page_background_gradient_start_color?: string | null
+  page_background_gradient_end_color?: string | null
   action_card_background_style?: ActionCardBackgroundStyle | null
   action_card_background_image_url?: string | null
+  action_card_gradient_start_color?: string | null
+  action_card_gradient_end_color?: string | null
   action_card_background_opacity?: number | null
+  cause_section_border_color?: string | null
+  cause_section_border_width?: number | null
   hero_transition_style: HeroTransitionStyle
   status: EventStatus
   version: number
@@ -103,8 +112,14 @@ export interface EventCreateRequest {
   secondary_color?: string
   background_color?: string
   accent_color?: string
+  page_background_style?: PageBackgroundStyle
+  page_background_image_url?: string
+  page_background_gradient_start_color?: string
+  page_background_gradient_end_color?: string
   action_card_background_style?: ActionCardBackgroundStyle
   action_card_background_image_url?: string
+  action_card_gradient_start_color?: string
+  action_card_gradient_end_color?: string
   action_card_background_opacity?: number
 }
 
@@ -128,8 +143,14 @@ export interface EventUpdateRequest {
   secondary_color?: string
   background_color?: string
   accent_color?: string
+  page_background_style?: PageBackgroundStyle
+  page_background_image_url?: string
+  page_background_gradient_start_color?: string
+  page_background_gradient_end_color?: string
   action_card_background_style?: ActionCardBackgroundStyle
   action_card_background_image_url?: string
+  action_card_gradient_start_color?: string
+  action_card_gradient_end_color?: string
   action_card_background_opacity?: number
   hero_transition_style?: HeroTransitionStyle
   version?: number

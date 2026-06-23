@@ -9,6 +9,7 @@ from app.api.v1 import (
     admin_auction_engagement,
     admin_auction_item_import,
     admin_auctioneer,
+    admin_branding_themes,
     admin_checklist,
     admin_donate_now,
     admin_donations,
@@ -180,5 +181,6 @@ api_router.include_router(admin_event_nudges.router, tags=["admin-event-nudges"]
 
 # Feature 045: Printable Reports
 api_router.include_router(admin_reports.router)
+api_router.include_router(admin_branding_themes.router)
 
 __all__ = ["api_router"]

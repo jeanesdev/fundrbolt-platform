@@ -4,17 +4,17 @@
  * Shown on the My Event home page when checkout is open.
  * Polls every 10 seconds for checkout status updates.
  */
-import { useQuery } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
-import { CheckCircle2, CreditCard, Download, ShoppingBag } from 'lucide-react'
-import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   downloadCheckoutReceipt,
   getCheckoutSession,
   getCheckoutStatus,
 } from '@/lib/api/checkout'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
+import { CheckCircle2, CreditCard, Download, ShoppingBag } from 'lucide-react'
+import { toast } from 'sonner'
 
 export interface CheckoutSummaryCardProps {
   eventId: string
@@ -58,7 +58,13 @@ export function CheckoutSummaryCard({
   // Completed state
   if (sessionStatus === 'complete' && session) {
     return (
-      <Card className='border-green-200 bg-green-50'>
+      <Card
+        className='bg-green-50'
+        style={{
+          borderColor: 'var(--event-cause-border-color, #3B82F6)',
+          borderWidth: 'var(--event-cause-border-width, 1px)',
+        }}
+      >
         <CardHeader className='pb-2'>
           <CardTitle className='flex items-center gap-2 text-base text-green-800'>
             <CheckCircle2 className='h-5 w-5 text-green-600' />
@@ -121,7 +127,13 @@ export function CheckoutSummaryCard({
   const estimatedTotal = session?.total_cents ?? 0
 
   return (
-    <Card className='border-orange-300 bg-orange-50'>
+    <Card
+      className='bg-orange-50'
+      style={{
+        borderColor: 'var(--event-cause-border-color, #3B82F6)',
+        borderWidth: 'var(--event-cause-border-width, 1px)',
+      }}
+    >
       <CardHeader className='pb-2'>
         <CardTitle className='flex items-center gap-2 text-base text-orange-900'>
           <CreditCard className='h-5 w-5 text-orange-600' />

@@ -363,6 +363,27 @@ async def list_paddle_raise_donations(
     )
 
 
+@router.delete(
+    "/paddle-raise/donations/{donation_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_paddle_raise_donation(
+    event_id: UUID,
+    donation_id: UUID,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> None:
+    """Delete a paddle raise quick-entry donation."""
+    event = await _get_event_or_404(db, event_id)
+    await _require_quick_entry_access(db, current_user, event)
+    await PaddleRaiseService.delete_donation(
+        db,
+        event_id=event_id,
+        donation_id=donation_id,
+        deleted_by_user_id=current_user.id,
+    )
+
+
 @router.get(
     "/donation-labels",
     response_model=QuickEntryDonationLabelListResponse,

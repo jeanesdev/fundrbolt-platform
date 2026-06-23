@@ -1,5 +1,5 @@
-import type { AuctionItem } from '@/types/auction-item'
 import apiClient from '@/lib/axios'
+import type { AuctionItem } from '@/types/auction-item'
 
 export async function getQuickEntryStatus(
   eventId: string
@@ -195,6 +195,15 @@ export async function createPaddleDonation(
     payload
   )
   return response.data
+}
+
+export async function deletePaddleDonation(
+  eventId: string,
+  donationId: string
+): Promise<void> {
+  await apiClient.delete(
+    `/admin/events/${eventId}/quick-entry/paddle-raise/donations/${donationId}`
+  )
 }
 
 export async function getPaddleRaiseSummary(

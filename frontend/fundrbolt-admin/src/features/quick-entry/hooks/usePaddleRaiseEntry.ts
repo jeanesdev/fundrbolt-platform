@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react'
-import { AxiosError } from 'axios'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { AxiosError } from 'axios'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import {
   createPaddleDonation,
+  deletePaddleDonation,
   getPaddleDonations,
   getPaddleRaiseSummary,
   getQuickEntryDonationLabels,
@@ -107,6 +108,18 @@ export function usePaddleRaiseEntry(eventId: string) {
     },
   })
 
+  const deleteMutation = useMutation({
+    mutationFn: (donationId: string) =>
+      deletePaddleDonation(eventId, donationId),
+    onSuccess: () => {
+      toast.success('Donation deleted')
+      queryClient.invalidateQueries({ queryKey: ['quick-entry'] })
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, 'Failed to delete donation'))
+    },
+  })
+
   return {
     amount,
     bidderNumber,
@@ -119,12 +132,14 @@ export function usePaddleRaiseEntry(eventId: string) {
     summary: summaryQuery.data,
     recentDonations: donationsQuery.data?.items ?? [],
     isSubmitting: mutation.isPending,
+    isDeleting: deleteMutation.isPending,
     setAmount,
     setBidderNumber,
     setCustomLabel,
     setSelectedLabelIds,
     setIsMonthly,
     submitDonation: () => mutation.mutate(),
+    deleteDonation: (donationId: string) => deleteMutation.mutate(donationId),
     submitToken,
   }
 }

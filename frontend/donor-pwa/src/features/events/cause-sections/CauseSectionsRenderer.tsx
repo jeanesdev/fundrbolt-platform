@@ -1,13 +1,13 @@
-import type { ReactNode } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { EventDetails } from '@/components/event-home/EventDetails'
+import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
 import { usePreviewMode } from '@/contexts/PreviewContext'
-import { Loader2 } from 'lucide-react'
 import {
   getPublishedCausePageCards,
   type PublicCauseSectionCard,
 } from '@/lib/api/cause-section-cards'
-import { EventDetails } from '@/components/event-home/EventDetails'
-import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
+import { useQuery } from '@tanstack/react-query'
+import { Loader2 } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { CauseSectionShell } from './CauseSectionShell'
 import { SlideshowCard } from './SlideshowCard'
 import { TextCard } from './TextCard'
@@ -48,7 +48,7 @@ function AboutBuiltInCard({
   return (
     <CauseSectionShell card={card}>
       <div
-        className='prose prose-sm max-w-none text-slate-700'
+        className='prose prose-sm max-w-none text-[var(--event-text-on-background,#111827)]'
         dangerouslySetInnerHTML={{ __html: aboutEventHtml }}
       />
     </CauseSectionShell>

@@ -15,6 +15,7 @@ from sqlalchemy import Select, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.api.v1.event_media_urls import get_signed_asset_url
 from app.models.cause_section_card import (
     CardTypeEnum,
     CauseSectionCard,
@@ -569,11 +570,24 @@ def card_to_response(card: CauseSectionCard) -> CauseSectionCardResponse:
 
 
 def public_card_to_response(card: CauseSectionCard) -> PublicCauseSectionCardResponse:
-    return PublicCauseSectionCardResponse.model_validate(card)
+    response = PublicCauseSectionCardResponse.model_validate(card)
+
+    if response.video_media_source == MediaSourceEnum.UPLOAD:
+        response.video_url = get_signed_asset_url(response.video_url)
+
+    response.slides = [public_slide_to_response(slide) for slide in card.slides]
+    return response
 
 
 def slide_to_response(slide: CauseSectionSlideItem) -> SlideItemResponse:
     return SlideItemResponse.model_validate(slide)
+
+
+def public_slide_to_response(slide: CauseSectionSlideItem) -> SlideItemResponse:
+    response = SlideItemResponse.model_validate(slide)
+    if response.media_source == MediaSourceEnum.UPLOAD:
+        response.media_url = get_signed_asset_url(response.media_url)
+    return response
 
 
 def revision_to_response(revision: CauseSectionCardRevision) -> RevisionResponse:

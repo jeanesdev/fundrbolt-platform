@@ -11,6 +11,7 @@ from app.models.event import EventLinkType, EventMediaStatus, EventMediaUsageTag
 
 HeroTransitionStyle = str
 ActionCardBackgroundStyle = Literal["solid", "gradient", "image"]
+PageBackgroundStyle = Literal["solid", "gradient", "image"]
 
 # ================================
 # Request Schemas
@@ -63,9 +64,21 @@ class EventCreateRequest(BaseModel):
     secondary_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     background_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     accent_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
+    page_background_style: PageBackgroundStyle | None = Field(default=None)
+    page_background_image_url: str | None = Field(default=None, max_length=500)
+    page_background_gradient_start_color: str | None = Field(
+        default=None, pattern=r"^#[0-9A-Fa-f]{6}$"
+    )
+    page_background_gradient_end_color: str | None = Field(
+        default=None, pattern=r"^#[0-9A-Fa-f]{6}$"
+    )
     action_card_background_style: ActionCardBackgroundStyle | None = Field(default=None)
     action_card_background_image_url: str | None = Field(default=None, max_length=500)
+    action_card_gradient_start_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
+    action_card_gradient_end_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     action_card_background_opacity: float | None = Field(default=None, ge=0, le=1)
+    cause_section_border_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
+    cause_section_border_width: int | None = Field(default=None, ge=0, le=12)
     hero_transition_style: HeroTransitionStyle = Field(
         default="documentary_style",
         pattern=r"^(documentary_style|fade|swipe|simple)$",
@@ -154,9 +167,21 @@ class EventUpdateRequest(BaseModel):
     secondary_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     background_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     accent_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
+    page_background_style: PageBackgroundStyle | None = Field(default=None)
+    page_background_image_url: str | None = Field(default=None, max_length=500)
+    page_background_gradient_start_color: str | None = Field(
+        default=None, pattern=r"^#[0-9A-Fa-f]{6}$"
+    )
+    page_background_gradient_end_color: str | None = Field(
+        default=None, pattern=r"^#[0-9A-Fa-f]{6}$"
+    )
     action_card_background_style: ActionCardBackgroundStyle | None = Field(default=None)
     action_card_background_image_url: str | None = Field(default=None, max_length=500)
+    action_card_gradient_start_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
+    action_card_gradient_end_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     action_card_background_opacity: float | None = Field(default=None, ge=0, le=1)
+    cause_section_border_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
+    cause_section_border_width: int | None = Field(default=None, ge=0, le=12)
     hero_transition_style: HeroTransitionStyle | None = Field(
         default=None,
         pattern=r"^(documentary_style|fade|swipe|simple)$",
@@ -463,9 +488,17 @@ class EventDetailResponse(BaseModel):
     secondary_color: str | None
     background_color: str | None
     accent_color: str | None
+    page_background_style: PageBackgroundStyle | None = None
+    page_background_image_url: str | None = None
+    page_background_gradient_start_color: str | None = None
+    page_background_gradient_end_color: str | None = None
     action_card_background_style: ActionCardBackgroundStyle | None = None
     action_card_background_image_url: str | None = None
+    action_card_gradient_start_color: str | None = None
+    action_card_gradient_end_color: str | None = None
     action_card_background_opacity: float | None = None
+    cause_section_border_color: str | None = None
+    cause_section_border_width: int | None = None
     hero_transition_style: HeroTransitionStyle
     table_count: int | None = None
     max_guests_per_table: int | None = None
@@ -545,9 +578,17 @@ class EventPublicResponse(BaseModel):
     secondary_color: str | None
     background_color: str | None
     accent_color: str | None
+    page_background_style: PageBackgroundStyle | None = None
+    page_background_image_url: str | None = None
+    page_background_gradient_start_color: str | None = None
+    page_background_gradient_end_color: str | None = None
     action_card_background_style: ActionCardBackgroundStyle | None = None
     action_card_background_image_url: str | None = None
+    action_card_gradient_start_color: str | None = None
+    action_card_gradient_end_color: str | None = None
     action_card_background_opacity: float | None = None
+    cause_section_border_color: str | None = None
+    cause_section_border_width: int | None = None
     hero_transition_style: HeroTransitionStyle
     media: list[EventMediaResponse]
     links: list[EventLinkResponse]

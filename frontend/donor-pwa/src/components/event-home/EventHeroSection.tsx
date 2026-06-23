@@ -8,8 +8,8 @@
  * - Date + venue chips
  * - EventSwitcher dropdown + Profile button in top corners
  */
-import { type ReactNode, useEffect, useState } from 'react'
 import { Calendar, MapPin, Radio } from 'lucide-react'
+import { type ReactNode, useEffect, useState } from 'react'
 
 export type EventStatus = 'live' | 'upcoming' | 'past'
 export type HeroTransitionStyle =
@@ -172,7 +172,7 @@ export function EventHeroSection({
       const distance =
         visibleBannerImages.length > 0
           ? (index - safeActiveBannerIndex + visibleBannerImages.length) %
-            visibleBannerImages.length
+          visibleBannerImages.length
           : 0
       const swipeOffset = distance === 1 ? '10%' : '-10%'
 
@@ -256,6 +256,7 @@ export function EventHeroSection({
             </div>
           ))}
           <div className='absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/80' />
+          <div className='pointer-events-none absolute inset-x-0 -bottom-px h-28 bg-gradient-to-t from-black/95 via-black/70 to-transparent' />
         </div>
       ) : (
         <div

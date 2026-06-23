@@ -339,11 +339,19 @@ class EventRegistrationService:
                     secondary_color=secondary_color,
                     background_color=background_color,
                     accent_color=accent_color,
+                    page_background_style=event.page_background_style or "solid",
+                    page_background_image_url=event.page_background_image_url,
+                    page_background_gradient_start_color=event.page_background_gradient_start_color,
+                    page_background_gradient_end_color=event.page_background_gradient_end_color,
                     action_card_background_style=event.action_card_background_style or "gradient",
                     action_card_background_image_url=event.action_card_background_image_url,
+                    action_card_gradient_start_color=event.action_card_gradient_start_color,
+                    action_card_gradient_end_color=event.action_card_gradient_end_color,
                     action_card_background_opacity=event.action_card_background_opacity
                     if event.action_card_background_opacity is not None
                     else 1.0,
+                    cause_section_border_color=event.cause_section_border_color,
+                    cause_section_border_width=event.cause_section_border_width,
                     npo_name=npo.name if npo else "Unknown Organization",
                     npo_logo_url=npo_branding.logo_url if npo_branding else None,
                 )

@@ -5,7 +5,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { CauseSectionsPage } from '../cause-sections/CauseSectionsPage'
 import { EventForm } from '../components/EventForm'
 import { useEventWorkspace } from '../useEventWorkspace'
 
@@ -24,7 +23,7 @@ export function EventDetailsSection() {
         <CardHeader>
           <CardTitle>Event Information</CardTitle>
           <CardDescription>
-            Update event details, branding, and location information
+            Update event details, schedule, contact, and location information
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -35,19 +34,8 @@ export function EventDetailsSection() {
             onSubmit={handleSubmit}
             onCancel={handleCancel}
             isSubmitting={isSubmitting}
+            mode='detailsOnly'
           />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Our Cause Page Setup</CardTitle>
-          <CardDescription>
-            Manage the cards that appear on the public cause page.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <CauseSectionsPage embedded />
         </CardContent>
       </Card>
     </>

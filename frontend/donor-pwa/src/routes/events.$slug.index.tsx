@@ -1,21 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
+import { CountdownTimer } from '@/components/event-home/CountdownTimer'
+import { EventDetails } from '@/components/event-home/EventDetails'
 import {
-  ArrowLeft,
-  CalendarPlus,
-  Home,
-  ImageOff,
-  Loader2,
-  Ticket,
-} from 'lucide-react'
-import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import {
-  useEventContextStore,
-  type EventContextOption,
-} from '@/stores/event-context-store'
+  EventHeroSection,
+  type EventStatus,
+  type HeroTransitionStyle,
+} from '@/components/event-home/EventHeroSection'
+import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
+import { ProfileDropdown } from '@/components/profile-dropdown'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { EventHomePage } from '@/features/events/EventHomePage'
+import { AttendeeSurveyModal } from '@/features/survey/AttendeeSurveyModal'
+import { SurveyThankYouPopup } from '@/features/survey/SurveyThankYouPopup'
+import { useEventBranding } from '@/hooks/use-event-branding'
+import { useEventContext } from '@/hooks/use-event-context'
 import { donateNowApi } from '@/lib/api/donateNow'
 import { getEventBySlug, type EventMediaUsageTag } from '@/lib/api/events'
 import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
@@ -27,22 +25,24 @@ import {
 import { getMyInventory } from '@/lib/api/ticket-purchases'
 import apiClient from '@/lib/axios'
 import { hasValidRefreshToken } from '@/lib/storage/tokens'
-import { useEventBranding } from '@/hooks/use-event-branding'
-import { useEventContext } from '@/hooks/use-event-context'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { CountdownTimer } from '@/components/event-home/CountdownTimer'
-import { EventDetails } from '@/components/event-home/EventDetails'
+import { useAuthStore } from '@/stores/auth-store'
 import {
-  EventHeroSection,
-  type EventStatus,
-  type HeroTransitionStyle,
-} from '@/components/event-home/EventHeroSection'
-import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { EventHomePage } from '@/features/events/EventHomePage'
-import { AttendeeSurveyModal } from '@/features/survey/AttendeeSurveyModal'
-import { SurveyThankYouPopup } from '@/features/survey/SurveyThankYouPopup'
+  useEventContextStore,
+  type EventContextOption,
+} from '@/stores/event-context-store'
+import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import {
+  ArrowLeft,
+  CalendarPlus,
+  Home,
+  ImageOff,
+  Loader2,
+  Ticket,
+} from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 
 interface PublicAuctionPreviewItem {
   id: string
@@ -58,6 +58,18 @@ interface PublicAuctionPreviewResponse {
     pages?: number
     has_more?: boolean
   }
+}
+
+const hexToRgba = (hex: string, alpha: number): string | null => {
+  const normalized = hex.trim()
+  const match = /^#([0-9A-Fa-f]{6})$/.exec(normalized)
+  if (!match) return null
+
+  const [, value] = match
+  const r = Number.parseInt(value.slice(0, 2), 16)
+  const g = Number.parseInt(value.slice(2, 4), 16)
+  const b = Number.parseInt(value.slice(4, 6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
 export const Route = createFileRoute('/events/$slug/')({
@@ -236,11 +248,7 @@ function RouteComponent() {
   // Apply event branding colors when event loads
   useEffect(() => {
     if (event) {
-      applyBranding({
-        primary_color: event.primary_color || '#3B82F6',
-        secondary_color: event.secondary_color || '#9333EA',
-        background_color: '#FFFFFF',
-      })
+      applyBranding(event)
     }
   }, [event, applyBranding])
 
@@ -570,37 +578,67 @@ function RouteComponent() {
   const externalDonateNowUrl = donateNowSlug
     ? null
     : (event.external_donate_now_url ?? null)
+  const pageBackground = (() => {
+    const style = event.page_background_style || 'solid'
+    const backgroundColor =
+      event.background_color?.trim() ||
+      'rgb(var(--event-background, 255, 255, 255))'
+    const gradientStart =
+      event.page_background_gradient_start_color?.trim() || backgroundColor
+    const gradientEnd =
+      event.page_background_gradient_end_color?.trim() ||
+      event.secondary_color?.trim() ||
+      event.primary_color?.trim() ||
+      '#9333EA'
+
+    if (style === 'image' && event.page_background_image_url?.trim()) {
+      return {
+        backgroundImage: `url(${event.page_background_image_url})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundColor,
+      }
+    }
+
+    if (style === 'gradient') {
+      return {
+        background: `linear-gradient(160deg, ${gradientStart} 0%, ${gradientEnd} 100%)`,
+      }
+    }
+
+    return {
+      backgroundColor,
+    }
+  })()
   const actionCardBackground = (() => {
     const style = event.action_card_background_style || 'gradient'
     const opacity = Math.max(
       0,
       Math.min(1, event.action_card_background_opacity ?? 1)
     )
-
-    if (style === 'image' && event.action_card_background_image_url?.trim()) {
-      return {
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), linear-gradient(rgba(255, 255, 255, ${1 - opacity}), rgba(255, 255, 255, ${1 - opacity})), url(${event.action_card_background_image_url})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }
-    }
+    const gradientStart =
+      event.action_card_gradient_start_color?.trim() ||
+      event.primary_color?.trim() ||
+      '#3B82F6'
+    const gradientEnd =
+      event.action_card_gradient_end_color?.trim() ||
+      event.secondary_color?.trim() ||
+      '#9333EA'
 
     if (style === 'solid') {
       return {
-        background: `rgb(var(--event-primary, 59, 130, 246) / ${opacity})`,
+        background: `${hexToRgba(gradientStart, opacity) || `rgba(59, 130, 246, ${opacity})`}`,
       }
     }
 
     return {
-      background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246) / ${opacity}) 0%, rgb(var(--event-secondary, 147, 51, 234) / ${opacity}) 100%)`,
+      background: `linear-gradient(135deg, ${hexToRgba(gradientStart, opacity) || `rgba(59, 130, 246, ${opacity})`} 0%, ${hexToRgba(gradientEnd, opacity) || `rgba(147, 51, 234, ${opacity})`} 100%)`,
     }
   })()
 
   return (
-    <div
-      className='min-h-screen overflow-x-hidden'
-      style={{ backgroundColor: 'rgb(var(--event-background, 255, 255, 255))' }}
-    >
+    <div className='min-h-screen overflow-x-hidden' style={pageBackground}>
       {/* Profile menu overlay for authenticated users; Home button for anonymous visitors */}
       {isAuthenticated ? (
         <div className='fixed top-3 right-3 z-50'>

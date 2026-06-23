@@ -10,14 +10,18 @@
     "grep": {},
     "grepInvert": null,
     "maxFailures": 0,
-    "metadata": {},
+    "metadata": {
+      "actualWorkers": 1
+    },
     "preserveOutput": "always",
     "projects": [
       {
         "outputDir": "/home/jjeanes/dev/fundrbolt-platform/e2e/test-results",
         "repeatEach": 1,
         "retries": 1,
-        "metadata": {},
+        "metadata": {
+          "actualWorkers": 1
+        },
         "id": "chromium",
         "name": "chromium",
         "testDir": "/home/jjeanes/dev/fundrbolt-platform/e2e",
@@ -56,34 +60,6 @@
   },
   "suites": [
     {
-      "title": "critical-path/01-donor-signup.spec.ts",
-      "file": "critical-path/01-donor-signup.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [
-        {
-          "title": "donor signup sends a verification email",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 30000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [],
-              "status": "skipped"
-            }
-          ],
-          "id": "70bf86e7d16c211fa8e8-c509a09cdce9df47001c",
-          "file": "critical-path/01-donor-signup.spec.ts",
-          "line": 6,
-          "column": 1
-        }
-      ]
-    },
-    {
       "title": "critical-path/02-donor-signin.spec.ts",
       "file": "critical-path/02-donor-signin.spec.ts",
       "column": 0,
@@ -100,8 +76,22 @@
               "expectedStatus": "passed",
               "projectId": "chromium",
               "projectName": "chromium",
-              "results": [],
-              "status": "skipped"
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2965,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-19T10:18:52.155Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
             }
           ],
           "id": "c07020d77c06c63005de-a09fd0775214a7aeef00",
@@ -110,210 +100,14 @@
           "column": 1
         }
       ]
-    },
-    {
-      "title": "critical-path/03-event-registration.spec.ts",
-      "file": "critical-path/03-event-registration.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [
-        {
-          "title": "donor can validate a scoped registration cart",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 30000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [],
-              "status": "skipped"
-            }
-          ],
-          "id": "bb09daa78aeb15e9dc6d-e20cb6c6f845989dd4f3",
-          "file": "critical-path/03-event-registration.spec.ts",
-          "line": 3,
-          "column": 1
-        }
-      ]
-    },
-    {
-      "title": "critical-path/04-ticket-purchase.spec.ts",
-      "file": "critical-path/04-ticket-purchase.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [
-        {
-          "title": "seed donor can validate promo pricing for live event tickets",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 30000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [],
-              "status": "skipped"
-            }
-          ],
-          "id": "689df825181e8270c82c-de32bbcdeb44b2bef933",
-          "file": "critical-path/04-ticket-purchase.spec.ts",
-          "line": 3,
-          "column": 1
-        }
-      ]
-    },
-    {
-      "title": "critical-path/05-bid-placement.spec.ts",
-      "file": "critical-path/05-bid-placement.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [
-        {
-          "title": "seed donor can list seeded live event auction items",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 30000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [],
-              "status": "skipped"
-            }
-          ],
-          "id": "9b5d3ba5eacba22e2c6f-4e4a805dcde996cd2c34",
-          "file": "critical-path/05-bid-placement.spec.ts",
-          "line": 3,
-          "column": 1
-        }
-      ]
-    },
-    {
-      "title": "critical-path/06-guest-checkin.spec.ts",
-      "file": "critical-path/06-guest-checkin.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [
-        {
-          "title": "check-in staff can fetch seeded live-event lookup suggestions",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 30000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [],
-              "status": "skipped"
-            }
-          ],
-          "id": "5950aae6c1e7b99a9a9b-3010672270eb7d3ccbd2",
-          "file": "critical-path/06-guest-checkin.spec.ts",
-          "line": 4,
-          "column": 1
-        }
-      ]
-    },
-    {
-      "title": "critical-path/07-admin-event-creation.spec.ts",
-      "file": "critical-path/07-admin-event-creation.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [
-        {
-          "title": "npo admin can provision a draft event",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 30000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [],
-              "status": "skipped"
-            }
-          ],
-          "id": "df1ce8709c348c5a93ba-b03768f6b4b33be58397",
-          "file": "critical-path/07-admin-event-creation.spec.ts",
-          "line": 4,
-          "column": 1
-        }
-      ]
-    },
-    {
-      "title": "full-suite/cross-cutting/pwa-features.spec.ts",
-      "file": "full-suite/cross-cutting/pwa-features.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [
-        {
-          "title": "mobile subset placeholder keeps configuration valid",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 30000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [],
-              "status": "skipped"
-            }
-          ],
-          "id": "22bd97ae64d3cd77cb2c-d5185285b599cbb191c2",
-          "file": "full-suite/cross-cutting/pwa-features.spec.ts",
-          "line": 3,
-          "column": 1
-        }
-      ]
-    },
-    {
-      "title": "full-suite/cross-cutting/responsive-layout.spec.ts",
-      "file": "full-suite/cross-cutting/responsive-layout.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [
-        {
-          "title": "responsive subset placeholder keeps configuration valid",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 30000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [],
-              "status": "skipped"
-            }
-          ],
-          "id": "2e47e9de388608c61fe1-f9f8b933483bba122df8",
-          "file": "full-suite/cross-cutting/responsive-layout.spec.ts",
-          "line": 3,
-          "column": 1
-        }
-      ]
     }
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-05-30T17:27:21.048Z",
-    "duration": 103.17599999999993,
-    "expected": 0,
-    "skipped": 9,
+    "startTime": "2026-06-19T10:18:51.137Z",
+    "duration": 4144.393,
+    "expected": 1,
+    "skipped": 0,
     "unexpected": 0,
     "flaky": 0
   }

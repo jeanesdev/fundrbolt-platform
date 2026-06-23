@@ -1,6 +1,3 @@
-import { useEffect, useMemo, useState } from 'react'
-import type { EventMedia, HeroTransitionStyle } from '@/types/event'
-import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -22,6 +19,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import type {
+  EventMedia,
+  EventMediaUsageTag,
+  HeroTransitionStyle,
+} from '@/types/event'
+import { ImageIcon, Loader2 } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { MediaUploader } from '../components/MediaUploader'
 import { useEventWorkspace } from '../useEventWorkspace'
 
@@ -203,6 +208,14 @@ function HeroTransitionDemo({
   )
 }
 
+const singleImageUsageRows = [
+  { usageTag: 'event_logo_icon', label: 'Event Logo Icon (Square)' },
+  { usageTag: 'event_logo', label: 'Event Logo Full' },
+  { usageTag: 'npo_logo_icon', label: 'NPO Logo Icon (Square)' },
+  { usageTag: 'npo_logo', label: 'NPO Logo Full' },
+  { usageTag: 'event_layout_map', label: 'Event Map Layout' },
+] as const
+
 export function EventMediaSection() {
   const {
     eventId,
@@ -229,6 +242,8 @@ export function EventMediaSection() {
     )
   const [savingStyle, setSavingStyle] = useState(false)
   const [showDemo, setShowDemo] = useState(false)
+  const [uploadingUsageTag, setUploadingUsageTag] =
+    useState<EventMediaUsageTag | null>(null)
   const demoKey = useMemo(
     () =>
       `${showDemo}:${heroTransitionStyle}:${heroMedia
@@ -259,6 +274,48 @@ export function EventMediaSection() {
       toast.error('Failed to update hero transition style')
     } finally {
       setSavingStyle(false)
+    }
+  }
+
+  const getCurrentSingleImage = (usageTag: EventMediaUsageTag) => {
+    const matches = (currentEvent.media || [])
+      .filter((item) => item.usage_tag === usageTag)
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    return {
+      current: matches[0],
+      extraCount: Math.max(0, matches.length - 1),
+      all: matches,
+    }
+  }
+
+  const handleSingleImageUpload = async (
+    usageTag: EventMediaUsageTag,
+    file?: File
+  ) => {
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please choose an image file')
+      return
+    }
+
+    setUploadingUsageTag(usageTag)
+
+    try {
+      const existing = (currentEvent.media || []).filter(
+        (item) => item.usage_tag === usageTag
+      )
+
+      for (const media of existing) {
+        await handleMediaDelete(media.id)
+      }
+
+      await handleMediaUpload(file, usageTag)
+      toast.success('Image uploaded')
+    } catch (_error) {
+      toast.error('Failed to upload image')
+    } finally {
+      setUploadingUsageTag(null)
     }
   }
 
@@ -318,30 +375,85 @@ export function EventMediaSection() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Other Event Media</CardTitle>
+          <CardTitle>Event Logos and Map</CardTitle>
           <CardDescription>
-            Upload full logos, icon logos, layout maps, and other event media
-            assets.
+            Upload one image for each usage type. Uploading a new file replaces
+            the existing one for that slot.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <MediaUploader
-            media={currentEvent.media || []}
-            onUpload={handleMediaUpload}
-            onUpdateMedia={handleMediaUpdate}
-            onDelete={handleMediaDelete}
-            excludedUsageTags={['main_event_page_hero']}
-            allowedUploadUsageTags={[
-              'event_layout_map',
-              'npo_logo',
-              'npo_logo_icon',
-              'event_logo',
-              'event_logo_icon',
-            ]}
-            defaultUploadUsageTag='event_layout_map'
-            uploadProgress={uploadProgress}
-            uploadingFiles={uploadingFiles}
-          />
+          <div className='space-y-4'>
+            {singleImageUsageRows.map((row) => {
+              const { current, extraCount } = getCurrentSingleImage(
+                row.usageTag
+              )
+              const inputId = `single-media-${row.usageTag}`
+              const isUploading = uploadingUsageTag === row.usageTag
+
+              return (
+                <div
+                  key={row.usageTag}
+                  className='flex flex-col gap-3 rounded-md border p-4 sm:flex-row sm:items-center sm:justify-between'
+                >
+                  <div className='flex items-center gap-3'>
+                    {current?.file_url ? (
+                      <img
+                        src={current.file_url}
+                        alt={row.label}
+                        className='h-16 w-16 rounded border object-cover'
+                      />
+                    ) : (
+                      <div className='bg-muted text-muted-foreground flex h-16 w-16 items-center justify-center rounded border'>
+                        <ImageIcon className='h-5 w-5' />
+                      </div>
+                    )}
+
+                    <div>
+                      <p className='text-sm font-medium'>{row.label}</p>
+                      <p className='text-muted-foreground text-xs'>
+                        {current ? current.file_name : 'No image uploaded'}
+                      </p>
+                      {extraCount > 0 && (
+                        <p className='text-xs text-amber-600'>
+                          {extraCount} older image
+                          {extraCount === 1 ? '' : 's'} will be removed on next
+                          upload.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className='flex items-center gap-2'>
+                    <input
+                      id={inputId}
+                      type='file'
+                      accept='image/jpeg,image/png,image/webp,image/gif'
+                      className='hidden'
+                      onChange={(event) => {
+                        void handleSingleImageUpload(
+                          row.usageTag,
+                          event.target.files?.[0]
+                        )
+                        event.currentTarget.value = ''
+                      }}
+                    />
+                    <Button type='button' variant='outline' asChild>
+                      <label htmlFor={inputId} className='cursor-pointer'>
+                        {isUploading ? (
+                          <span className='inline-flex items-center gap-2'>
+                            <Loader2 className='h-4 w-4 animate-spin' />
+                            Uploading...
+                          </span>
+                        ) : (
+                          'Choose File'
+                        )}
+                      </label>
+                    </Button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </CardContent>
       </Card>
 

@@ -142,6 +142,40 @@ class PaddleRaiseService(QuickEntryServiceBase):
 
         return output
 
+    @classmethod
+    async def delete_donation(
+        cls,
+        db: AsyncSession,
+        *,
+        event_id: UUID,
+        donation_id: UUID,
+        deleted_by_user_id: UUID,
+    ) -> None:
+        """Delete a paddle raise quick-entry donation."""
+        stmt = select(QuickEntryDonation).where(
+            QuickEntryDonation.id == donation_id,
+            QuickEntryDonation.event_id == event_id,
+        )
+        result = await db.execute(stmt)
+        donation = result.scalar_one_or_none()
+        if donation is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Paddle raise donation not found",
+            )
+
+        cls.log_quick_entry_action(
+            db,
+            actor_user_id=deleted_by_user_id,
+            action="quick_entry_paddle_donation_deleted",
+            resource_type="quick_entry_paddle_donation",
+            resource_id=donation.id,
+            event_id=event_id,
+            metadata={"amount": donation.amount, "bidder_number": donation.bidder_number},
+        )
+        await db.delete(donation)
+        await db.commit()
+
     @staticmethod
     async def list_available_labels(
         db: AsyncSession,

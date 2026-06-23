@@ -5,8 +5,8 @@
  * Active tab uses the event primary brand colour.
  * Supports a badge count on any tab.
  */
-import { Heart, PartyPopper, Ticket } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Heart, PartyPopper, Ticket } from 'lucide-react'
 
 export type DonorTab = 'home' | 'auction' | 'seat'
 
@@ -47,7 +47,7 @@ export function BottomTabNav({
       className='fixed right-0 bottom-0 left-0 z-50 border-t'
       style={{
         backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
-        borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
+        borderColor: 'rgb(var(--event-secondary, 147, 51, 234) / 0.2)',
         boxShadow: '0 -1px 4px rgb(0 0 0 / 0.08)',
         paddingBottom: 'var(--bottom-safe-area, 0px)',
       }}
@@ -79,7 +79,7 @@ export function BottomTabNav({
                 <span
                   className='absolute top-0 right-1/4 left-1/4 h-0.5 rounded-full'
                   style={{
-                    backgroundColor: `rgb(var(--event-primary, 59, 130, 246))`,
+                    backgroundColor: `rgb(var(--event-accent, 16, 185, 129))`,
                   }}
                 />
               )}
@@ -93,8 +93,8 @@ export function BottomTabNav({
                   )}
                   style={{
                     color: isActive
-                      ? `rgb(var(--event-primary, 59, 130, 246))`
-                      : 'var(--event-text-on-background, #000000)',
+                      ? `rgb(var(--event-accent, 16, 185, 129))`
+                      : `rgb(var(--event-secondary, 147, 51, 234))`,
                   }}
                 />
                 {badgeCount > 0 && (
@@ -117,8 +117,8 @@ export function BottomTabNav({
                 )}
                 style={{
                   color: isActive
-                    ? `rgb(var(--event-primary, 59, 130, 246))`
-                    : 'var(--event-text-on-background, #000000)',
+                    ? `rgb(var(--event-accent, 16, 185, 129))`
+                    : `rgb(var(--event-secondary, 147, 51, 234))`,
                 }}
               >
                 {tab.label}

@@ -243,6 +243,26 @@ class Event(Base, UUIDMixin, TimestampMixin):
         nullable=True,
         comment="Hex color code for accents (e.g., #FF5733)",
     )
+    page_background_style: Mapped[str | None] = mapped_column(
+        String(16),
+        nullable=True,
+        comment="Donor page background style: solid, gradient, or image",
+    )
+    page_background_image_url: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+        comment="Optional image URL used when donor page background style is image",
+    )
+    page_background_gradient_start_color: Mapped[str | None] = mapped_column(
+        String(7),
+        nullable=True,
+        comment="Hex color used as the first stop for donor page gradient backgrounds",
+    )
+    page_background_gradient_end_color: Mapped[str | None] = mapped_column(
+        String(7),
+        nullable=True,
+        comment="Hex color used as the second stop for donor page gradient backgrounds",
+    )
     action_card_background_style: Mapped[str | None] = mapped_column(
         String(16),
         nullable=True,
@@ -253,10 +273,30 @@ class Event(Base, UUIDMixin, TimestampMixin):
         nullable=True,
         comment="Optional image URL used when donor action card background style is image",
     )
+    action_card_gradient_start_color: Mapped[str | None] = mapped_column(
+        String(7),
+        nullable=True,
+        comment="Hex color used as the first stop for donor action card gradients",
+    )
+    action_card_gradient_end_color: Mapped[str | None] = mapped_column(
+        String(7),
+        nullable=True,
+        comment="Hex color used as the second stop for donor action card gradients",
+    )
     action_card_background_opacity: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
         comment="Opacity for donor action card backgrounds (0.0 transparent - 1.0 opaque)",
+    )
+    cause_section_border_color: Mapped[str | None] = mapped_column(
+        String(7),
+        nullable=True,
+        comment="Hex color used for built-in donor cause section card borders",
+    )
+    cause_section_border_width: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        comment="Border thickness in pixels for built-in donor cause section cards",
     )
     hero_transition_style: Mapped[str] = mapped_column(
         String(32),
@@ -465,12 +505,40 @@ class Event(Base, UUIDMixin, TimestampMixin):
             name="check_secondary_color_format",
         ),
         CheckConstraint(
+            "page_background_gradient_start_color IS NULL OR page_background_gradient_start_color ~ '^#[0-9A-Fa-f]{6}$'",
+            name="check_page_bg_gradient_start_color_format",
+        ),
+        CheckConstraint(
+            "page_background_gradient_end_color IS NULL OR page_background_gradient_end_color ~ '^#[0-9A-Fa-f]{6}$'",
+            name="check_page_bg_gradient_end_color_format",
+        ),
+        CheckConstraint(
+            "page_background_style IS NULL OR page_background_style IN ('solid', 'gradient', 'image')",
+            name="check_page_background_style",
+        ),
+        CheckConstraint(
+            "action_card_gradient_start_color IS NULL OR action_card_gradient_start_color ~ '^#[0-9A-Fa-f]{6}$'",
+            name="check_action_card_gradient_start_color_format",
+        ),
+        CheckConstraint(
+            "action_card_gradient_end_color IS NULL OR action_card_gradient_end_color ~ '^#[0-9A-Fa-f]{6}$'",
+            name="check_action_card_gradient_end_color_format",
+        ),
+        CheckConstraint(
             "action_card_background_style IS NULL OR action_card_background_style IN ('solid', 'gradient', 'image')",
             name="check_action_card_background_style",
         ),
         CheckConstraint(
             "action_card_background_opacity IS NULL OR (action_card_background_opacity >= 0 AND action_card_background_opacity <= 1)",
             name="check_action_card_background_opacity",
+        ),
+        CheckConstraint(
+            "cause_section_border_color IS NULL OR cause_section_border_color ~ '^#[0-9A-Fa-f]{6}$'",
+            name="check_cause_section_border_color_format",
+        ),
+        CheckConstraint(
+            "cause_section_border_width IS NULL OR (cause_section_border_width >= 0 AND cause_section_border_width <= 12)",
+            name="check_cause_section_border_width_range",
         ),
     )
 

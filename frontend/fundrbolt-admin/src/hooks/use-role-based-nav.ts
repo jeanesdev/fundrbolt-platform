@@ -353,6 +353,7 @@ const EVENT_SECTION_CONFIG: EventSectionConfig[] = [
   { title: 'Donor Dashboard', path: 'donor-dashboard', icon: 'HeartHandshake' },
   { title: 'Auction Dashboard', path: 'auction-dashboard', icon: 'Gavel' },
   { title: 'Event Details', path: 'details', icon: 'FileText' },
+  { title: 'Page Setup', path: 'page-setup', icon: 'Settings' },
   {
     title: 'Images & Video',
     path: 'media',
@@ -466,6 +467,7 @@ const EVENT_NAV_GROUPS: Array<{
     sections: [
       sectionByPath('preview'),
       sectionByPath('details'),
+      sectionByPath('page-setup'),
       sectionByPath('media'),
       sectionByPath('checklist'),
       sectionByPath('run-of-show'),

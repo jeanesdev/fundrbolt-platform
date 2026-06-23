@@ -13,7 +13,11 @@ export interface AuctionItemGalleryItem {
   auction_type: AuctionType
   bid_number: number
   thumbnail_url: string | null
-  starting_bid: number
+  starting_bid: number | null
+  bid_increment?: number | null
+  donor_value?: number | null
+  display_starting_bid?: boolean
+  display_fair_market_value?: boolean
   current_bid: number | null
   bid_count: number
   buy_now_purchased_count?: number

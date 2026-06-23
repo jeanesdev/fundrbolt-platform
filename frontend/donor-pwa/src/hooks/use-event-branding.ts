@@ -42,12 +42,12 @@
  * }
  * ```
  */
-import { useEffect } from 'react'
 import {
   getContrastingTextColor,
   getContrastingTextColors,
   hexToRgbTuple,
 } from '@/lib/color-utils'
+import { useEffect } from 'react'
 
 /**
  * Update the theme-color meta tag so iOS Safari chrome matches the page background.
@@ -64,6 +64,11 @@ export interface EventBranding {
   secondary_color?: string | null
   background_color?: string | null
   accent_color?: string | null
+  action_card_background_style?: 'solid' | 'gradient' | 'image' | null
+  action_card_gradient_start_color?: string | null
+  action_card_gradient_end_color?: string | null
+  cause_section_border_color?: string | null
+  cause_section_border_width?: number | null
   logo_url?: string | null
   banner_url?: string | null
 }
@@ -109,6 +114,16 @@ export function useEventBranding() {
     const backgroundColor =
       branding.background_color || DEFAULT_COLORS.background
     const accentColor = branding.accent_color || DEFAULT_COLORS.accent
+    const cardBaseColor =
+      branding.action_card_background_style === 'solid'
+        ? branding.action_card_gradient_start_color || secondaryColor
+        : branding.action_card_gradient_start_color || secondaryColor
+    const causeBorderColor =
+      branding.cause_section_border_color || primaryColor
+    const causeBorderWidth = Math.max(
+      0,
+      Math.min(12, branding.cause_section_border_width ?? 1)
+    )
 
     // Apply color RGB tuples
     root.style.setProperty('--event-primary', hexToRgbTuple(primaryColor))
@@ -136,16 +151,26 @@ export function useEventBranding() {
       bgTextColors.muted
     )
 
-    // Card colors - use secondary as card background with proper text contrast
-    root.style.setProperty('--event-card-bg', hexToRgbTuple(secondaryColor))
+    // Card colors - keep shared card surfaces aligned with explicit event card branding.
+    root.style.setProperty('--event-card-bg', hexToRgbTuple(cardBaseColor))
     root.style.setProperty(
       '--event-card-text',
-      getContrastingTextColor(secondaryColor)
+      getContrastingTextColor(cardBaseColor)
     )
     root.style.setProperty(
       '--event-card-text-muted',
-      getContrastingTextColors(secondaryColor).muted
+      getContrastingTextColors(cardBaseColor).muted
     )
+    root.style.setProperty('--card', cardBaseColor)
+    root.style.setProperty('--card-foreground', getContrastingTextColor(cardBaseColor))
+    root.style.setProperty('--popover', cardBaseColor)
+    root.style.setProperty(
+      '--popover-foreground',
+      getContrastingTextColor(cardBaseColor)
+    )
+    root.style.setProperty('--muted-foreground', getContrastingTextColors(cardBaseColor).muted)
+    root.style.setProperty('--event-cause-border-color', causeBorderColor)
+    root.style.setProperty('--event-cause-border-width', `${causeBorderWidth}px`)
 
     // Update theme-color meta tag and body to match event background
     // This prevents the iOS Safari chrome (top/bottom bars) from being a different color
@@ -177,6 +202,16 @@ export function useEventBranding() {
       '--event-text-muted-on-background',
       DEFAULT_BRANDING.textMutedOnBackground
     )
+    root.style.removeProperty('--event-card-bg')
+    root.style.removeProperty('--event-card-text')
+    root.style.removeProperty('--event-card-text-muted')
+    root.style.removeProperty('--card')
+    root.style.removeProperty('--card-foreground')
+    root.style.removeProperty('--popover')
+    root.style.removeProperty('--popover-foreground')
+    root.style.removeProperty('--muted-foreground')
+    root.style.removeProperty('--event-cause-border-color')
+    root.style.removeProperty('--event-cause-border-width')
 
     // Reset theme-color to dark default and clear inline body background
     updateThemeColorMeta(DEFAULT_COLORS.background)

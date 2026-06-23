@@ -3,8 +3,8 @@
  *
  * Provides functions for accessing public event data (no authentication required).
  */
-import type { AxiosResponse } from 'axios'
 import apiClient from '@/lib/axios'
+import type { AxiosResponse } from 'axios'
 
 // ================================
 // Types
@@ -37,9 +37,17 @@ export interface EventResponse {
   secondary_color?: string | null
   background_color?: string | null
   accent_color?: string | null
+  page_background_style?: 'solid' | 'gradient' | 'image' | null
+  page_background_image_url?: string | null
+  page_background_gradient_start_color?: string | null
+  page_background_gradient_end_color?: string | null
   action_card_background_style?: 'solid' | 'gradient' | 'image' | null
   action_card_background_image_url?: string | null
+  action_card_gradient_start_color?: string | null
+  action_card_gradient_end_color?: string | null
   action_card_background_opacity?: number | null
+  cause_section_border_color?: string | null
+  cause_section_border_width?: number | null
   banner_url?: string | null
   hero_transition_style: string
   created_at: string
@@ -123,9 +131,17 @@ export interface EventDetailResponse extends EventResponse {
   secondary_color: string | null
   background_color: string | null
   accent_color: string | null
+  page_background_style?: 'solid' | 'gradient' | 'image' | null
+  page_background_image_url?: string | null
+  page_background_gradient_start_color?: string | null
+  page_background_gradient_end_color?: string | null
   action_card_background_style?: 'solid' | 'gradient' | 'image' | null
   action_card_background_image_url?: string | null
+  action_card_gradient_start_color?: string | null
+  action_card_gradient_end_color?: string | null
   action_card_background_opacity?: number | null
+  cause_section_border_color?: string | null
+  cause_section_border_width?: number | null
   banner_url?: string | null
   hero_transition_style: string
   food_options: FoodOption[]

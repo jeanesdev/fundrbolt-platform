@@ -1,3 +1,6 @@
+import { BidderAvatar } from '@/components/bidder-avatar'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import {
   type FormEvent,
   type KeyboardEvent,
@@ -6,9 +9,6 @@ import {
   useRef,
   useState,
 } from 'react'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import { BidderAvatar } from '@/components/bidder-avatar'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import type {
   QuickEntryDonationLabel,
   QuickEntryPaddleDonationResponse,
@@ -29,12 +29,14 @@ interface PaddleRaiseEntryFormProps {
   summary: QuickEntryPaddleSummary | undefined
   submitToken: number
   disabled?: boolean
+  isDeleting?: boolean
   onAmountChange: (value: string) => void
   onBidderNumberChange: (value: string) => void
   onCustomLabelChange: (value: string) => void
   onSelectedLabelIdsChange: (value: string[]) => void
   onIsMonthlyChange: (value: boolean) => void
   onSubmit: () => void
+  onDeleteDonation: (donationId: string) => void
 }
 
 function parseToWholeDollar(value: string): string {
@@ -70,12 +72,14 @@ export function PaddleRaiseEntryForm({
   summary,
   submitToken,
   disabled,
+  isDeleting,
   onAmountChange,
   onBidderNumberChange,
   onCustomLabelChange,
   onSelectedLabelIdsChange,
   onIsMonthlyChange,
   onSubmit,
+  onDeleteDonation,
 }: PaddleRaiseEntryFormProps) {
   const amountRef = useRef<HTMLInputElement>(null)
   const bidderRef = useRef<HTMLInputElement>(null)
@@ -425,6 +429,23 @@ export function PaddleRaiseEntryForm({
                       #{donation.bidder_number}
                     </span>
                   </div>
+                  <button
+                    type='button'
+                    className='rounded border px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-60'
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          'Delete this donation? This will remove it from the quick-entry log and summary totals.'
+                        )
+                      ) {
+                        onDeleteDonation(donation.id)
+                      }
+                    }}
+                    disabled={isDeleting}
+                    aria-label={`Delete donation ${donation.id}`}
+                  >
+                    Delete
+                  </button>
                 </div>
                 <p className='flex items-center gap-2 text-sm'>
                   {donation.donor_name ? (
@@ -525,6 +546,7 @@ export function PaddleRaiseEntryForm({
                     }
                   />
                 </th>
+                <th className='px-3 py-2'>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -550,13 +572,32 @@ export function PaddleRaiseEntryForm({
                   <td className='px-3 py-2'>
                     {donation.labels.length
                       ? donation.labels
-                          .map((label) => normalizeLabelName(label.label))
-                          .filter(isVisibleLabel)
-                          .join(', ') || '—'
+                        .map((label) => normalizeLabelName(label.label))
+                        .filter(isVisibleLabel)
+                        .join(', ') || '—'
                       : '—'}
                   </td>
                   <td className='px-3 py-2'>
                     {new Date(donation.entered_at).toLocaleTimeString()}
+                  </td>
+                  <td className='px-3 py-2'>
+                    <button
+                      type='button'
+                      className='rounded border px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-60'
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            'Delete this donation? This will remove it from the quick-entry log and summary totals.'
+                          )
+                        ) {
+                          onDeleteDonation(donation.id)
+                        }
+                      }}
+                      disabled={isDeleting}
+                      aria-label={`Delete donation ${donation.id}`}
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -564,7 +605,7 @@ export function PaddleRaiseEntryForm({
                 <tr>
                   <td
                     className='text-muted-foreground px-3 py-4 text-center'
-                    colSpan={5}
+                    colSpan={6}
                   >
                     {recentDonations.length === 0
                       ? 'No paddle raise donations entered yet.'

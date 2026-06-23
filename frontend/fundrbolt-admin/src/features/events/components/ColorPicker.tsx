@@ -2,7 +2,7 @@
  * ColorPicker Component
  * Simple color picker with hex input and visual preview
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { colors as brandColors } from '@fundrbolt/shared/assets'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,12 +16,26 @@ interface ColorPickerProps {
 export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
   const [hexInput, setHexInput] = useState(value || '')
 
+  useEffect(() => {
+    setHexInput(value || '')
+  }, [value])
+
+  const normalizeHexInput = (rawValue: string): string => {
+    const trimmed = rawValue.trim()
+    if (!trimmed) return ''
+
+    const withoutHashes = trimmed.replace(/^#+/, '')
+    return `#${withoutHashes}`
+  }
+
   const handleHexChange = (newHex: string) => {
-    setHexInput(newHex)
+    const normalizedHex = normalizeHexInput(newHex)
+    setHexInput(normalizedHex)
+
     // Validate hex color format
-    if (/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(newHex)) {
-      onChange(newHex)
-    } else if (newHex === '') {
+    if (/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(normalizedHex)) {
+      onChange(normalizedHex)
+    } else if (normalizedHex === '') {
       onChange('')
     }
   }

@@ -18,8 +18,8 @@ export interface AuctionItemBase {
   title: string
   description: string
   auction_type: AuctionType
-  starting_bid: number
-  bid_increment: number
+  starting_bid: number | null
+  bid_increment: number | null
   donor_value?: number | null
   cost?: number | null
   buy_now_price?: number | null
@@ -29,6 +29,8 @@ export interface AuctionItemBase {
   sponsor_id?: string | null
   item_webpage?: string | null
   display_priority?: number | null
+  display_starting_bid: boolean
+  display_fair_market_value: boolean
 }
 
 export interface AuctionItem extends AuctionItemBase {
@@ -55,14 +57,14 @@ export interface AuctionItemDetail extends AuctionItem {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface AuctionItemCreate extends AuctionItemBase {}
+export interface AuctionItemCreate extends AuctionItemBase { }
 
 export interface AuctionItemUpdate {
   title?: string
   description?: string
   auction_type?: AuctionType
-  starting_bid?: number
-  bid_increment?: number
+  starting_bid?: number | null
+  bid_increment?: number | null
   donor_value?: number | null
   cost?: number | null
   buy_now_price?: number | null
@@ -72,6 +74,8 @@ export interface AuctionItemUpdate {
   sponsor_id?: string | null
   item_webpage?: string | null
   display_priority?: number | null
+  display_starting_bid?: boolean
+  display_fair_market_value?: boolean
 }
 
 export interface PaginationInfo {
