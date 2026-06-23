@@ -73,3 +73,31 @@ class TestQuickEntryPaddleRaiseIntegration:
         )
         assert response.status_code == 201
         assert response.json()["labels"] == []
+
+    async def test_delete_paddle_raise_donation_removes_row(
+        self,
+        npo_admin_client: AsyncClient,
+        test_event: Any,
+        test_registration: Any,
+        db_session: AsyncSession,
+    ) -> None:
+        """Deletes an existing paddle raise donation and updates event counts."""
+        await _assign_bidder_number(db_session, test_registration.id, bidder_number=452)
+
+        create_response = await npo_admin_client.post(
+            f"/api/v1/admin/events/{test_event.id}/quick-entry/paddle-raise/donations",
+            json={"amount": 850, "bidder_number": 452, "label_ids": []},
+        )
+        assert create_response.status_code == 201
+        donation_id = create_response.json()["id"]
+
+        delete_response = await npo_admin_client.delete(
+            f"/api/v1/admin/events/{test_event.id}/quick-entry/paddle-raise/donations/{donation_id}"
+        )
+        assert delete_response.status_code == 204
+
+        count_stmt = select(func.count(QuickEntryDonation.id)).where(
+            QuickEntryDonation.event_id == test_event.id
+        )
+        final_count = int((await db_session.execute(count_stmt)).scalar_one())
+        assert final_count == 0

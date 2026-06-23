@@ -12,6 +12,7 @@ from app.models.auction_item import AuctionItem
 from app.models.auctioneer import AuctioneerEventSettings, AuctioneerItemCommission
 from app.models.audit_log import AuditLog
 from app.models.base import Base, TimestampMixin, UUIDMixin
+from app.models.branding_theme_template import BrandingThemeTemplate
 from app.models.buy_now_availability import BuyNowAvailability
 from app.models.cause_section_card import (
     CardTypeEnum,
@@ -168,6 +169,7 @@ __all__ = [
     "AuditLog",
     "Base",
     "BidActionAudit",
+    "BrandingThemeTemplate",
     "BuyNowAvailability",
     "CampaignStatusEnum",
     "CardTypeEnum",

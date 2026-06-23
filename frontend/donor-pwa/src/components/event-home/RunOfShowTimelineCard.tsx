@@ -4,9 +4,9 @@
  * Collapsible timeline card for the Home tab showing the donor-visible
  * run-of-show items. Hidden entirely when there are no items.
  */
-import { useState } from 'react'
 import type { DonorRunOfShowItem } from '@/types/run-of-show'
 import { ChevronDown, ChevronUp, Clock } from 'lucide-react'
+import { useState } from 'react'
 
 interface RunOfShowTimelineCardProps {
   items: DonorRunOfShowItem[]
@@ -32,7 +32,8 @@ export function RunOfShowTimelineCard({ items }: RunOfShowTimelineCardProps) {
     <div
       className='overflow-hidden rounded-2xl border'
       style={{
-        borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
+        borderColor: 'var(--event-cause-border-color, #3B82F6)',
+        borderWidth: 'var(--event-cause-border-width, 1px)',
         backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
       }}
     >
@@ -45,11 +46,11 @@ export function RunOfShowTimelineCard({ items }: RunOfShowTimelineCardProps) {
         <div className='flex items-center gap-2'>
           <Clock
             className='h-4 w-4 shrink-0'
-            style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
+            style={{ color: 'rgb(var(--event-accent, 16, 185, 129))' }}
           />
           <span
             className='text-sm font-bold'
-            style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
+            style={{ color: 'rgb(var(--event-accent, 16, 185, 129))' }}
           >
             Event Program
           </span>
@@ -118,13 +119,13 @@ export function RunOfShowTimelineCard({ items }: RunOfShowTimelineCardProps) {
                             ? undefined
                             : isNextUp
                               ? {
-                                  color:
-                                    'rgb(var(--event-primary, 59, 130, 246))',
-                                }
+                                color:
+                                  'rgb(var(--event-primary, 59, 130, 246))',
+                              }
                               : {
-                                  color:
-                                    'var(--event-text-muted-on-background, #4B5563)',
-                                }
+                                color:
+                                  'var(--event-text-muted-on-background, #4B5563)',
+                              }
                         }
                       >
                         {formatTime(item.scheduled_time)}
@@ -144,9 +145,9 @@ export function RunOfShowTimelineCard({ items }: RunOfShowTimelineCardProps) {
                           isComplete
                             ? undefined
                             : {
-                                color:
-                                  'var(--event-text-on-background, #374151)',
-                              }
+                              color:
+                                'var(--event-text-on-background, #374151)',
+                            }
                         }
                       >
                         {item.title}

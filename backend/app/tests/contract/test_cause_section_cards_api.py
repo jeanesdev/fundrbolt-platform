@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import pytest
 from httpx import AsyncClient
 
@@ -206,6 +208,57 @@ class TestCauseSectionCardMutations:
         text_cards = [card for card in public_cards if card["card_type"] == "text"]
         assert len(text_cards) == 1
         assert "Help families thrive." in (text_cards[0]["content_html"] or "")
+
+    async def test_public_cards_refresh_sas_for_uploaded_slides(
+        self,
+        client: AsyncClient,
+        npo_admin_client: AsyncClient,
+        test_event: object,
+    ) -> None:
+        event_id = str(test_event.id)  # type: ignore[attr-defined]
+
+        create_card_response = await npo_admin_client.post(
+            f"/api/v1/admin/events/{event_id}/cause-page/cards",
+            json={
+                "draft_version": 1,
+                "card_type": "slideshow",
+                "title": "Impact Slides",
+            },
+        )
+        assert create_card_response.status_code == 201
+        card_id = create_card_response.json()["id"]
+
+        create_slide_response = await npo_admin_client.post(
+            f"/api/v1/admin/events/{event_id}/cause-page/cards/{card_id}/slides",
+            json={
+                "draft_version": 2,
+                "slide_variant": "image_only",
+                "media_url": "https://fundrboltstorage.blob.core.windows.net/event-media/events/e1/slide.jpg?sv=old-expired-token",
+                "media_source": "upload",
+                "alt_text": "Impact image",
+            },
+        )
+        assert create_slide_response.status_code == 201
+
+        publish_response = await npo_admin_client.post(
+            f"/api/v1/admin/events/{event_id}/cause-page/publish",
+            json={"draft_version": 3},
+        )
+        assert publish_response.status_code == 200
+
+        with patch(
+            "app.services.media_service.MediaService.generate_read_sas_url",
+            return_value="https://signed.example.com/slide.jpg?sig=fresh",
+        ):
+            public_response = await client.get(f"/api/v1/events/{event_id}/cause-page/cards")
+
+        assert public_response.status_code == 200
+        public_cards = public_response.json()
+        slideshow_cards = [card for card in public_cards if card["card_type"] == "slideshow"]
+        assert len(slideshow_cards) == 1
+        assert slideshow_cards[0]["slides"][0]["media_url"] == (
+            "https://signed.example.com/slide.jpg?sig=fresh"
+        )
 
     async def test_delete_built_in_card_rejected(
         self,

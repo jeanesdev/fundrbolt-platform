@@ -2,13 +2,13 @@
  * FoodOptionSelector Component
  * Manage food/dietary options for events
  */
+import { useState } from 'react'
+import type { FoodOption, FoodOptionUpdateRequest } from '@/types/event'
+import { Pencil, Save, Trash2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import type { FoodOption, FoodOptionUpdateRequest } from '@/types/event'
-import { Pencil, Save, Trash2, X } from 'lucide-react'
-import { useState } from 'react'
 
 interface FoodOptionSelectorProps {
   options: FoodOption[]

@@ -37,15 +37,31 @@ def upgrade() -> None:
             comment="Optional image URL used when donor action card background style is image",
         ),
     )
+    op.add_column(
+        "events",
+        sa.Column(
+            "action_card_background_opacity",
+            sa.Float(),
+            nullable=True,
+            comment="Opacity for donor action card backgrounds (0.0 transparent - 1.0 opaque)",
+        ),
+    )
 
     op.create_check_constraint(
         "check_action_card_background_style",
         "events",
         "action_card_background_style IS NULL OR action_card_background_style IN ('solid', 'gradient', 'image')",
     )
+    op.create_check_constraint(
+        "check_action_card_background_opacity",
+        "events",
+        "action_card_background_opacity IS NULL OR (action_card_background_opacity >= 0 AND action_card_background_opacity <= 1)",
+    )
 
 
 def downgrade() -> None:
+    op.drop_constraint("check_action_card_background_opacity", "events", type_="check")
     op.drop_constraint("check_action_card_background_style", "events", type_="check")
+    op.drop_column("events", "action_card_background_opacity")
     op.drop_column("events", "action_card_background_image_url")
     op.drop_column("events", "action_card_background_style")

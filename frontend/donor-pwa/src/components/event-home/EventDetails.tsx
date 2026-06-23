@@ -10,7 +10,7 @@
  * Expanded by default for upcoming events (within 30 days),
  * collapsed for past events.
  */
-import { useMemo, useState } from 'react'
+import { cn, formatPhoneNumber } from '@/lib/utils'
 import * as Collapsible from '@radix-ui/react-collapsible'
 import {
   Calendar,
@@ -22,7 +22,7 @@ import {
   Phone,
   Shirt,
 } from 'lucide-react'
-import { cn, formatPhoneNumber } from '@/lib/utils'
+import { useMemo, useState } from 'react'
 
 export interface EventDetailsProps {
   /** Event date/time */
@@ -77,7 +77,7 @@ function DetailRow({
       target={href.startsWith('http') ? '_blank' : undefined}
       rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
       className='underline hover:no-underline'
-      style={{ color: 'rgb(var(--event-primary,59,130,246))' }}
+      style={{ color: 'rgb(var(--event-accent,16,185,129))' }}
     >
       {value}
     </a>
@@ -92,7 +92,7 @@ function DetailRow({
       <div>
         <Icon
           className='mt-0.5 h-5 w-5 flex-shrink-0'
-          style={{ color: 'rgb(var(--event-primary,59,130,246))' }}
+          style={{ color: 'rgb(var(--event-secondary,147,51,234))' }}
         />
       </div>
       <div>
@@ -213,7 +213,7 @@ export function EventDetails({
               'h-5 w-5 transition-transform duration-200',
               isOpen && 'rotate-180'
             )}
-            style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+            style={{ color: 'rgb(var(--event-secondary,147,51,234))' }}
           />
         </button>
       </Collapsible.Trigger>

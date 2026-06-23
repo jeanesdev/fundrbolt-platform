@@ -16,6 +16,7 @@ export type HeroTransitionStyle =
   | 'swipe'
   | 'simple'
 export type ActionCardBackgroundStyle = 'solid' | 'gradient' | 'image'
+export type PageBackgroundStyle = 'solid' | 'gradient' | 'image'
 export type EventMediaUsageTag =
   | 'main_event_page_hero'
   | 'event_layout_map'
@@ -55,8 +56,17 @@ export interface Event {
   secondary_color: string | null
   background_color: string | null
   accent_color: string | null
+  page_background_style?: PageBackgroundStyle | null
+  page_background_image_url?: string | null
+  page_background_gradient_start_color?: string | null
+  page_background_gradient_end_color?: string | null
   action_card_background_style?: ActionCardBackgroundStyle | null
   action_card_background_image_url?: string | null
+  action_card_gradient_start_color?: string | null
+  action_card_gradient_end_color?: string | null
+  action_card_background_opacity?: number | null
+  cause_section_border_color?: string | null
+  cause_section_border_width?: number | null
   hero_transition_style: HeroTransitionStyle
   table_count: number | null
   max_guests_per_table: number | null
@@ -108,8 +118,17 @@ export interface EventCreateRequest {
   secondary_color?: string
   background_color?: string
   accent_color?: string
+  page_background_style?: PageBackgroundStyle
+  page_background_image_url?: string
+  page_background_gradient_start_color?: string
+  page_background_gradient_end_color?: string
   action_card_background_style?: ActionCardBackgroundStyle
   action_card_background_image_url?: string
+  action_card_gradient_start_color?: string
+  action_card_gradient_end_color?: string
+  action_card_background_opacity?: number
+  cause_section_border_color?: string
+  cause_section_border_width?: number
   hero_transition_style?: HeroTransitionStyle
   table_count?: number | null
   max_guests_per_table?: number | null
@@ -138,8 +157,17 @@ export interface EventUpdateRequest {
   secondary_color?: string
   background_color?: string
   accent_color?: string
+  page_background_style?: PageBackgroundStyle
+  page_background_image_url?: string
+  page_background_gradient_start_color?: string
+  page_background_gradient_end_color?: string
   action_card_background_style?: ActionCardBackgroundStyle
   action_card_background_image_url?: string
+  action_card_gradient_start_color?: string
+  action_card_gradient_end_color?: string
+  action_card_background_opacity?: number
+  cause_section_border_color?: string
+  cause_section_border_width?: number
   hero_transition_style?: HeroTransitionStyle
   table_count?: number | null
   max_guests_per_table?: number | null
@@ -191,6 +219,34 @@ export interface EventStats {
   guest_count: number
   active_guest_count: number
 }
+
+export interface BrandingThemeTemplate {
+  id: string
+  name: string
+  primary_color: string
+  secondary_color: string
+  background_color: string
+  accent_color: string
+  page_background_style: 'solid' | 'gradient' | 'image'
+  page_background_gradient_start_color: string
+  page_background_gradient_end_color: string
+  action_card_background_style: 'solid' | 'gradient'
+  action_card_gradient_start_color: string
+  action_card_gradient_end_color: string
+  action_card_background_opacity: number
+  created_by?: string | null
+  updated_by?: string | null
+  created_at?: string
+  updated_at?: string
+}
+
+export type BrandingThemeTemplateCreateRequest = Omit<
+  BrandingThemeTemplate,
+  'id' | 'created_by' | 'updated_by' | 'created_at' | 'updated_at'
+>
+
+export type BrandingThemeTemplateUpdateRequest =
+  Partial<BrandingThemeTemplateCreateRequest>
 
 // ============================================
 // Event Media Types

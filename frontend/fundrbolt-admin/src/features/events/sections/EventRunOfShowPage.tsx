@@ -44,6 +44,7 @@ import {
   Save,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { getErrorMessage } from '@/lib/error-utils'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -209,7 +210,9 @@ export function EventRunOfShowPage() {
       setConfirmReplace(false)
       void queryClient.invalidateQueries({ queryKey: ['ros', eventId] })
     },
-    onError: () => toast.error('Failed to apply template'),
+    onError: (error) => {
+      toast.error(getErrorMessage(error, 'Failed to apply template'))
+    },
   })
 
   // ── Handlers ──────────────────────────────────────────────────
@@ -540,14 +543,22 @@ export function EventRunOfShowPage() {
               </div>
             )}
             {items.length > 0 && selectedTemplateId && (
-              <label className='flex cursor-pointer items-center gap-2 text-sm'>
-                <input
-                  type='checkbox'
-                  checked={confirmReplace}
-                  onChange={(e) => setConfirmReplace(e.target.checked)}
-                />
-                Replace existing items when applying template
-              </label>
+              <div className='space-y-2'>
+                <label className='flex cursor-pointer items-center gap-2 text-sm'>
+                  <input
+                    type='checkbox'
+                    checked={confirmReplace}
+                    onChange={(e) => setConfirmReplace(e.target.checked)}
+                  />
+                  Replace existing items when applying template
+                </label>
+                {!confirmReplace && (
+                  <p className='text-muted-foreground text-xs'>
+                    ⚠ This event already has run-of-show items. Enable
+                    replacement to apply this template.
+                  </p>
+                )}
+              </div>
             )}
           </div>
           <DialogFooter>
@@ -559,7 +570,11 @@ export function EventRunOfShowPage() {
             </Button>
             <Button
               onClick={handleApplyTemplate}
-              disabled={!selectedTemplateId || applyTemplateMutation.isPending}
+              disabled={
+                !selectedTemplateId ||
+                applyTemplateMutation.isPending ||
+                (items.length > 0 && !confirmReplace)
+              }
             >
               {applyTemplateMutation.isPending && (
                 <Loader2 className='mr-1 h-4 w-4 animate-spin' />

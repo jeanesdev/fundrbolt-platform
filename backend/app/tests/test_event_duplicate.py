@@ -75,6 +75,9 @@ async def _create_source_event(
         secondary_color="#34a853",
         background_color="#ffffff",
         accent_color="#fbbc04",
+        action_card_background_style="image",
+        action_card_background_image_url="https://example.com/action-card-bg.png",
+        action_card_background_opacity=0.7,
         table_count=10,
         max_guests_per_table=8,
         seating_layout_image_url=None,
@@ -351,6 +354,9 @@ class TestDuplicateEventService:
         assert new_event.description == source.description
         assert new_event.primary_color == source.primary_color
         assert new_event.secondary_color == source.secondary_color
+        assert new_event.action_card_background_style == source.action_card_background_style
+        assert new_event.action_card_background_image_url == source.action_card_background_image_url
+        assert new_event.action_card_background_opacity == source.action_card_background_opacity
         assert new_event.logo_url == source.logo_url
 
     async def test_duplicate_resets_seating_layout(

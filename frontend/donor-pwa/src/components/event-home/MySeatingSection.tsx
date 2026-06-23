@@ -6,13 +6,13 @@
  * - Table name / number with captain badge
  * - Compact tablemates grid
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import * as DialogPrimitive from '@radix-ui/react-dialog'
-import { Crown, Hash, Loader2, Map, MapPin, Users, X } from 'lucide-react'
-import { useSwipeDownToClose } from '@/hooks/use-swipe-down-to-close'
+import type { GuestProfileData } from '@/components/event-home/GuestProfileModal'
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
-import type { GuestProfileData } from '@/components/event-home/GuestProfileModal'
+import { useSwipeDownToClose } from '@/hooks/use-swipe-down-to-close'
+import * as DialogPrimitive from '@radix-ui/react-dialog'
+import { Crown, Hash, Loader2, Map, MapPin, Users, X } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 interface MySeatingInfo {
   guestId: string
@@ -315,24 +315,24 @@ export function MySeatingSection({
     seatingInfo.tableAssignment ?? seatingInfoRecord.table_assignment
   const tableAssignment: TableAssignment | null = tableAssignmentSource
     ? {
-        tableNumber:
-          tableAssignmentSource.tableNumber ??
-          tableAssignmentSource.table_number ??
-          0,
-        tableName:
-          tableAssignmentSource.tableName ??
-          tableAssignmentSource.table_name ??
-          null,
-        captainFullName:
-          tableAssignmentSource.captainFullName ??
-          tableAssignmentSource.table_captain_name ??
-          tableAssignmentSource.captain_full_name ??
-          null,
-        youAreCaptain:
-          tableAssignmentSource.youAreCaptain ??
-          tableAssignmentSource.you_are_captain ??
-          false,
-      }
+      tableNumber:
+        tableAssignmentSource.tableNumber ??
+        tableAssignmentSource.table_number ??
+        0,
+      tableName:
+        tableAssignmentSource.tableName ??
+        tableAssignmentSource.table_name ??
+        null,
+      captainFullName:
+        tableAssignmentSource.captainFullName ??
+        tableAssignmentSource.table_captain_name ??
+        tableAssignmentSource.captain_full_name ??
+        null,
+      youAreCaptain:
+        tableAssignmentSource.youAreCaptain ??
+        tableAssignmentSource.you_are_captain ??
+        false,
+    }
     : null
 
   const isCurrentUserCaptain = Boolean(tableAssignment?.youAreCaptain)
@@ -347,17 +347,17 @@ export function MySeatingSection({
   const displayTablemates: TablemateInfo[] = hasCurrentUserInTablemates
     ? tablemates
     : [
-        {
-          guestId: myInfo.guestId || '__current-user__',
-          name: myInfo.fullName ?? 'Guest',
-          bidderNumber: myInfo.bidderNumber,
-          isTableCaptain: isCurrentUserCaptain,
-          company: null,
-          profileImageUrl: null,
-          isCurrentUser: true,
-        },
-        ...tablemates,
-      ]
+      {
+        guestId: myInfo.guestId || '__current-user__',
+        name: myInfo.fullName ?? 'Guest',
+        bidderNumber: myInfo.bidderNumber,
+        isTableCaptain: isCurrentUserCaptain,
+        company: null,
+        profileImageUrl: null,
+        isCurrentUser: true,
+      },
+      ...tablemates,
+    ]
 
   const detectedCaptainFromTablemates = displayTablemates.find(
     (mate) => mate.isTableCaptain
@@ -526,7 +526,8 @@ export function MySeatingSection({
           className='rounded-xl border px-4 py-3'
           style={{
             backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
-            borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.25)',
+            borderColor: 'var(--event-cause-border-color, #3B82F6)',
+            borderWidth: 'var(--event-cause-border-width, 1px)',
           }}
         >
           <p
@@ -540,10 +541,11 @@ export function MySeatingSection({
 
       {hasTable && (
         <div
-          className='relative overflow-hidden rounded-2xl border-2 p-4 shadow-md'
+          className='relative overflow-hidden rounded-2xl border p-4 shadow-md'
           style={{
             backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))',
-            borderColor: 'rgb(var(--event-primary, 59, 130, 246))',
+            borderColor: 'var(--event-cause-border-color, #3B82F6)',
+            borderWidth: 'var(--event-cause-border-width, 1px)',
             boxShadow:
               '0 14px 36px rgb(var(--event-primary, 59, 130, 246) / 0.18)',
           }}
@@ -566,17 +568,17 @@ export function MySeatingSection({
               {(isCurrentUserCaptain ||
                 captainDisplayName ||
                 detectedCaptainFromTablemates) && (
-                <span
-                  className='inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold'
-                  style={{
-                    backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))',
-                    color: 'var(--event-text-on-primary, #FFFFFF)',
-                  }}
-                >
-                  <Crown className='h-2.5 w-2.5' />
-                  {captainPillLabel}
-                </span>
-              )}
+                  <span
+                    className='inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold'
+                    style={{
+                      backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))',
+                      color: 'var(--event-text-on-primary, #FFFFFF)',
+                    }}
+                  >
+                    <Crown className='h-2.5 w-2.5' />
+                    {captainPillLabel}
+                  </span>
+                )}
             </div>
             <span
               className='rounded-full px-2 py-0.5 text-xs font-medium'
@@ -630,16 +632,16 @@ export function MySeatingSection({
                   onClick={
                     onGuestClick && !mate.isCurrentUser
                       ? () =>
-                          onGuestClick({
-                            guestId: mate.guestId,
-                            name: mate.name,
-                            bidderNumber: mate.bidderNumber,
-                            tableNumber: resolvedTableNumber,
-                            tableName: tableAssignment?.tableName ?? null,
-                            company: mate.company,
-                            profileImageUrl: mate.profileImageUrl,
-                            isTableCaptain: mate.isTableCaptain,
-                          })
+                        onGuestClick({
+                          guestId: mate.guestId,
+                          name: mate.name,
+                          bidderNumber: mate.bidderNumber,
+                          tableNumber: resolvedTableNumber,
+                          tableName: tableAssignment?.tableName ?? null,
+                          company: mate.company,
+                          profileImageUrl: mate.profileImageUrl,
+                          isTableCaptain: mate.isTableCaptain,
+                        })
                       : undefined
                   }
                 >
@@ -671,21 +673,21 @@ export function MySeatingSection({
                       (captainGuestId && mate.guestId === captainGuestId) ||
                       (captainDisplayName &&
                         namesLikelyMatch(mate.name, captainDisplayName))) && (
-                      <span
-                        className='absolute -top-1.5 -right-1.5 z-20 inline-flex h-5 w-5 items-center justify-center rounded-full border shadow-sm'
-                        style={{
-                          backgroundColor:
-                            'rgb(var(--event-text-on-primary-rgb, 255 255 255))',
-                          borderColor:
-                            'rgb(var(--event-primary, 59, 130, 246) / 0.45)',
-                          color: 'rgb(var(--event-primary, 59, 130, 246))',
-                        }}
-                        title='Table Captain'
-                        aria-label='Table Captain'
-                      >
-                        <Crown className='h-3 w-3' />
-                      </span>
-                    )}
+                        <span
+                          className='absolute -top-1.5 -right-1.5 z-20 inline-flex h-5 w-5 items-center justify-center rounded-full border shadow-sm'
+                          style={{
+                            backgroundColor:
+                              'rgb(var(--event-text-on-primary-rgb, 255 255 255))',
+                            borderColor:
+                              'rgb(var(--event-primary, 59, 130, 246) / 0.45)',
+                            color: 'rgb(var(--event-primary, 59, 130, 246))',
+                          }}
+                          title='Table Captain'
+                          aria-label='Table Captain'
+                        >
+                          <Crown className='h-3 w-3' />
+                        </span>
+                      )}
                   </div>
                   <p
                     className='line-clamp-2 text-center text-[10px] leading-tight font-medium'

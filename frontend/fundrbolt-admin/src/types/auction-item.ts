@@ -38,6 +38,8 @@ export interface AuctionItemBase {
   display_priority?: number | null
   slide_presentation_html?: string | null
   slide_presentation_layout: SlidePresentationLayout
+  display_starting_bid: boolean
+  display_fair_market_value: boolean
 }
 
 export interface AuctionItem extends AuctionItemBase {
@@ -58,8 +60,13 @@ export interface AuctionItemDetail extends AuctionItem {
   // Sponsor will be added when we integrate sponsor display
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface AuctionItemCreate extends AuctionItemBase {}
+export interface AuctionItemCreate extends Omit<
+  AuctionItemBase,
+  'starting_bid' | 'bid_increment'
+> {
+  starting_bid?: number
+  bid_increment?: number
+}
 
 export interface AuctionItemUpdate {
   title?: string
@@ -78,6 +85,8 @@ export interface AuctionItemUpdate {
   display_priority?: number | null
   slide_presentation_html?: string | null
   slide_presentation_layout?: SlidePresentationLayout
+  display_starting_bid?: boolean
+  display_fair_market_value?: boolean
 }
 
 export interface PaginationInfo {

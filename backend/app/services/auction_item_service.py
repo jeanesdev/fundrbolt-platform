@@ -165,10 +165,21 @@ class AuctionItemService:
             raise ValueError(f"Event {event_id} not found")
 
         # Cross-field validation (deferred from Pydantic schema)
+        if item_data.auction_type == AuctionType.SILENT:
+            if item_data.starting_bid is None:
+                raise ValueError("starting_bid is required for silent auctions")
+            if item_data.bid_increment is None:
+                raise ValueError("bid_increment is required for silent auctions")
+
+        effective_starting_bid = item_data.starting_bid or Decimal("0.00")
+        effective_bid_increment = item_data.bid_increment
+        if effective_bid_increment is None:
+            effective_bid_increment = calculate_bid_increment(effective_starting_bid)
+
         if item_data.buy_now_price is not None:
-            if item_data.buy_now_price < item_data.starting_bid:
+            if item_data.buy_now_price < effective_starting_bid:
                 raise ValueError(
-                    f"Buy now price (${item_data.buy_now_price}) must be >= starting bid (${item_data.starting_bid})"
+                    f"Buy now price (${item_data.buy_now_price}) must be >= starting bid (${effective_starting_bid})"
                 )
 
             if not item_data.buy_now_enabled:
@@ -177,10 +188,7 @@ class AuctionItemService:
         # Get next bid number (atomic)
         bid_number = await self._get_next_bid_number(event_id)
 
-        # Auto-calculate bid_increment if not provided or set to default
-        bid_increment = item_data.bid_increment
-        if bid_increment == Decimal("50.00"):  # Default value
-            bid_increment = calculate_bid_increment(item_data.starting_bid)
+        bid_increment = effective_bid_increment
 
         # Create auction item
         auction_item = AuctionItem(
@@ -190,7 +198,7 @@ class AuctionItemService:
             title=item_data.title,
             description=item_data.description,
             auction_type=item_data.auction_type,
-            starting_bid=item_data.starting_bid,
+            starting_bid=effective_starting_bid,
             bid_increment=bid_increment,
             donor_value=item_data.donor_value,
             cost=item_data.cost,
@@ -203,6 +211,8 @@ class AuctionItemService:
             display_priority=item_data.display_priority,
             slide_presentation_html=item_data.slide_presentation_html,
             slide_presentation_layout=item_data.slide_presentation_layout,
+            display_starting_bid=item_data.display_starting_bid,
+            display_fair_market_value=item_data.display_fair_market_value,
             status=ItemStatus.DRAFT,  # New items start as draft
             created_by=created_by,
         )
@@ -380,8 +390,26 @@ class AuctionItemService:
         # Update fields (only if provided)
         update_dict = update_data.model_dump(exclude_unset=True)
 
+        target_auction_type = update_dict.get("auction_type", item.auction_type)
+
+        if "starting_bid" in update_dict and update_dict["starting_bid"] is None:
+            if target_auction_type == AuctionType.SILENT:
+                raise ValueError("starting_bid is required for silent auctions")
+            update_dict["starting_bid"] = Decimal("0.00")
+
+        if "bid_increment" in update_dict and update_dict["bid_increment"] is None:
+            if target_auction_type == AuctionType.SILENT:
+                raise ValueError("bid_increment is required for silent auctions")
+            update_dict["bid_increment"] = calculate_bid_increment(
+                update_dict.get("starting_bid", item.starting_bid)
+            )
+
         # If starting_bid is being updated and bid_increment is not, auto-calculate
-        if "starting_bid" in update_dict and "bid_increment" not in update_dict:
+        if (
+            "starting_bid" in update_dict
+            and "bid_increment" not in update_dict
+            and update_dict["starting_bid"] is not None
+        ):
             new_starting_bid = update_dict["starting_bid"]
             auto_increment = calculate_bid_increment(new_starting_bid)
             update_dict["bid_increment"] = auto_increment

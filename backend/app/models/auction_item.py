@@ -165,6 +165,18 @@ class AuctionItem(Base, UUIDMixin, TimestampMixin):
         nullable=False,
     )
 
+    # Display configuration
+    display_starting_bid: Mapped[bool] = mapped_column(
+        default=False,
+        server_default="false",
+        nullable=False,
+    )
+    display_fair_market_value: Mapped[bool] = mapped_column(
+        default=False,
+        server_default="false",
+        nullable=False,
+    )
+
     # Soft delete
     deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
@@ -191,8 +203,14 @@ class AuctionItem(Base, UUIDMixin, TimestampMixin):
             "status IN ('draft', 'published', 'sold', 'withdrawn')",
             name="ck_auction_items_status",
         ),
-        CheckConstraint("starting_bid >= 0", name="ck_auction_items_starting_bid_nonnegative"),
-        CheckConstraint("bid_increment > 0", name="ck_auction_items_bid_increment_positive"),
+        CheckConstraint(
+            "starting_bid IS NULL OR starting_bid >= 0",
+            name="ck_auction_items_starting_bid_positive",
+        ),
+        CheckConstraint(
+            "bid_increment IS NULL OR bid_increment > 0",
+            name="ck_auction_items_bid_increment_positive",
+        ),
         CheckConstraint(
             "donor_value IS NULL OR donor_value >= 0",
             name="ck_auction_items_donor_value_nonnegative",

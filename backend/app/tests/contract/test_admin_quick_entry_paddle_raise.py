@@ -96,3 +96,34 @@ class TestAdminQuickEntryPaddleRaiseContract:
         by_amount = {row["amount"]: row["count"] for row in summary["by_amount_level"]}
         assert by_amount[1000] == 1
         assert by_amount[500] == 1
+
+    async def test_paddle_raise_delete_updates_summary(
+        self,
+        npo_admin_client: AsyncClient,
+        test_event: Any,
+        test_registration: Any,
+        db_session: AsyncSession,
+    ) -> None:
+        """Deletes a paddle donation and removes it from summary counts."""
+        await _assign_bidder_number(db_session, test_registration.id, bidder_number=411)
+
+        create_response = await npo_admin_client.post(
+            f"/api/v1/admin/events/{test_event.id}/quick-entry/paddle-raise/donations",
+            json={"amount": 750, "bidder_number": 411, "label_ids": []},
+        )
+        assert create_response.status_code == 201
+        donation_id = create_response.json()["id"]
+
+        delete_response = await npo_admin_client.delete(
+            f"/api/v1/admin/events/{test_event.id}/quick-entry/paddle-raise/donations/{donation_id}"
+        )
+        assert delete_response.status_code == 204
+
+        summary_response = await npo_admin_client.get(
+            f"/api/v1/admin/events/{test_event.id}/quick-entry/summary",
+            params={"mode": "PADDLE_RAISE"},
+        )
+        assert summary_response.status_code == 200
+        summary = summary_response.json()
+        assert summary["donation_count"] == 0
+        assert summary["total_pledged"] == 0

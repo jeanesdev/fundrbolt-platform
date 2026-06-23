@@ -4,8 +4,8 @@
  * Dramatic, large countdown with animated digit transitions.
  * Uses event brand gradient background.
  */
-import { cn } from '@/lib/utils'
 import { useCountdown } from '@/hooks/use-countdown'
+import { cn } from '@/lib/utils'
 
 export interface CountdownTimerProps {
   targetDate: string | Date | null | undefined
@@ -100,7 +100,7 @@ export function CountdownTimer({
       style={{
         background: urgent
           ? 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)'
-          : `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246) / 0.9) 0%, rgb(var(--event-secondary, 147, 51, 234) / 0.9) 100%)`,
+          : `linear-gradient(135deg, rgb(var(--event-secondary, 147, 51, 234) / 0.9) 0%, rgb(var(--event-accent, 16, 185, 129) / 0.9) 100%)`,
       }}
     >
       {/* Contrast scrim */}

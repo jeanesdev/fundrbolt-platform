@@ -6,7 +6,14 @@
  * - Fallback dropdown with: Facebook, X/Twitter, LinkedIn, Email, SMS, Copy Link
  * - Includes event hashtag in social share text when available
  */
-import { useCallback, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   Check,
   Copy,
@@ -17,15 +24,8 @@ import {
   Share2,
   Twitter,
 } from 'lucide-react'
+import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 
 export interface ShareEventButtonProps {
   eventName: string
@@ -126,8 +126,9 @@ export function ShareEventButton({
         onClick={handleNativeShare}
         className={className}
         style={{
-          borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.3)',
-          color: 'rgb(var(--event-primary, 59, 130, 246))',
+          borderColor: 'var(--event-cause-border-color, #3B82F6)',
+          borderWidth: 'var(--event-cause-border-width, 1px)',
+          color: 'rgb(var(--event-accent, 16, 185, 129))',
         }}
       >
         <Share2 className='mr-2 h-4 w-4' />
@@ -145,8 +146,9 @@ export function ShareEventButton({
           size='sm'
           className={className}
           style={{
-            borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.3)',
-            color: 'rgb(var(--event-primary, 59, 130, 246))',
+            borderColor: 'var(--event-cause-border-color, #3B82F6)',
+            borderWidth: 'var(--event-cause-border-width, 1px)',
+            color: 'rgb(var(--event-accent, 16, 185, 129))',
           }}
         >
           <Share2 className='mr-2 h-4 w-4' />

@@ -180,12 +180,14 @@ export function QuickEntryPage() {
   const {
     amount: paddleAmount,
     bidderNumber: paddleBidderNumber,
+    deleteDonation: deletePaddleDonation,
     selectedLabelIds,
     customLabel,
     isMonthly,
     labels,
     labelsError,
     isLoadingLabels,
+    isDeleting: isDeletingPaddleDonation,
     summary: paddleSummary,
     isSubmitting: isSubmittingPaddle,
     setAmount: setPaddleAmount,
@@ -445,12 +447,14 @@ export function QuickEntryPage() {
           summary={paddleSummary}
           submitToken={paddleSubmitToken}
           disabled={isSubmittingPaddle}
+          isDeleting={isDeletingPaddleDonation}
           onAmountChange={setPaddleAmount}
           onBidderNumberChange={setPaddleBidderNumber}
           onCustomLabelChange={setCustomLabel}
           onSelectedLabelIdsChange={setSelectedLabelIds}
           onIsMonthlyChange={setIsMonthly}
           onSubmit={submitDonation}
+          onDeleteDonation={deletePaddleDonation}
         />
       ) : mode === 'BUY_NOW' ? (
         <BuyNowEntryForm

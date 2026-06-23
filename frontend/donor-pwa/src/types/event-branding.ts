@@ -26,8 +26,15 @@ export interface RegisteredEventWithBranding {
   secondary_color: string
   background_color: string
   accent_color: string
+  page_background_style?: 'solid' | 'gradient' | 'image'
+  page_background_image_url?: string | null
+  page_background_gradient_start_color?: string | null
+  page_background_gradient_end_color?: string | null
   action_card_background_style: 'solid' | 'gradient' | 'image'
   action_card_background_image_url: string | null
+  action_card_gradient_start_color?: string | null
+  action_card_gradient_end_color?: string | null
+  action_card_background_opacity: number
 
   // NPO Info
   npo_name: string

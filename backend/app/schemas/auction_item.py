@@ -6,7 +6,7 @@ from uuid import UUID
 
 import bleach
 from bleach.css_sanitizer import CSSSanitizer
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.models.auction_item import AuctionType, ItemStatus, SlidePresentationLayout
 
@@ -36,8 +36,8 @@ class AuctionItemBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
     description: str = Field(..., min_length=1, max_length=10000)
     auction_type: AuctionType
-    starting_bid: Decimal = Field(..., ge=0, decimal_places=2)
-    bid_increment: Decimal = Field(default=Decimal("50.00"), gt=0, decimal_places=2)
+    starting_bid: Decimal | None = Field(None, ge=0, decimal_places=2)
+    bid_increment: Decimal | None = Field(None, gt=0, decimal_places=2)
     donor_value: Decimal | None = Field(None, ge=0, decimal_places=2)
     cost: Decimal | None = Field(None, ge=0, decimal_places=2)
     buy_now_price: Decimal | None = Field(None, ge=0, decimal_places=2)
@@ -49,6 +49,12 @@ class AuctionItemBase(BaseModel):
     display_priority: int | None = None
     slide_presentation_html: str | None = Field(None, max_length=20000)
     slide_presentation_layout: SlidePresentationLayout = SlidePresentationLayout.BELOW_IMAGE
+    display_starting_bid: bool = Field(
+        default=False, description="Whether to display starting bid on donor-facing pages"
+    )
+    display_fair_market_value: bool = Field(
+        default=False, description="Whether to display fair market value on donor-facing pages"
+    )
 
     @field_validator("buy_now_price")
     @classmethod
@@ -62,6 +68,16 @@ class AuctionItemBase(BaseModel):
     @classmethod
     def validate_slide_presentation_html(cls, value: str | None) -> str | None:
         return _sanitize_slide_html(value)
+
+    @model_validator(mode="after")
+    def validate_auction_type_requirements(self) -> "AuctionItemBase":
+        if self.auction_type == AuctionType.SILENT:
+            if self.starting_bid is None:
+                raise ValueError("starting_bid is required for silent auctions")
+            if self.bid_increment is None:
+                # Backward-compatible default used by persisted model and existing API tests.
+                self.bid_increment = Decimal("50.00")
+        return self
 
 
 class AuctionItemCreate(AuctionItemBase):
@@ -89,6 +105,12 @@ class AuctionItemUpdate(BaseModel):
     display_priority: int | None = None
     slide_presentation_html: str | None = Field(None, max_length=20000)
     slide_presentation_layout: SlidePresentationLayout | None = None
+    display_starting_bid: bool | None = Field(
+        None, description="Whether to display starting bid on donor-facing pages"
+    )
+    display_fair_market_value: bool | None = Field(
+        None, description="Whether to display fair market value on donor-facing pages"
+    )
 
     @field_validator("slide_presentation_html")
     @classmethod

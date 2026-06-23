@@ -2,11 +2,11 @@
  * SponsorForm Component Tests
  * T051: Frontend component test for SponsorForm
  */
-import { SponsorForm } from '@/features/events/components/SponsorForm'
 import { LogoSize, type Sponsor } from '@/types/sponsor'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { SponsorForm } from '@/features/events/components/SponsorForm'
 
 // Mock sponsor data for edit mode
 const mockSponsor: Sponsor = {

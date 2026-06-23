@@ -464,6 +464,9 @@ class TestGetRegisteredEventsWithBrandingContract:
             "secondary_color",
             "background_color",
             "accent_color",
+            "action_card_background_style",
+            "action_card_background_image_url",
+            "action_card_background_opacity",
             "npo_name",
             "npo_logo_url",
         ]

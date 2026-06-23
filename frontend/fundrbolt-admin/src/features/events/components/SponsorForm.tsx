@@ -2,6 +2,15 @@
  * SponsorForm
  * Form for creating or editing a sponsor with logo upload
  */
+import { useEffect, useRef, useState } from 'react'
+import {
+  LogoSize,
+  type Sponsor,
+  type SponsorCreateRequest,
+  type SponsorUpdateRequest,
+} from '@/types/sponsor'
+import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
+import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,15 +22,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  LogoSize,
-  type Sponsor,
-  type SponsorCreateRequest,
-  type SponsorUpdateRequest,
-} from '@/types/sponsor'
-import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
-import { X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
 
 // US States for dropdown
 const US_STATES = [
@@ -397,46 +397,46 @@ export function SponsorForm({
 
     const data = isEdit
       ? ({
-        name: formData.name || undefined,
-        website_url: normalizedWebsiteUrl || null,
-        logo_size: formData.logo_size,
-        sponsor_level: formData.sponsor_level || null,
-        contact_name: formData.contact_name || null,
-        contact_email: formData.contact_email || null,
-        contact_phone: formData.contact_phone || null,
-        address_line1: formData.address_line1 || null,
-        address_line2: formData.address_line2 || null,
-        city: formData.city || null,
-        state: formData.state || null,
-        postal_code: formData.postal_code || null,
-        country: formData.country || null,
-        donation_amount: formData.donation_amount
-          ? parseFloat(formData.donation_amount)
-          : null,
-        notes: formData.notes || null,
-      } as SponsorUpdateRequest)
+          name: formData.name || undefined,
+          website_url: normalizedWebsiteUrl || null,
+          logo_size: formData.logo_size,
+          sponsor_level: formData.sponsor_level || null,
+          contact_name: formData.contact_name || null,
+          contact_email: formData.contact_email || null,
+          contact_phone: formData.contact_phone || null,
+          address_line1: formData.address_line1 || null,
+          address_line2: formData.address_line2 || null,
+          city: formData.city || null,
+          state: formData.state || null,
+          postal_code: formData.postal_code || null,
+          country: formData.country || null,
+          donation_amount: formData.donation_amount
+            ? parseFloat(formData.donation_amount)
+            : null,
+          notes: formData.notes || null,
+        } as SponsorUpdateRequest)
       : ({
-        name: formData.name,
-        logo_file_name: logoFile?.name || 'logo.png',
-        logo_file_type: logoFile?.type || 'image/png',
-        logo_file_size: logoFile?.size || 0,
-        website_url: normalizedWebsiteUrl || undefined,
-        logo_size: formData.logo_size,
-        sponsor_level: formData.sponsor_level || undefined,
-        contact_name: formData.contact_name || undefined,
-        contact_email: formData.contact_email || undefined,
-        contact_phone: formData.contact_phone || undefined,
-        address_line1: formData.address_line1 || undefined,
-        address_line2: formData.address_line2 || undefined,
-        city: formData.city || undefined,
-        state: formData.state || undefined,
-        postal_code: formData.postal_code || undefined,
-        country: formData.country || undefined,
-        donation_amount: formData.donation_amount
-          ? parseFloat(formData.donation_amount)
-          : undefined,
-        notes: formData.notes || undefined,
-      } as SponsorCreateRequest)
+          name: formData.name,
+          logo_file_name: logoFile?.name || 'logo.png',
+          logo_file_type: logoFile?.type || 'image/png',
+          logo_file_size: logoFile?.size || 0,
+          website_url: normalizedWebsiteUrl || undefined,
+          logo_size: formData.logo_size,
+          sponsor_level: formData.sponsor_level || undefined,
+          contact_name: formData.contact_name || undefined,
+          contact_email: formData.contact_email || undefined,
+          contact_phone: formData.contact_phone || undefined,
+          address_line1: formData.address_line1 || undefined,
+          address_line2: formData.address_line2 || undefined,
+          city: formData.city || undefined,
+          state: formData.state || undefined,
+          postal_code: formData.postal_code || undefined,
+          country: formData.country || undefined,
+          donation_amount: formData.donation_amount
+            ? parseFloat(formData.donation_amount)
+            : undefined,
+          notes: formData.notes || undefined,
+        } as SponsorCreateRequest)
 
     await onSubmit(data, logoFile || undefined)
   }

@@ -9,47 +9,6 @@
  * Branding CSS variables (injected by useEventBranding):
  *   --event-primary, --event-secondary, --event-background, --event-accent
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { AxiosError } from 'axios'
-import {
-  keepPreviousData,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
-import { Link, useNavigate, useParams } from '@tanstack/react-router'
-import { usePreviewMode } from '@/contexts/PreviewContext'
-import auctionItemService from '@/services/auctionItemService'
-import {
-  getEventGuests,
-  getMyActivity,
-} from '@/services/donor-activity-service'
-import { getEventRevenueGenerators } from '@/services/revenueGeneratorService'
-import { getDonorRunOfShow } from '@/services/runOfShowService'
-import {
-  getMySeatingInfo,
-  type SeatingInfoResponse,
-} from '@/services/seating-service'
-import watchListService from '@/services/watchlistService'
-import type { AuctionItemGalleryItem } from '@/types/auction-gallery'
-import type { EventMediaUsageTag } from '@/types/event'
-import type { RegisteredEventWithBranding } from '@/types/event-branding'
-import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
-import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
-import { AlertCircle, Loader2, Ticket, TriangleAlert } from 'lucide-react'
-import { toast } from 'sonner'
-import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import { useEventContextStore } from '@/stores/event-context-store'
-import { useEventStore } from '@/stores/event-store'
-import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
-import { getMyInventory } from '@/lib/api/ticket-purchases'
-import apiClient from '@/lib/axios'
-import { triggerCelebrationConfetti } from '@/lib/celebration-confetti'
-import { useEventBranding } from '@/hooks/use-event-branding'
-import { useEventContext } from '@/hooks/use-event-context'
-import { useUnreadCount } from '@/hooks/use-notifications'
-import { useTabSwipe } from '@/hooks/use-tab-swipe'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   AuctionGallery,
   EventDetails,
@@ -81,7 +40,60 @@ import { PushOptInPrompt } from '@/components/notifications/PushOptInPrompt'
 import { CheckoutCartIcon } from '@/components/payments/CheckoutCartIcon'
 import { CheckoutSummaryCard } from '@/components/payments/CheckoutSummaryCard'
 import { ProfileDropdown } from '@/components/profile-dropdown'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { usePreviewMode } from '@/contexts/PreviewContext'
 import { CauseSectionsRenderer } from '@/features/events/cause-sections/CauseSectionsRenderer'
+import { useEventBranding } from '@/hooks/use-event-branding'
+import { useEventContext } from '@/hooks/use-event-context'
+import { useUnreadCount } from '@/hooks/use-notifications'
+import { useTabSwipe } from '@/hooks/use-tab-swipe'
+import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
+import { getMyInventory } from '@/lib/api/ticket-purchases'
+import apiClient from '@/lib/axios'
+import { triggerCelebrationConfetti } from '@/lib/celebration-confetti'
+import auctionItemService from '@/services/auctionItemService'
+import {
+  getEventGuests,
+  getMyActivity,
+} from '@/services/donor-activity-service'
+import { getEventRevenueGenerators } from '@/services/revenueGeneratorService'
+import { getDonorRunOfShow } from '@/services/runOfShowService'
+import {
+  getMySeatingInfo,
+  type SeatingInfoResponse,
+} from '@/services/seating-service'
+import watchListService from '@/services/watchlistService'
+import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import { useEventContextStore } from '@/stores/event-context-store'
+import { useEventStore } from '@/stores/event-store'
+import type { AuctionItemGalleryItem } from '@/types/auction-gallery'
+import type { EventMediaUsageTag } from '@/types/event'
+import type { RegisteredEventWithBranding } from '@/types/event-branding'
+import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
+import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
+import { Link, useNavigate, useParams } from '@tanstack/react-router'
+import type { AxiosError } from 'axios'
+import { AlertCircle, Loader2, Ticket, TriangleAlert } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { toast } from 'sonner'
+
+const hexToRgba = (hex: string, alpha: number): string | null => {
+  const normalized = hex.trim()
+  const match = /^#([0-9A-Fa-f]{6})$/.exec(normalized)
+  if (!match) return null
+
+  const [, value] = match
+  const r = Number.parseInt(value.slice(0, 2), 16)
+  const g = Number.parseInt(value.slice(2, 4), 16)
+  const b = Number.parseInt(value.slice(4, 6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
 
 export function EventHomePage() {
   const navigate = useNavigate()
@@ -622,20 +634,36 @@ export function EventHomePage() {
     loadEvent()
   }, [loadEvent])
 
+  // Pre-apply cached branding as early as possible to avoid default-color flash
+  // while the full event payload is still loading.
+  useEffect(() => {
+    if (currentEvent || !eventSlug || !registrationsData?.events?.length) {
+      return
+    }
+
+    const cachedBrandingEvent = registrationsData.events.find(
+      (event) => event.slug === eventSlug
+    )
+
+    if (!cachedBrandingEvent) {
+      return
+    }
+
+    applyBranding(cachedBrandingEvent)
+  }, [currentEvent, eventSlug, registrationsData, applyBranding])
+
   // Apply event branding
   useEffect(() => {
     if (currentEvent) {
-      applyBranding({
-        primary_color: currentEvent.primary_color,
-        secondary_color: currentEvent.secondary_color,
-        background_color: currentEvent.background_color,
-        accent_color: currentEvent.accent_color,
-      })
+      applyBranding(currentEvent)
     }
+  }, [currentEvent, applyBranding])
+
+  useEffect(() => {
     return () => {
       clearBranding()
     }
-  }, [currentEvent, applyBranding, clearBranding])
+  }, [clearBranding])
 
   // Venue map link
   const venueMapLink = useMemo(() => {
@@ -796,14 +824,14 @@ export function EventHomePage() {
           (
             previous:
               | {
-                  watch_list?: Array<{
-                    id: string
-                    user_id: string
-                    auction_item_id: string
-                    added_at: string
-                  }>
-                  total?: number
-                }
+                watch_list?: Array<{
+                  id: string
+                  user_id: string
+                  auction_item_id: string
+                  added_at: string
+                }>
+                total?: number
+              }
               | undefined
           ) => {
             const existing = previous?.watch_list ?? []
@@ -898,14 +926,14 @@ export function EventHomePage() {
             (
               previous:
                 | {
-                    watch_list?: Array<{
-                      id: string
-                      user_id: string
-                      auction_item_id: string
-                      added_at: string
-                    }>
-                    total?: number
-                  }
+                  watch_list?: Array<{
+                    id: string
+                    user_id: string
+                    auction_item_id: string
+                    added_at: string
+                  }>
+                  total?: number
+                }
                 | undefined
             ) => {
               const existing = previous?.watch_list ?? []
@@ -1174,34 +1202,65 @@ export function EventHomePage() {
   const aboutEventHtml = renderMarkdownToSafeHtml(
     currentEvent.description ?? ''
   )
-  const actionCardBackground = useMemo(() => {
-    const style = currentEvent.action_card_background_style || 'gradient'
+  const pageBackground = (() => {
+    const style = currentEvent.page_background_style || 'solid'
+    const backgroundColor =
+      currentEvent.background_color?.trim() ||
+      'rgb(var(--event-background, 255, 255, 255))'
+    const gradientStart =
+      currentEvent.page_background_gradient_start_color?.trim() ||
+      backgroundColor
+    const gradientEnd =
+      currentEvent.page_background_gradient_end_color?.trim() ||
+      currentEvent.secondary_color?.trim() ||
+      currentEvent.primary_color?.trim() ||
+      '#9333EA'
 
-    if (
-      style === 'image' &&
-      currentEvent.action_card_background_image_url?.trim()
-    ) {
+    if (style === 'image' && currentEvent.page_background_image_url?.trim()) {
       return {
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url(${currentEvent.action_card_background_image_url})`,
+        backgroundImage: `url(${currentEvent.page_background_image_url})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundColor,
       }
     }
 
-    if (style === 'solid') {
+    if (style === 'gradient') {
       return {
-        background: 'rgb(var(--event-primary, 59, 130, 246))',
+        background: `linear-gradient(160deg, ${gradientStart} 0%, ${gradientEnd} 100%)`,
       }
     }
 
     return {
-      background:
-        'linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)',
+      backgroundColor,
     }
-  }, [
-    currentEvent.action_card_background_image_url,
-    currentEvent.action_card_background_style,
-  ])
+  })()
+  const actionCardBackground = (() => {
+    const style = currentEvent.action_card_background_style || 'gradient'
+    const opacity = Math.max(
+      0,
+      Math.min(1, currentEvent.action_card_background_opacity ?? 1)
+    )
+    const gradientStart =
+      currentEvent.action_card_gradient_start_color?.trim() ||
+      currentEvent.primary_color?.trim() ||
+      '#3B82F6'
+    const gradientEnd =
+      currentEvent.action_card_gradient_end_color?.trim() ||
+      currentEvent.secondary_color?.trim() ||
+      '#9333EA'
+
+    if (style === 'solid') {
+      return {
+        background: `${hexToRgba(gradientStart, opacity) || `rgba(59, 130, 246, ${opacity})`}`,
+      }
+    }
+
+    return {
+      background: `linear-gradient(135deg, ${hexToRgba(gradientStart, opacity) || `rgba(59, 130, 246, ${opacity})`} 0%, ${hexToRgba(gradientEnd, opacity) || `rgba(147, 51, 234, ${opacity})`} 100%)`,
+    }
+  })()
 
   // ─── Tab content ─────────────────────────────────────────────────────────────
 
@@ -1304,16 +1363,17 @@ export function EventHomePage() {
 
         {/* Event Hashtag & Share */}
         <div
-          className='flex flex-col items-stretch gap-3 rounded-2xl px-4 py-3 sm:flex-row sm:items-center sm:justify-between'
+          className='flex flex-col items-stretch gap-3 rounded-2xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between'
           style={{
-            backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.08)',
-            borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
+            backgroundColor: 'rgb(var(--event-secondary, 147, 51, 234) / 0.08)',
+            borderColor: 'var(--event-cause-border-color, #3B82F6)',
+            borderWidth: 'var(--event-cause-border-width, 1px)',
           }}
         >
           {currentEvent.hashtag ? (
             <span
               className='min-w-0 text-base font-black tracking-wide break-all sm:text-lg'
-              style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
+              style={{ color: 'rgb(var(--event-accent, 16, 185, 129))' }}
             >
               {currentEvent.hashtag}
             </span>
@@ -1430,13 +1490,13 @@ export function EventHomePage() {
                   style={{
                     backgroundColor:
                       'rgb(var(--event-primary, 59, 130, 246) / 0.08)',
-                    borderColor:
-                      'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
+                    borderColor: 'var(--event-cause-border-color, #3B82F6)',
+                    borderWidth: 'var(--event-cause-border-width, 1px)',
                   }}
                 >
                   <h3
                     className='mb-2 text-xs font-bold tracking-widest uppercase'
-                    style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
+                    style={{ color: 'var(--event-text-on-background, #111827)' }}
                   >
                     About This Event
                   </h3>
@@ -1679,7 +1739,7 @@ export function EventHomePage() {
       <div
         className='pb-bottom-nav min-h-full'
         style={{
-          backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+          backgroundColor: 'transparent',
           paddingBottom:
             tab === 'auction'
               ? 'calc(5rem + 40px + var(--bottom-safe-area, 0px))'
@@ -1704,10 +1764,7 @@ export function EventHomePage() {
 
   // ─── Main render ─────────────────────────────────────────────────────────────
   return (
-    <div
-      className='flex h-svh flex-col overflow-hidden'
-      style={{ backgroundColor: 'rgb(var(--event-background, 255, 255, 255))' }}
-    >
+    <div className='flex h-svh flex-col overflow-hidden' style={pageBackground}>
       {/* Tab content — scrollable, key triggers re-animation on tab switch */}
       <main
         className='relative flex-1 overflow-hidden'

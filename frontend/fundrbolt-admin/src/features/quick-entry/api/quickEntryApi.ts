@@ -197,6 +197,15 @@ export async function createPaddleDonation(
   return response.data
 }
 
+export async function deletePaddleDonation(
+  eventId: string,
+  donationId: string
+): Promise<void> {
+  await apiClient.delete(
+    `/admin/events/${eventId}/quick-entry/paddle-raise/donations/${donationId}`
+  )
+}
+
 export async function getPaddleRaiseSummary(
   eventId: string
 ): Promise<QuickEntryPaddleSummary> {

@@ -6,7 +6,7 @@
  * tablemates) as a compact card grid.  Tapping a card opens the
  * GuestProfileModal for a read-only view of that guest's profile.
  */
-import { useMemo, useState } from 'react'
+import type { GuestProfileData } from '@/components/event-home/GuestProfileModal'
 import type { EventGuestItem } from '@/services/donor-activity-service'
 import {
   ChevronDown,
@@ -16,7 +16,7 @@ import {
   Search,
   Users,
 } from 'lucide-react'
-import type { GuestProfileData } from '@/components/event-home/GuestProfileModal'
+import { useMemo, useState } from 'react'
 
 interface OtherGuestsSectionProps {
   guests: EventGuestItem[]
@@ -56,7 +56,8 @@ export function OtherGuestsSection({
     <div
       className='overflow-hidden rounded-2xl border'
       style={{
-        borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
+        borderColor: 'var(--event-cause-border-color, #3B82F6)',
+        borderWidth: 'var(--event-cause-border-width, 1px)',
         backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
       }}
     >
@@ -71,25 +72,25 @@ export function OtherGuestsSection({
           <div
             className='flex h-8 w-8 items-center justify-center rounded-full'
             style={{
-              backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.1)',
+              backgroundColor: 'rgb(var(--event-accent, 16, 185, 129) / 0.14)',
             }}
           >
             <Users
               className='h-4 w-4'
-              style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
+              style={{ color: 'rgb(var(--event-accent, 16, 185, 129))' }}
             />
           </div>
           <span
             className='text-sm font-semibold'
-            style={{ color: 'var(--event-text-on-background, #111827)' }}
+            style={{ color: 'rgb(var(--event-accent, 16, 185, 129))' }}
           >
             Other Guests
           </span>
           <span
             className='rounded-full px-2 py-0.5 text-xs font-medium'
             style={{
-              backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.1)',
-              color: 'rgb(var(--event-primary, 59, 130, 246))',
+              backgroundColor: 'rgb(var(--event-accent, 16, 185, 129) / 0.14)',
+              color: 'rgb(var(--event-accent, 16, 185, 129))',
             }}
           >
             {guests.length}
@@ -150,14 +151,13 @@ export function OtherGuestsSection({
               {filtered.map((guest) => (
                 <div
                   key={guest.guest_id}
-                  className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors ${
-                    onGuestClick ? 'cursor-pointer active:opacity-70' : ''
-                  }`}
+                  className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors ${onGuestClick ? 'cursor-pointer active:opacity-70' : ''
+                    }`}
                   style={{
-                    borderColor:
-                      'rgb(var(--event-primary, 59, 130, 246) / 0.12)',
+                    borderColor: 'var(--event-cause-border-color, #3B82F6)',
+                    borderWidth: 'var(--event-cause-border-width, 1px)',
                     backgroundColor:
-                      'rgb(var(--event-primary, 59, 130, 246) / 0.03)',
+                      'rgb(var(--event-primary, 59, 130, 246) / 0.12)',
                   }}
                   role={onGuestClick ? 'button' : undefined}
                   tabIndex={onGuestClick ? 0 : undefined}
@@ -169,6 +169,22 @@ export function OtherGuestsSection({
                   onClick={
                     onGuestClick
                       ? () =>
+                        onGuestClick({
+                          guestId: guest.guest_id,
+                          name: guest.name,
+                          bidderNumber: guest.bidder_number,
+                          tableNumber: guest.table_number,
+                          tableName: guest.table_name,
+                          profileImageUrl: guest.profile_image_url,
+                          isTableCaptain: guest.is_table_captain,
+                        })
+                      : undefined
+                  }
+                  onKeyDown={
+                    onGuestClick
+                      ? (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
                           onGuestClick({
                             guestId: guest.guest_id,
                             name: guest.name,
@@ -178,24 +194,8 @@ export function OtherGuestsSection({
                             profileImageUrl: guest.profile_image_url,
                             isTableCaptain: guest.is_table_captain,
                           })
-                      : undefined
-                  }
-                  onKeyDown={
-                    onGuestClick
-                      ? (e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault()
-                            onGuestClick({
-                              guestId: guest.guest_id,
-                              name: guest.name,
-                              bidderNumber: guest.bidder_number,
-                              tableNumber: guest.table_number,
-                              tableName: guest.table_name,
-                              profileImageUrl: guest.profile_image_url,
-                              isTableCaptain: guest.is_table_captain,
-                            })
-                          }
                         }
+                      }
                       : undefined
                   }
                 >
