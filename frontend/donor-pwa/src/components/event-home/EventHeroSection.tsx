@@ -172,7 +172,7 @@ export function EventHeroSection({
       const distance =
         visibleBannerImages.length > 0
           ? (index - safeActiveBannerIndex + visibleBannerImages.length) %
-          visibleBannerImages.length
+            visibleBannerImages.length
           : 0
       const swipeOffset = distance === 1 ? '10%' : '-10%'
 

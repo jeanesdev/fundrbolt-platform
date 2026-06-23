@@ -79,6 +79,7 @@ class TestBidNumberAssignment:
             auction_type=AuctionType.SILENT,
             starting_bid=Decimal("10.00"),
             donor_value=Decimal("20.00"),
+            bid_increment=Decimal("5.00"),
             cost=Decimal("0.00"),
             buy_now_price=None,
             donated_by="Test Donor",
@@ -111,6 +112,7 @@ class TestBidNumberAssignment:
                 auction_type=AuctionType.SILENT,
                 starting_bid=Decimal("10.00"),
                 donor_value=Decimal("20.00"),
+                bid_increment=Decimal("5.00"),
                 cost=Decimal("0.00"),
                 buy_now_price=None,
                 donated_by="Test Donor",
@@ -172,6 +174,7 @@ class TestBidNumberAssignment:
             auction_type=AuctionType.SILENT,
             starting_bid=Decimal("10.00"),
             donor_value=Decimal("20.00"),
+            bid_increment=Decimal("5.00"),
             cost=Decimal("0.00"),
             buy_now_price=None,
             donated_by="Test Donor",
@@ -216,6 +219,7 @@ class TestBidNumberAssignment:
             description="Test description",
             auction_type=AuctionType.SILENT,
             starting_bid=Decimal("10.00"),
+            bid_increment=Decimal("5.00"),
             donor_value=Decimal("20.00"),
             cost=Decimal("0.00"),
             buy_now_price=None,
@@ -248,6 +252,7 @@ class TestBuyNowPriceValidation:
             description="Test description",
             auction_type=AuctionType.SILENT,
             starting_bid=Decimal("100.00"),
+            bid_increment=Decimal("10.00"),
             buy_now_price=Decimal("50.00"),  # Less than starting_bid
             buy_now_enabled=True,
             donor_value=Decimal("150.00"),
@@ -276,6 +281,7 @@ class TestBuyNowPriceValidation:
             description="Test description",
             auction_type=AuctionType.SILENT,
             starting_bid=Decimal("100.00"),
+            bid_increment=Decimal("10.00"),
             buy_now_price=Decimal("100.00"),  # Equal
             buy_now_enabled=True,
             donor_value=Decimal("150.00"),
@@ -305,6 +311,7 @@ class TestBuyNowPriceValidation:
             description="Test description",
             auction_type=AuctionType.SILENT,
             starting_bid=Decimal("100.00"),
+            bid_increment=Decimal("10.00"),
             buy_now_enabled=True,
             buy_now_price=None,  # Missing price - violates DB constraint
             donor_value=Decimal("150.00"),
@@ -336,6 +343,7 @@ class TestBuyNowPriceValidation:
             auction_type=AuctionType.SILENT,
             starting_bid=Decimal("100.00"),
             donor_value=Decimal("150.00"),
+            bid_increment=Decimal("10.00"),
             cost=Decimal("0.00"),
             buy_now_price=None,
             donated_by="Test Donor",
@@ -378,6 +386,7 @@ class TestSoftVsHardDelete:
             auction_type=AuctionType.SILENT,
             starting_bid=Decimal("10.00"),
             donor_value=Decimal("20.00"),
+            bid_increment=Decimal("5.00"),
             cost=Decimal("0.00"),
             buy_now_price=None,
             donated_by="Test Donor",
@@ -413,6 +422,7 @@ class TestSoftVsHardDelete:
             auction_type=AuctionType.SILENT,
             starting_bid=Decimal("10.00"),
             donor_value=Decimal("20.00"),
+            bid_increment=Decimal("5.00"),
             cost=Decimal("0.00"),
             buy_now_price=None,
             donated_by="Test Donor",
@@ -457,6 +467,7 @@ class TestSoftVsHardDelete:
             auction_type=AuctionType.SILENT,
             starting_bid=Decimal("10.00"),
             donor_value=Decimal("20.00"),
+            bid_increment=Decimal("5.00"),
             cost=Decimal("0.00"),
             buy_now_price=None,
             donated_by="Test Donor",
@@ -500,6 +511,7 @@ class TestSoftVsHardDelete:
             auction_type=AuctionType.SILENT,
             starting_bid=Decimal("10.00"),
             donor_value=Decimal("20.00"),
+            bid_increment=Decimal("5.00"),
             cost=Decimal("0.00"),
             buy_now_price=None,
             donated_by="Test Donor",
@@ -529,3 +541,53 @@ class TestSoftVsHardDelete:
         deleted_item = result.scalar_one_or_none()
 
         assert deleted_item is None
+
+
+@pytest.mark.asyncio
+class TestAuctionTypeBidRules:
+    """Test live/silent bid field validation rules."""
+
+    async def test_live_item_allows_missing_starting_bid_and_increment(
+        self,
+        test_event: Event,
+        test_user,
+        auction_item_service: AuctionItemService,
+    ):
+        """Live items may omit starting_bid and bid_increment."""
+        item_data = AuctionItemCreate(
+            title="Live Item",
+            description="Live description",
+            auction_type=AuctionType.LIVE,
+            donor_value=Decimal("500.00"),
+            cost=Decimal("0.00"),
+            buy_now_price=None,
+            donated_by="Live Donor",
+            item_webpage=None,
+        )
+
+        item = await auction_item_service.create_auction_item(
+            event_id=test_event.id,
+            item_data=item_data,
+            created_by=test_user.id,
+        )
+
+        assert item.starting_bid == Decimal("0.00")
+        assert item.bid_increment == Decimal("5.00")
+
+    async def test_silent_item_requires_bid_increment_in_schema(self):
+        """Silent items must include bid_increment."""
+        with pytest.raises(
+            ValueError,
+            match="bid_increment is required for silent auctions",
+        ):
+            AuctionItemCreate(
+                title="Silent Item",
+                description="Silent description",
+                auction_type=AuctionType.SILENT,
+                starting_bid=Decimal("100.00"),
+                donor_value=Decimal("150.00"),
+                cost=Decimal("0.00"),
+                buy_now_price=None,
+                donated_by="Silent Donor",
+                item_webpage=None,
+            )

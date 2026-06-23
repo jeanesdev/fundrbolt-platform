@@ -603,19 +603,21 @@ export function AuctionItemForm({
             </Label>
           </div>
 
-          <div className='flex items-center space-x-2 sm:col-span-2'>
-            <Switch
-              id='display_starting_bid'
-              checked={formData.display_starting_bid}
-              onCheckedChange={(checked) =>
-                setFormData({ ...formData, display_starting_bid: checked })
-              }
-              disabled={isSubmitting}
-            />
-            <Label htmlFor='display_starting_bid' className='cursor-pointer'>
-              Display Starting Bid (show on donor app)
-            </Label>
-          </div>
+          {formData.auction_type === AuctionType.LIVE && (
+            <div className='flex items-center space-x-2 sm:col-span-2'>
+              <Switch
+                id='display_starting_bid'
+                checked={formData.display_starting_bid}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, display_starting_bid: checked })
+                }
+                disabled={isSubmitting}
+              />
+              <Label htmlFor='display_starting_bid' className='cursor-pointer'>
+                Display Starting Bid (show on donor app)
+              </Label>
+            </div>
+          )}
 
           <div className='flex items-center space-x-2 sm:col-span-2'>
             <Switch

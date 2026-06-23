@@ -2,59 +2,60 @@
  * EventRunOfShowPage — Full-page view of the run-of-show for an event.
  * Accessible via /events/:eventId/run-of-show
  */
-import React, { useCallback, useMemo, useState } from 'react'
-import { format } from 'date-fns'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  applyRosTemplate,
-  createRosItem,
-  deleteRosItem,
-  getRunOfShow,
-  listRosTemplates,
-  markRosItemComplete,
-  markRosItemIncomplete,
-  saveAsRosTemplate,
-  updateRosItem,
-} from '@/services/runOfShowService'
-import type {
-  RunOfShowItemCreate,
-  RunOfShowItemUpdate,
-  RunOfShowTemplate,
-} from '@/types/run-of-show'
-import {
-  closestCenter,
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core'
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
-import {
-  CalendarClock,
-  Clock,
-  ListPlus,
-  Loader2,
-  Plus,
-  Save,
-} from 'lucide-react'
-import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
+import { getErrorMessage } from '@/lib/error-utils'
+import {
+    applyRosTemplate,
+    createRosItem,
+    deleteRosItem,
+    getRunOfShow,
+    listRosTemplates,
+    markRosItemComplete,
+    markRosItemIncomplete,
+    saveAsRosTemplate,
+    updateRosItem,
+} from '@/services/runOfShowService'
+import type {
+    RunOfShowItemCreate,
+    RunOfShowItemUpdate,
+    RunOfShowTemplate,
+} from '@/types/run-of-show'
+import {
+    closestCenter,
+    DndContext,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { format } from 'date-fns'
+import {
+    CalendarClock,
+    Clock,
+    ListPlus,
+    Loader2,
+    Plus,
+    Save,
+} from 'lucide-react'
+import React, { useCallback, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { RunOfShowItemForm } from '../components/RunOfShowItemForm'
 import { SortableRunOfShowItem } from '../components/SortableRunOfShowItem'
 
@@ -209,7 +210,9 @@ export function EventRunOfShowPage() {
       setConfirmReplace(false)
       void queryClient.invalidateQueries({ queryKey: ['ros', eventId] })
     },
-    onError: () => toast.error('Failed to apply template'),
+    onError: (error) => {
+      toast.error(getErrorMessage(error, 'Failed to apply template'))
+    },
   })
 
   // ── Handlers ──────────────────────────────────────────────────
@@ -540,14 +543,22 @@ export function EventRunOfShowPage() {
               </div>
             )}
             {items.length > 0 && selectedTemplateId && (
-              <label className='flex cursor-pointer items-center gap-2 text-sm'>
-                <input
-                  type='checkbox'
-                  checked={confirmReplace}
-                  onChange={(e) => setConfirmReplace(e.target.checked)}
-                />
-                Replace existing items when applying template
-              </label>
+              <div className='space-y-2'>
+                <label className='flex cursor-pointer items-center gap-2 text-sm'>
+                  <input
+                    type='checkbox'
+                    checked={confirmReplace}
+                    onChange={(e) => setConfirmReplace(e.target.checked)}
+                  />
+                  Replace existing items when applying template
+                </label>
+                {!confirmReplace && (
+                  <p className='text-muted-foreground text-xs'>
+                    ⚠ This event already has run-of-show items. Enable
+                    replacement to apply this template.
+                  </p>
+                )}
+              </div>
             )}
           </div>
           <DialogFooter>
@@ -559,7 +570,11 @@ export function EventRunOfShowPage() {
             </Button>
             <Button
               onClick={handleApplyTemplate}
-              disabled={!selectedTemplateId || applyTemplateMutation.isPending}
+              disabled={
+                !selectedTemplateId ||
+                applyTemplateMutation.isPending ||
+                (items.length > 0 && !confirmReplace)
+              }
             >
               {applyTemplateMutation.isPending && (
                 <Loader2 className='mr-1 h-4 w-4 animate-spin' />

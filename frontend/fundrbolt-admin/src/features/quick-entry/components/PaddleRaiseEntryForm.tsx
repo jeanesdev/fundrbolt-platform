@@ -1,6 +1,7 @@
 import { BidderAvatar } from '@/components/bidder-avatar'
 import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { useViewPreference } from '@/hooks/use-view-preference'
+import { Trash2 } from 'lucide-react'
 import {
   type FormEvent,
   type KeyboardEvent,
@@ -431,7 +432,7 @@ export function PaddleRaiseEntryForm({
                   </div>
                   <button
                     type='button'
-                    className='rounded border px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-60'
+                    className='hover:bg-muted rounded p-1.5 disabled:cursor-not-allowed disabled:opacity-60'
                     onClick={() => {
                       if (
                         window.confirm(
@@ -444,7 +445,7 @@ export function PaddleRaiseEntryForm({
                     disabled={isDeleting}
                     aria-label={`Delete donation ${donation.id}`}
                   >
-                    Delete
+                    <Trash2 className='h-4 w-4' />
                   </button>
                 </div>
                 <p className='flex items-center gap-2 text-sm'>
@@ -583,7 +584,7 @@ export function PaddleRaiseEntryForm({
                   <td className='px-3 py-2'>
                     <button
                       type='button'
-                      className='rounded border px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-60'
+                      className='hover:bg-muted rounded p-1.5 disabled:cursor-not-allowed disabled:opacity-60'
                       onClick={() => {
                         if (
                           window.confirm(
@@ -596,7 +597,7 @@ export function PaddleRaiseEntryForm({
                       disabled={isDeleting}
                       aria-label={`Delete donation ${donation.id}`}
                     >
-                      Delete
+                      <Trash2 className='h-4 w-4' />
                     </button>
                   </td>
                 </tr>
