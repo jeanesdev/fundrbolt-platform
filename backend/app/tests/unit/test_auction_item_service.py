@@ -574,20 +574,18 @@ class TestAuctionTypeBidRules:
         assert item.starting_bid == Decimal("0.00")
         assert item.bid_increment == Decimal("5.00")
 
-    async def test_silent_item_requires_bid_increment_in_schema(self):
-        """Silent items must include bid_increment."""
-        with pytest.raises(
-            ValueError,
-            match="bid_increment is required for silent auctions",
-        ):
-            AuctionItemCreate(
-                title="Silent Item",
-                description="Silent description",
-                auction_type=AuctionType.SILENT,
-                starting_bid=Decimal("100.00"),
-                donor_value=Decimal("150.00"),
-                cost=Decimal("0.00"),
-                buy_now_price=None,
-                donated_by="Silent Donor",
-                item_webpage=None,
-            )
+    async def test_silent_item_defaults_bid_increment_in_schema(self):
+        """Silent items default bid_increment when omitted for backwards compatibility."""
+        item_data = AuctionItemCreate(
+            title="Silent Item",
+            description="Silent description",
+            auction_type=AuctionType.SILENT,
+            starting_bid=Decimal("100.00"),
+            donor_value=Decimal("150.00"),
+            cost=Decimal("0.00"),
+            buy_now_price=None,
+            donated_by="Silent Donor",
+            item_webpage=None,
+        )
+
+        assert item_data.bid_increment == Decimal("50.00")

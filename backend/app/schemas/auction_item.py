@@ -49,8 +49,12 @@ class AuctionItemBase(BaseModel):
     display_priority: int | None = None
     slide_presentation_html: str | None = Field(None, max_length=20000)
     slide_presentation_layout: SlidePresentationLayout = SlidePresentationLayout.BELOW_IMAGE
-    display_starting_bid: bool = False
-    display_fair_market_value: bool = False
+    display_starting_bid: bool = Field(
+        default=False, description="Whether to display starting bid on donor-facing pages"
+    )
+    display_fair_market_value: bool = Field(
+        default=False, description="Whether to display fair market value on donor-facing pages"
+    )
 
     @field_validator("buy_now_price")
     @classmethod
@@ -71,7 +75,8 @@ class AuctionItemBase(BaseModel):
             if self.starting_bid is None:
                 raise ValueError("starting_bid is required for silent auctions")
             if self.bid_increment is None:
-                raise ValueError("bid_increment is required for silent auctions")
+                # Backward-compatible default used by persisted model and existing API tests.
+                self.bid_increment = Decimal("50.00")
         return self
 
 
@@ -100,8 +105,12 @@ class AuctionItemUpdate(BaseModel):
     display_priority: int | None = None
     slide_presentation_html: str | None = Field(None, max_length=20000)
     slide_presentation_layout: SlidePresentationLayout | None = None
-    display_starting_bid: bool | None = None
-    display_fair_market_value: bool | None = None
+    display_starting_bid: bool | None = Field(
+        None, description="Whether to display starting bid on donor-facing pages"
+    )
+    display_fair_market_value: bool | None = Field(
+        None, description="Whether to display fair market value on donor-facing pages"
+    )
 
     @field_validator("slide_presentation_html")
     @classmethod
