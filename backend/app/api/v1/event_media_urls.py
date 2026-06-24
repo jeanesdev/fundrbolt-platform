@@ -213,14 +213,13 @@ def get_media_variant_urls(blob_name: str) -> dict[str, str]:
     base_name = file_parts[0]
     ext = file_parts[1]
 
+    # Generate SAS URLs for variants (best-effort: variant blobs may not exist if generation failed)
     variants = {}
     for variant_name in ["thumbnail", "medium", "large"]:
         variant_blob_name = f"{directory}/{base_name}_{variant_name}.{ext}"
-        try:
-            variants[variant_name] = MediaService.generate_read_sas_url(variant_blob_name)
-        except Exception:
-            # Silently skip missing variants
-            pass
+        # Note: These URLs are generated without checking blob existence.
+        # Clients should gracefully handle 404 if variant generation failed and blob wasn't uploaded.
+        variants[variant_name] = MediaService.generate_read_sas_url(variant_blob_name)
 
     # Always include original
     variants["original"] = MediaService.generate_read_sas_url(blob_name)

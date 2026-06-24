@@ -250,7 +250,7 @@ class SponsorLogoService:
         return sas_url
 
     @staticmethod
-    def generate_thumbnail(logo_blob_data: bytes) -> bytes:
+    def generate_thumbnail(logo_blob_data: bytes) -> tuple[bytes, str]:
         """
         Generate a thumbnail from logo image data.
 
@@ -258,7 +258,9 @@ class SponsorLogoService:
             logo_blob_data: Original logo image bytes
 
         Returns:
-            Thumbnail image bytes (128x128 PNG)
+            Tuple of (thumbnail_bytes, content_type)
+            If image is already small or SVG, returns original bytes with detected content type
+            Otherwise returns PNG thumbnail
 
         Raises:
             HTTPException: If thumbnail generation fails
@@ -266,12 +268,21 @@ class SponsorLogoService:
         try:
             image: PILImage = Image.open(BytesIO(logo_blob_data))
 
-            # For SVG or if image is already small, just return original
+            # For SVG or if image is already small, return original with detected content type
             if image.format == "SVG" or (
                 image.width <= SponsorLogoService.THUMBNAIL_SIZE[0]
                 and image.height <= SponsorLogoService.THUMBNAIL_SIZE[1]
             ):
-                return logo_blob_data
+                # Infer content type from original format
+                format_to_type = {
+                    "JPEG": "image/jpeg",
+                    "PNG": "image/png",
+                    "GIF": "image/gif",
+                    "WEBP": "image/webp",
+                    "SVG": "image/svg+xml",
+                }
+                content_type = format_to_type.get(image.format or "", "image/png")
+                return logo_blob_data, content_type
 
             # Create thumbnail with aspect ratio preservation
             image.thumbnail(SponsorLogoService.THUMBNAIL_SIZE, Image.Resampling.LANCZOS)
@@ -287,7 +298,7 @@ class SponsorLogoService:
                 image = background
 
             image.save(output, format="PNG", optimize=True)
-            return output.getvalue()
+            return output.getvalue(), "image/png"
 
         except Exception as e:
             logger.error(f"Failed to generate thumbnail: {str(e)}")
@@ -346,8 +357,8 @@ class SponsorLogoService:
             # Download logo for thumbnail generation
             logo_data = blob_client.download_blob().readall()
 
-            # Generate thumbnail
-            thumbnail_data = SponsorLogoService.generate_thumbnail(logo_data)
+            # Generate thumbnail (returns tuple of bytes and content type)
+            thumbnail_data, thumbnail_content_type = SponsorLogoService.generate_thumbnail(logo_data)
 
             # Generate thumbnail blob name
             thumbnail_blob_name = logo_blob_name.replace(f"/{sponsor_id}/", f"/{sponsor_id}/thumb_")
@@ -355,12 +366,12 @@ class SponsorLogoService:
                 container=container_name, blob=thumbnail_blob_name
             )
 
-            # Upload thumbnail
+            # Upload thumbnail with detected content type
             thumbnail_blob_client.upload_blob(
                 thumbnail_data,
                 overwrite=True,
                 content_settings=ContentSettings(
-                    content_type="image/png",
+                    content_type=thumbnail_content_type,
                     cache_control="public, max-age=31536000, immutable",
                 ),
             )
