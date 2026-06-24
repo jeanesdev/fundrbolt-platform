@@ -43,6 +43,7 @@ import { NudgesCompact } from '@/features/nudges'
 import { RGAuctioneerTab } from '@/features/revenue-generators'
 import { useViewPreference } from '@/hooks/use-view-preference'
 import { auctioneerService } from '@/services/auctioneerService'
+import { eventDashboardService } from '@/services/event-dashboard'
 import { reportService } from '@/services/reportService'
 import { getAuctioneerRunOfShow } from '@/services/runOfShowService'
 import { useQuery } from '@tanstack/react-query'
@@ -155,7 +156,16 @@ export function AuctioneerDashboardPage({
     queryFn: () => getAuctioneerRunOfShow(currentEvent.id),
     refetchInterval: 30_000,
   })
+  const { data: eventDashboardSummary } = useQuery({
+    queryKey: ['event-dashboard-summary', currentEvent.id],
+    queryFn: () => eventDashboardService.getDashboard(currentEvent.id),
+    enabled: Boolean(currentEvent.id),
+    refetchInterval: 60_000,
+  })
   const rosNextItem = rosData?.next_item ?? null
+  const checkedInCount =
+    eventDashboardSummary?.funnel.find((stage) => stage.stage === 'checked_in')
+      ?.count ?? null
   const [silentViewMode, setSilentViewMode] = useViewPreference(
     'auctioneer-silent-gallery'
   )
@@ -423,6 +433,22 @@ export function AuctioneerDashboardPage({
   }, [paddleDonationsFilter, paddleDonationsSort, paddleRaise.data?.donations])
 
   const revenueGeneratorHeaderCards = useMemo(() => {
+    const getItemMaxSellable = (item: {
+      max_entries: number | null
+      max_entries_per_person: number | null
+      total_entries: number
+    }): number | null => {
+      const perPersonLimit = item.max_entries_per_person
+      const globalLimit = item.max_entries
+
+      if (perPersonLimit != null && checkedInCount != null) {
+        const derived = perPersonLimit * checkedInCount
+        return globalLimit != null ? Math.min(globalLimit, derived) : derived
+      }
+
+      return globalLimit
+    }
+
     const items = [...(revenueGenerators.data ?? [])].sort(
       (left, right) => left.display_order - right.display_order
     )
@@ -430,12 +456,16 @@ export function AuctioneerDashboardPage({
       (sum, item) => sum + Number(item.total_revenue ?? 0),
       0
     )
+    const itemsWithCapacity = items.map((item) => ({
+      ...item,
+      maxSellable: getItemMaxSellable(item),
+    }))
 
     return {
       totalRevenue,
-      items,
+      items: itemsWithCapacity,
     }
-  }, [revenueGenerators.data])
+  }, [checkedInCount, revenueGenerators.data])
 
   if (isLoading) {
     return (
@@ -569,7 +599,7 @@ export function AuctioneerDashboardPage({
                 key={item.id}
                 icon={<HandCoins className='h-3.5 w-3.5' />}
                 label={item.name}
-                value={fmtCurrency(item.total_revenue)}
+                value={`${fmtCurrency(item.total_revenue)} (${item.total_entries}/${item.maxSellable ?? '∞'})`}
                 onClick={() => setActiveTab('revenue')}
               />
             ))}
