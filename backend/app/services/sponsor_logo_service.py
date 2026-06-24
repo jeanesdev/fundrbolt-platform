@@ -358,7 +358,9 @@ class SponsorLogoService:
             logo_data = blob_client.download_blob().readall()
 
             # Generate thumbnail (returns tuple of bytes and content type)
-            thumbnail_data, thumbnail_content_type = SponsorLogoService.generate_thumbnail(logo_data)
+            thumbnail_data, thumbnail_content_type = SponsorLogoService.generate_thumbnail(
+                logo_data
+            )
 
             # Generate thumbnail blob name
             thumbnail_blob_name = logo_blob_name.replace(f"/{sponsor_id}/", f"/{sponsor_id}/thumb_")
