@@ -1,34 +1,14 @@
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
-import { auctioneerService } from '@/services/auctioneerService'
-import { reportService } from '@/services/reportService'
-import { getAuctioneerRunOfShow } from '@/services/runOfShowService'
-import {
-  ArrowUpDown,
-  CalendarClock,
-  CircleDollarSign,
-  Clock,
-  Coins,
-  Download,
-  Eye,
-  EyeOff,
-  FileText,
-  Filter,
-  Gavel,
-  HandCoins,
-  Image as ImageIcon,
-  Loader2,
-  Pin,
-  PinOff,
-  Target,
-  Timer,
-} from 'lucide-react'
-import { toast } from 'sonner'
-import { useViewPreference } from '@/hooks/use-view-preference'
+import { BidderAvatar } from '@/components/bidder-avatar'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,12 +38,37 @@ import {
 } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import { BidderAvatar } from '@/components/bidder-avatar'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
 import { NudgesCompact } from '@/features/nudges'
 import { RGAuctioneerTab } from '@/features/revenue-generators'
-import { EventMapCard } from '../components/EventMapCard'
+import { useViewPreference } from '@/hooks/use-view-preference'
+import { auctioneerService } from '@/services/auctioneerService'
+import { reportService } from '@/services/reportService'
+import { getAuctioneerRunOfShow } from '@/services/runOfShowService'
+import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
+import {
+  ArrowUpDown,
+  CalendarClock,
+  CircleDollarSign,
+  Clock,
+  Coins,
+  Download,
+  Eye,
+  EyeOff,
+  FileText,
+  Filter,
+  Gavel,
+  HandCoins,
+  Image as ImageIcon,
+  Loader2,
+  Map,
+  Pin,
+  PinOff,
+  Target,
+} from 'lucide-react'
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { RosCountdownBadge } from '../components/RosCountdownBadge'
 import { RunOfShowCard } from '../components/RunOfShowCard'
 import {
@@ -170,6 +175,8 @@ export function AuctioneerDashboardPage({
     'live' | 'silent' | 'paddle' | 'revenue'
   >(defaultTab)
   const [showCommissionTotals, setShowCommissionTotals] = useState(true)
+  const [isRosModalOpen, setIsRosModalOpen] = useState(false)
+  const [isEventMapModalOpen, setIsEventMapModalOpen] = useState(false)
   const summaryHeaderRef = useRef<HTMLDivElement | null>(null)
   const [summaryStickyTop, setSummaryStickyTop] = useState(56)
   const [summaryPinned, setSummaryPinned] = useState<boolean>(() => {
@@ -448,13 +455,6 @@ export function AuctioneerDashboardPage({
     )
   }
 
-  const liveTimerValue =
-    dashboard.timers.live_auction_status === 'not_started'
-      ? getTimeRemaining(dashboard.timers.live_auction_start_datetime)
-      : dashboard.timers.live_auction_status === 'in_progress'
-        ? 'Live'
-        : 'Ended'
-
   const silentTimerValue =
     dashboard.timers.silent_auction_status === 'open'
       ? getTimeRemaining(dashboard.timers.auction_close_datetime)
@@ -485,26 +485,26 @@ export function AuctioneerDashboardPage({
 
       <div
         ref={summaryHeaderRef}
-        className={`bg-background/95 supports-[backdrop-filter]:bg-background/85 -mx-2 border-b px-2 py-2 backdrop-blur sm:-mx-4 sm:px-4 lg:-mx-6 lg:px-6 ${
-          summaryPinned ? 'sticky z-30' : ''
-        }`}
+        className={`bg-background/95 supports-[backdrop-filter]:bg-background/85 -mx-2 border-b px-2 py-2 backdrop-blur sm:-mx-4 sm:px-4 lg:-mx-6 lg:px-6 ${summaryPinned ? 'sticky z-30' : ''}`}
         style={summaryPinned ? { top: `${summaryStickyTop}px` } : undefined}
       >
         <div className='relative'>
-          <div className='grid min-w-0 auto-cols-auto grid-flow-col grid-rows-2 gap-1.5 overflow-x-auto pr-8 pb-0.5'>
-            {rosData && <RosCountdownBadge nextItem={rosNextItem} />}
-            <CompactStatusChip
-              icon={<CircleDollarSign className='h-3.5 w-3.5' />}
-              label='Event'
-              value={fmtCurrency(dashboard.event_totals.event_total_raised)}
-            />
-            {currentEvent.last_year_total != null && (
+          <div className='grid min-w-0 auto-cols-auto grid-flow-col grid-rows-2 gap-1.5 overflow-x-auto pr-28 pb-0.5'>
+            <div className='bg-muted/30 row-span-2 flex min-w-[220px] flex-col gap-1 rounded-md border p-1'>
               <CompactStatusChip
-                icon={<CalendarClock className='h-3.5 w-3.5' />}
-                label='Last Year'
-                value={fmtCurrency(currentEvent.last_year_total)}
+                icon={<CircleDollarSign className='h-3.5 w-3.5' />}
+                label='Current Event Total'
+                value={fmtCurrency(dashboard.event_totals.event_total_raised)}
               />
-            )}
+              {currentEvent.last_year_total != null && (
+                <CompactStatusChip
+                  icon={<CalendarClock className='h-3.5 w-3.5' />}
+                  label='Last Year Total'
+                  value={fmtCurrency(currentEvent.last_year_total)}
+                />
+              )}
+            </div>
+            {rosData && <RosCountdownBadge nextItem={rosNextItem} />}
             <CompactStatusChip
               icon={<Coins className='h-3.5 w-3.5' />}
               label='Commission'
@@ -542,19 +542,19 @@ export function AuctioneerDashboardPage({
             />
             <CompactStatusChip
               icon={<Gavel className='h-3.5 w-3.5' />}
-              label='Live Raised'
+              label='Live Auction'
               value={fmtCurrency(dashboard.event_totals.live_auction_raised)}
               onClick={() => setActiveTab('live')}
             />
             <CompactStatusChip
               icon={<Target className='h-3.5 w-3.5' />}
-              label='Silent Raised'
+              label='Silent Auction'
               value={fmtCurrency(dashboard.event_totals.silent_auction_raised)}
               onClick={() => setActiveTab('silent')}
             />
             <CompactStatusChip
               icon={<HandCoins className='h-3.5 w-3.5' />}
-              label='Paddle Raised'
+              label='Paddle Raise'
               value={fmtCurrency(dashboard.event_totals.paddle_raise_raised)}
               onClick={() => setActiveTab('paddle')}
             />
@@ -574,44 +574,96 @@ export function AuctioneerDashboardPage({
               />
             ))}
             <CompactStatusChip
-              icon={<Timer className='h-3.5 w-3.5' />}
-              label='Live'
-              value={liveTimerValue}
-              onClick={() => setActiveTab('live')}
-            />
-            <CompactStatusChip
               icon={<Clock className='h-3.5 w-3.5' />}
-              label='Silent'
+              label='Silent Auction Close'
               value={silentTimerValue}
               onClick={() => setActiveTab('silent')}
             />
           </div>
-          <Button
-            type='button'
-            variant='ghost'
-            size='icon'
-            className='absolute top-0 right-0 h-7 w-7'
-            onClick={() => setSummaryPinned((current) => !current)}
-            aria-label={
-              summaryPinned ? 'Unpin summary header' : 'Pin summary header'
-            }
-            title={
-              summaryPinned ? 'Unpin summary header' : 'Pin summary header'
-            }
-          >
-            {summaryPinned ? (
-              <PinOff className='h-3.5 w-3.5' />
-            ) : (
-              <Pin className='h-3.5 w-3.5' />
-            )}
-          </Button>
+          <div className='absolute top-0 right-0 flex items-center gap-1'>
+            <Button
+              type='button'
+              variant='ghost'
+              size='icon'
+              className='h-7 w-7'
+              onClick={() => setIsRosModalOpen(true)}
+              aria-label='Open Run of Show'
+              title='Open Run of Show'
+            >
+              <CalendarClock className='h-3.5 w-3.5' />
+            </Button>
+            <Button
+              type='button'
+              variant='ghost'
+              size='icon'
+              className='h-7 w-7'
+              onClick={() => setIsEventMapModalOpen(true)}
+              aria-label='Open Event Map'
+              title='Open Event Map'
+            >
+              <Map className='h-3.5 w-3.5' />
+            </Button>
+            <Button
+              type='button'
+              variant='ghost'
+              size='icon'
+              className='h-7 w-7'
+              onClick={() => setSummaryPinned((current) => !current)}
+              aria-label={
+                summaryPinned ? 'Unpin summary header' : 'Pin summary header'
+              }
+              title={
+                summaryPinned ? 'Unpin summary header' : 'Pin summary header'
+              }
+            >
+              {summaryPinned ? (
+                <PinOff className='h-3.5 w-3.5' />
+              ) : (
+                <Pin className='h-3.5 w-3.5' />
+              )}
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-        <RunOfShowCard eventId={currentEvent.id} />
-        <EventMapCard layoutImageUrl={currentEvent.seating_layout_image_url} />
-      </div>
+      <Dialog open={isRosModalOpen} onOpenChange={setIsRosModalOpen}>
+        <DialogContent className='max-h-[90dvh] overflow-hidden p-0 sm:max-w-3xl'>
+          <DialogHeader className='border-b px-4 py-3'>
+            <DialogTitle className='flex items-center gap-2 text-base'>
+              <CalendarClock className='h-4 w-4' />
+              Run of Show
+            </DialogTitle>
+          </DialogHeader>
+          <div className='max-h-[calc(90dvh-70px)] overflow-y-auto p-4'>
+            <RunOfShowCard eventId={currentEvent.id} />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEventMapModalOpen} onOpenChange={setIsEventMapModalOpen}>
+        <DialogContent className='max-h-[90dvh] overflow-hidden p-0 sm:max-w-4xl'>
+          <DialogHeader className='border-b px-4 py-3'>
+            <DialogTitle className='flex items-center gap-2 text-base'>
+              <Map className='h-4 w-4' />
+              Event Map
+            </DialogTitle>
+          </DialogHeader>
+          <div className='flex max-h-[calc(90dvh-70px)] items-center justify-center overflow-auto p-4'>
+            {currentEvent.seating_layout_image_url ? (
+              <img
+                src={currentEvent.seating_layout_image_url}
+                alt='Event map'
+                className='max-h-full max-w-full object-contain'
+              />
+            ) : (
+              <div className='text-muted-foreground flex flex-col items-center gap-2 py-8'>
+                <ImageIcon className='h-10 w-10 opacity-30' />
+                <p className='text-xs'>No event map uploaded</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <NudgesCompact eventId={currentEvent.id} />
 
@@ -699,10 +751,10 @@ export function AuctioneerDashboardPage({
                   value: fmtCurrency(paddleRaise.data?.total_pledged),
                   detail:
                     paddleRaise.data?.total_goal != null &&
-                    paddleRaise.data?.total_goal_progress_percent != null
+                      paddleRaise.data?.total_goal_progress_percent != null
                       ? `Goal ${fmtCurrency(
-                          paddleRaise.data.total_goal
-                        )} · ${paddleRaise.data.total_goal_progress_percent.toFixed(2)}% complete`
+                        paddleRaise.data.total_goal
+                      )} · ${paddleRaise.data.total_goal_progress_percent.toFixed(2)}% complete`
                       : undefined,
                 },
                 {
@@ -769,7 +821,7 @@ export function AuctioneerDashboardPage({
                           %
                         </p>
                         {level.goal_amount != null &&
-                        level.goal_progress_percent != null ? (
+                          level.goal_progress_percent != null ? (
                           <p className='text-muted-foreground text-xs'>
                             Goal {fmtCurrency(level.goal_amount)} ·{' '}
                             {level.goal_progress_percent.toFixed(2)}% complete
@@ -854,11 +906,11 @@ export function AuctioneerDashboardPage({
                         onValueChange={(value) =>
                           setPaddleDonationsSort(
                             value as
-                              | 'newest'
-                              | 'oldest'
-                              | 'amount_desc'
-                              | 'amount_asc'
-                              | 'bidder_asc'
+                            | 'newest'
+                            | 'oldest'
+                            | 'amount_desc'
+                            | 'amount_asc'
+                            | 'bidder_asc'
                           )
                         }
                       >
@@ -1003,19 +1055,18 @@ function CompactStatusChip({
 }) {
   return (
     <div
-      className={`bg-muted/70 flex min-h-9 items-center gap-2 rounded-md border px-2.5 py-1 text-xs${
-        onClick
+      className={`bg-muted/70 flex min-h-9 items-center gap-2 rounded-md border px-2.5 py-1 text-xs${onClick
           ? 'hover:bg-muted hover:border-foreground/20 cursor-pointer transition-colors'
           : ''
-      }`}
+        }`}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={
         onClick
           ? (e) => {
-              if (e.key === 'Enter' || e.key === ' ') onClick()
-            }
+            if (e.key === 'Enter' || e.key === ' ') onClick()
+          }
           : undefined
       }
     >
@@ -1050,23 +1101,23 @@ function ItemGallerySection({
   title: string
   subtitle: string
   items:
-    | Array<{
-        id: string
-        bid_number: number | null
-        title: string
-        current_bid_amount: number | null
-        bid_count: number
-        bidder_count: number
-        primary_image_url: string | null
-        donor_value: number | null
-        auction_type: string
-        has_commission: boolean
-        has_bounty: boolean
-        commission_percent: number | null
-        flat_fee: number | null
-      }>
-    | null
-    | undefined
+  | Array<{
+    id: string
+    bid_number: number | null
+    title: string
+    current_bid_amount: number | null
+    bid_count: number
+    bidder_count: number
+    primary_image_url: string | null
+    donor_value: number | null
+    auction_type: string
+    has_commission: boolean
+    has_bounty: boolean
+    commission_percent: number | null
+    flat_fee: number | null
+  }>
+  | null
+  | undefined
   isLoading: boolean
   error: unknown
   totalItems: number
@@ -1620,11 +1671,11 @@ function BidderTotalsCard({
             onValueChange={(value) =>
               setSortValue(
                 value as
-                  | 'amount_desc'
-                  | 'amount_asc'
-                  | 'count_desc'
-                  | 'count_asc'
-                  | 'bidder_asc'
+                | 'amount_desc'
+                | 'amount_asc'
+                | 'count_desc'
+                | 'count_asc'
+                | 'bidder_asc'
               )
             }
           >

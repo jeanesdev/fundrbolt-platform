@@ -133,7 +133,8 @@ export function EventHeroSection({
     if (!nextUrl || preloadedUrls.has(nextUrl)) return
 
     // Use requestIdleCallback for non-critical preload
-    let scheduleId: number | null = null
+    let idleId: number | undefined
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
 
     const callback = () => {
       const img = new Image()
@@ -141,20 +142,19 @@ export function EventHeroSection({
       setPreloadedUrls((prev) => new Set([...prev, nextUrl]))
     }
 
-    if ('requestIdleCallback' in window) {
-      scheduleId = window.requestIdleCallback(callback, { timeout: 2000 })
+    if (typeof window.requestIdleCallback === 'function') {
+      idleId = window.requestIdleCallback(callback, { timeout: 2000 })
     } else {
-      scheduleId = window.setTimeout(callback, 100)
+      timeoutId = setTimeout(callback, 100)
     }
 
     // Cleanup: cancel the scheduled callback if component unmounts or deps change
     return () => {
-      if (scheduleId !== null) {
-        if ('requestIdleCallback' in window && scheduleId >= 0) {
-          cancelIdleCallback(scheduleId)
-        } else {
-          clearTimeout(scheduleId as ReturnType<typeof setTimeout>)
-        }
+      if (idleId !== undefined && typeof window.cancelIdleCallback === 'function') {
+        window.cancelIdleCallback(idleId)
+      }
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId)
       }
     }
   }, [safeActiveBannerIndex, visibleBannerImages, preloadedUrls])

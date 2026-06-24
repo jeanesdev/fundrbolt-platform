@@ -1,6 +1,7 @@
 """Integration tests for RunOfShowService."""
 
 import uuid
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi import HTTPException
@@ -121,6 +122,61 @@ class TestRunOfShowServiceGetEventRos:
         )
         assert result.total_count == 1
         assert result.items[0].title == "Auctioneer visible"
+
+    async def test_next_item_uses_earliest_incomplete_even_if_overdue(
+        self,
+        db_session: AsyncSession,
+        test_event: dict,
+    ) -> None:
+        now = datetime.now(UTC)
+        overdue_incomplete = _make_item(
+            test_event,
+            title="Overdue intro",
+            display_order=0,
+            is_complete=False,
+            scheduled_time=now - timedelta(minutes=5),
+        )
+        future_incomplete = _make_item(
+            test_event,
+            title="Future raffle",
+            display_order=1,
+            is_complete=False,
+            scheduled_time=now + timedelta(minutes=30),
+        )
+        db_session.add_all([overdue_incomplete, future_incomplete])
+        await db_session.commit()
+
+        result = await RunOfShowService.get_event_ros(db_session, test_event.id)
+
+        assert result.next_item is not None
+        assert result.next_item.title == "Overdue intro"
+
+    async def test_next_item_is_none_when_all_items_complete(
+        self,
+        db_session: AsyncSession,
+        test_event: dict,
+    ) -> None:
+        now = datetime.now(UTC)
+        complete_one = _make_item(
+            test_event,
+            title="Welcome",
+            display_order=0,
+            is_complete=True,
+            scheduled_time=now - timedelta(minutes=10),
+        )
+        complete_two = _make_item(
+            test_event,
+            title="Dinner",
+            display_order=1,
+            is_complete=True,
+            scheduled_time=now + timedelta(minutes=20),
+        )
+        db_session.add_all([complete_one, complete_two])
+        await db_session.commit()
+
+        result = await RunOfShowService.get_event_ros(db_session, test_event.id)
+
+        assert result.next_item is None
 
 
 @pytest.mark.asyncio

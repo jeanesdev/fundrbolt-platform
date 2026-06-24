@@ -148,21 +148,21 @@ class RunOfShowService:
         result = await db.execute(query)
         items = list(result.scalars().all())
 
-        now = datetime.now(UTC)
         completed_count = sum(1 for i in items if i.is_complete)
 
-        # Next item: earliest uncompleted item where scheduled_time > now
+        # Next item: earliest uncompleted item by schedule order.
+        # This keeps the auctioneer header useful even if an item is overdue.
         next_item_orm: RunOfShowItem | None = None
-        future_incomplete = [
-            i
-            for i in items
-            if not i.is_complete and i.scheduled_time is not None and i.scheduled_time > now
+        incomplete_with_schedule = [
+            i for i in items if not i.is_complete and i.scheduled_time is not None
         ]
-        if future_incomplete:
+        if incomplete_with_schedule:
             next_item_orm = min(
-                future_incomplete,
+                incomplete_with_schedule,
                 key=lambda i: i.scheduled_time or datetime.min.replace(tzinfo=UTC),
             )
+        else:
+            next_item_orm = next((i for i in items if not i.is_complete), None)
 
         # Get event start time
         event_result = await db.execute(select(Event).where(Event.id == event_id))

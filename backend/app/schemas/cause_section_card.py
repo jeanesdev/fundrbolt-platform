@@ -45,6 +45,7 @@ class SlideItemResponse(BaseModel):
     display_order: int
     slide_variant: SlideVariantEnum
     media_url: str | None = None
+    media_variants: dict[str, str] | None = None
     media_source: MediaSourceEnum | None = None
     slide_name: str | None = None
     alt_text: str | None = None
