@@ -16,6 +16,7 @@ export interface PublicCauseSectionSlideItem {
   display_order: number
   slide_variant: SlideVariant
   media_url: string | null
+  media_variants: Record<string, string> | null
   media_source: MediaSource | null
   slide_name: string | null
   alt_text: string | null

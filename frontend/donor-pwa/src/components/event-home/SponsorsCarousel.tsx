@@ -19,7 +19,7 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import Autoplay from 'embla-carousel-autoplay'
 import { AlertCircle, Loader2 } from 'lucide-react'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 
 interface SponsorsCarouselProps {
   eventId?: string
@@ -43,6 +43,8 @@ export function SponsorsCarousel({
     : () => getEventSponsors(eventId!)
 
   // Fetch sponsors
+  const [thumbnailFailures, setThumbnailFailures] = useState<Record<string, boolean>>({})
+
   const {
     data: sponsors,
     isLoading,
@@ -113,34 +115,53 @@ export function SponsorsCarousel({
         }}
       >
         <CarouselContent className='-ml-2 md:-ml-4'>
-          {sponsors.map((sponsor) => (
+          {sponsors.map((sponsor, index) => (
             <CarouselItem
               key={sponsor.id}
               className='basis-full pl-2 md:basis-1/3 md:pl-4 lg:basis-1/4'
             >
               <div className='flex h-48 items-center justify-center bg-transparent p-6'>
-                {sponsor.website_url ? (
-                  <a
-                    href={sponsor.website_url}
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='flex h-full w-full items-center justify-center'
-                  >
+                {(() => {
+                  const prefersThumbnail =
+                    !!sponsor.thumbnail_url && !thumbnailFailures[sponsor.id]
+                  const imageSrc =
+                    prefersThumbnail && sponsor.thumbnail_url
+                      ? sponsor.thumbnail_url
+                      : sponsor.logo_url
+
+                  const logoImg = (
                     <img
-                      src={sponsor.thumbnail_url || sponsor.logo_url}
+                      src={imageSrc}
                       alt={sponsor.name}
                       className={`object-contain ${getLogoSizeClass(sponsor.logo_size)} max-w-full`}
-                      loading='lazy'
+                      loading={index < 4 ? 'eager' : 'lazy'}
+                      decoding='async'
+                      onError={() => {
+                        if (prefersThumbnail && sponsor.thumbnail_url) {
+                          setThumbnailFailures((prev) => ({
+                            ...prev,
+                            [sponsor.id]: true,
+                          }))
+                        }
+                      }}
                     />
-                  </a>
-                ) : (
-                  <img
-                    src={sponsor.thumbnail_url || sponsor.logo_url}
-                    alt={sponsor.name}
-                    className={`object-contain ${getLogoSizeClass(sponsor.logo_size)} max-w-full`}
-                    loading='lazy'
-                  />
-                )}
+                  )
+
+                  if (sponsor.website_url) {
+                    return (
+                      <a
+                        href={sponsor.website_url}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        className='flex h-full w-full items-center justify-center'
+                      >
+                        {logoImg}
+                      </a>
+                    )
+                  }
+
+                  return logoImg
+                })()}
               </div>
             </CarouselItem>
           ))}

@@ -15,7 +15,11 @@ from sqlalchemy import Select, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.v1.event_media_urls import get_signed_asset_url
+from app.api.v1.event_media_urls import (
+    extract_blob_name,
+    get_media_variant_urls,
+    get_signed_asset_url,
+)
 from app.models.cause_section_card import (
     CardTypeEnum,
     CauseSectionCard,
@@ -587,6 +591,9 @@ def public_slide_to_response(slide: CauseSectionSlideItem) -> SlideItemResponse:
     response = SlideItemResponse.model_validate(slide)
     if response.media_source == MediaSourceEnum.UPLOAD:
         response.media_url = get_signed_asset_url(response.media_url)
+        blob_name = extract_blob_name(response.media_url) if response.media_url else None
+        if blob_name:
+            response.media_variants = get_media_variant_urls(blob_name)
     return response
 
 

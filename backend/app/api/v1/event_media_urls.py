@@ -192,6 +192,9 @@ def get_media_variant_urls(blob_name: str) -> dict[str, str]:
             'original': 'https://.../banner.jpg?token=...'
         }
     """
+    from azure.core.exceptions import ResourceNotFoundError
+
+    from app.core.config import get_settings
     from app.services.media_service import MediaService
 
     if not blob_name:
@@ -213,13 +216,25 @@ def get_media_variant_urls(blob_name: str) -> dict[str, str]:
     base_name = file_parts[0]
     ext = file_parts[1]
 
-    # Generate SAS URLs for variants (best-effort: variant blobs may not exist if generation failed)
+    settings = get_settings()
+    blob_service_client = MediaService._get_blob_client()
+    container_name = settings.azure_storage_container_name or "event-media"
+
+    # Generate SAS URLs only for variant blobs that exist.
     variants = {}
     for variant_name in ["thumbnail", "medium", "large"]:
         variant_blob_name = f"{directory}/{base_name}_{variant_name}.{ext}"
-        # Note: These URLs are generated without checking blob existence.
-        # Clients should gracefully handle 404 if variant generation failed and blob wasn't uploaded.
-        variants[variant_name] = MediaService.generate_read_sas_url(variant_blob_name)
+        try:
+            variant_blob = blob_service_client.get_blob_client(
+                container=container_name,
+                blob=variant_blob_name,
+            )
+            variant_blob.get_blob_properties()
+            variants[variant_name] = MediaService.generate_read_sas_url(variant_blob_name)
+        except ResourceNotFoundError:
+            continue
+        except Exception:
+            continue
 
     # Always include original
     variants["original"] = MediaService.generate_read_sas_url(blob_name)
