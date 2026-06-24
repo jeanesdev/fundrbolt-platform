@@ -109,6 +109,7 @@ export function EventHeroSection({
   const [failedBannerUrls, setFailedBannerUrls] = useState<
     Record<string, true>
   >({})
+  const [preloadedUrls, setPreloadedUrls] = useState<Set<string>>(new Set())
 
   const sourceBannerImages =
     bannerImages?.filter((url) => !!url) ?? (bannerUrl ? [bannerUrl] : [])
@@ -121,6 +122,42 @@ export function EventHeroSection({
     visibleBannerImages.length > 0
       ? activeBannerIndex % visibleBannerImages.length
       : 0
+
+  // Preload next image after first paint to avoid blocking initial render
+  useEffect(() => {
+    if (visibleBannerImages.length <= 1) return
+
+    const nextIndex = (safeActiveBannerIndex + 1) % visibleBannerImages.length
+    const nextUrl = visibleBannerImages[nextIndex]
+
+    if (!nextUrl || preloadedUrls.has(nextUrl)) return
+
+    // Use requestIdleCallback for non-critical preload
+    let scheduleId: number | null = null
+
+    const callback = () => {
+      const img = new Image()
+      img.src = nextUrl
+      setPreloadedUrls((prev) => new Set([...prev, nextUrl]))
+    }
+
+    if ('requestIdleCallback' in window) {
+      scheduleId = window.requestIdleCallback(callback, { timeout: 2000 })
+    } else {
+      scheduleId = window.setTimeout(callback, 100)
+    }
+
+    // Cleanup: cancel the scheduled callback if component unmounts or deps change
+    return () => {
+      if (scheduleId !== null) {
+        if ('requestIdleCallback' in window && scheduleId >= 0) {
+          cancelIdleCallback(scheduleId)
+        } else {
+          clearTimeout(scheduleId as ReturnType<typeof setTimeout>)
+        }
+      }
+    }
+  }, [safeActiveBannerIndex, visibleBannerImages, preloadedUrls])
 
   useEffect(() => {
     if (visibleBannerImages.length === 0) return
@@ -172,7 +209,7 @@ export function EventHeroSection({
       const distance =
         visibleBannerImages.length > 0
           ? (index - safeActiveBannerIndex + visibleBannerImages.length) %
-            visibleBannerImages.length
+          visibleBannerImages.length
           : 0
       const swipeOffset = distance === 1 ? '10%' : '-10%'
 
@@ -236,25 +273,35 @@ export function EventHeroSection({
       {/* Background */}
       {showBanner ? (
         <div className='absolute inset-0 overflow-hidden'>
-          {visibleBannerImages.map((imageUrl, index) => (
-            <div
-              key={imageUrl}
-              className='absolute inset-0 bg-cover bg-center will-change-transform'
-              style={{
-                backgroundImage: `url(${imageUrl})`,
-                ...getSlideStyle(index, imageUrl),
-              }}
-            >
-              <img
-                src={imageUrl}
-                alt=''
-                className='hidden'
-                onError={() => {
-                  setFailedBannerUrls((prev) => ({ ...prev, [imageUrl]: true }))
+          {/* Render all slides to support transitions, but only load backgroundImage for active/next (preloaded) */}
+          {visibleBannerImages.map((imageUrl, idx) => {
+            const nextIndex = (safeActiveBannerIndex + 1) % visibleBannerImages.length
+            const shouldLoadImage = idx === safeActiveBannerIndex || idx === nextIndex
+            return (
+              <div
+                key={imageUrl}
+                className='absolute inset-0 bg-cover bg-center will-change-transform'
+                style={{
+                  backgroundImage: shouldLoadImage ? `url(${imageUrl})` : undefined,
+                  ...getSlideStyle(idx, imageUrl),
                 }}
-              />
-            </div>
-          ))}
+              >
+                {shouldLoadImage && (
+                  <img
+                    src={imageUrl}
+                    alt=''
+                    className='hidden'
+                    onError={() => {
+                      setFailedBannerUrls((prev) => ({
+                        ...prev,
+                        [imageUrl]: true,
+                      }))
+                    }}
+                  />
+                )}
+              </div>
+            )
+          })}
           <div className='absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/80' />
           <div className='pointer-events-none absolute inset-x-0 -bottom-px h-28 bg-gradient-to-t from-black/95 via-black/70 to-transparent' />
         </div>
