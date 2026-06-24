@@ -170,3 +170,58 @@ def resolve_event_card_thumbnail_url(event: Any) -> str | None:
         )
 
     return None
+
+
+def get_media_variant_urls(blob_name: str) -> dict[str, str]:
+    """
+    Generate SAS URLs for image variants (thumbnail, medium, large) based on blob name.
+
+    Variants are generated during upload as:
+    - {base_name}_thumbnail.{ext}
+    - {base_name}_medium.{ext}
+    - {base_name}_large.{ext}
+
+    Args:
+        blob_name: Original blob name (e.g., events/{event_id}/{media_id}/banner.jpg)
+
+    Returns:
+        Dictionary with variant URLs, e.g. {
+            'thumbnail': 'https://.../_thumbnail.jpg?token=...',
+            'medium': 'https://.../_medium.jpg?token=...',
+            'large': 'https://.../_large.jpg?token=...',
+            'original': 'https://.../banner.jpg?token=...'
+        }
+    """
+    from app.services.media_service import MediaService
+
+    if not blob_name:
+        return {}
+
+    # Split filename from path
+    path_parts = blob_name.rsplit("/", 1)
+    if len(path_parts) != 2:
+        return {}
+
+    directory = path_parts[0]
+    filename = path_parts[1]
+
+    # Split base name and extension
+    file_parts = filename.rsplit(".", 1)
+    if len(file_parts) != 2:
+        return {}
+
+    base_name = file_parts[0]
+    ext = file_parts[1]
+
+    variants = {}
+    for variant_name in ["thumbnail", "medium", "large"]:
+        variant_blob_name = f"{directory}/{base_name}_{variant_name}.{ext}"
+        try:
+            variants[variant_name] = MediaService.generate_read_sas_url(variant_blob_name)
+        except Exception:
+            # Silently skip missing variants
+            pass
+
+    # Always include original
+    variants["original"] = MediaService.generate_read_sas_url(blob_name)
+    return variants

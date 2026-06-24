@@ -1,5 +1,6 @@
 """Media Service - Azure Blob Storage integration for event media."""
 
+import io
 import logging
 import mimetypes
 import time
@@ -15,6 +16,7 @@ from azure.storage.blob import (
     generate_blob_sas,
 )
 from fastapi import HTTPException, status
+from PIL import Image
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -365,6 +367,92 @@ class MediaService:
         return media
 
     @staticmethod
+    async def _generate_and_upload_image_variants(
+        container_name: str,
+        event_id: uuid.UUID,
+        media_id: uuid.UUID,
+        filename: str,
+        file_bytes: bytes,
+    ) -> None:
+        """
+        Generate and upload resized image variants (thumbnail, medium, large).
+
+        Variants are uploaded to blob storage with immutable cache headers.
+        Sizing:
+        - Thumbnail: 300x300 for list views/carousels
+        - Medium: 800x600 for responsive hero on tablet
+        - Large: 1280x960 for responsive hero on desktop
+
+        Args:
+            container_name: Azure Blob Storage container name
+            event_id: Event UUID
+            media_id: Media UUID
+            filename: Original filename
+            file_bytes: Original image bytes
+        """
+        try:
+            # Open image and generate variants
+            original_image = Image.open(io.BytesIO(file_bytes))
+
+            # Determine output format based on original
+            img_format = original_image.format or "JPEG"
+            mime_type = (
+                f"image/{img_format.lower()}" if img_format.lower() != "jpg" else "image/jpeg"
+            )
+
+            # Get base filename without extension
+            base_name = ".".join(filename.split(".")[:-1])
+            ext = filename.split(".")[-1] if "." in filename else "jpg"
+
+            variants = {
+                "thumbnail": (300, 300),
+                "medium": (800, 600),
+                "large": (1280, 960),
+            }
+
+            blob_client = MediaService._get_blob_client()
+
+            for variant_name, size in variants.items():
+                try:
+                    # Generate variant
+                    variant_image = original_image.copy()
+                    variant_image.thumbnail(size, Image.Resampling.LANCZOS)
+
+                    # Convert to bytes
+                    variant_bytes = io.BytesIO()
+                    variant_image.save(variant_bytes, format=img_format)
+                    variant_bytes.seek(0)
+
+                    # Upload variant
+                    variant_blob_name = (
+                        f"events/{event_id}/{media_id}/{base_name}_{variant_name}.{ext}"
+                    )
+                    variant_blob = blob_client.get_blob_client(
+                        container=container_name, blob=variant_blob_name
+                    )
+
+                    variant_blob.upload_blob(
+                        variant_bytes.getvalue(),
+                        overwrite=True,
+                        content_settings=ContentSettings(
+                            content_type=mime_type,
+                            cache_control="public, max-age=31536000, immutable",
+                        ),
+                    )
+
+                    logger.info(
+                        f"Generated and uploaded {variant_name} variant for media {media_id}"
+                    )
+                except Exception as variant_exc:
+                    logger.warning(
+                        f"Failed to generate {variant_name} variant for media {media_id}: {variant_exc}"
+                    )
+                    # Don't fail upload if variant generation fails
+        except Exception as exc:
+            logger.warning(f"Failed to generate image variants for media {media_id}: {exc}")
+            # Don't fail upload if variant generation fails
+
+    @staticmethod
     async def upload_file_direct(
         db: AsyncSession,
         event_id: uuid.UUID,
@@ -432,8 +520,21 @@ class MediaService:
             blob.upload_blob(
                 file_bytes,
                 overwrite=True,
-                content_settings=ContentSettings(content_type=content_type),
+                content_settings=ContentSettings(
+                    content_type=content_type,
+                    cache_control="public, max-age=31536000, immutable",
+                ),
             )
+
+            # Generate image variants (thumbnail, medium, large) for images
+            if media_type == EventMediaType.IMAGE:
+                await MediaService._generate_and_upload_image_variants(
+                    container_name=container_name,
+                    event_id=event_id,
+                    media_id=media_id,
+                    filename=filename,
+                    file_bytes=file_bytes,
+                )
         except Exception as exc:
             logger.exception("Direct blob upload failed for event %s", event_id)
             raise HTTPException(

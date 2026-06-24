@@ -4,15 +4,6 @@
  * Auto-playing carousel that displays event sponsors.
  * Automatically transitions through sponsors in a loop.
  */
-import { useRef } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import Autoplay from 'embla-carousel-autoplay'
-import { AlertCircle, Loader2 } from 'lucide-react'
-import {
-  getEventSponsors,
-  getPublicEventSponsors,
-  type Sponsor,
-} from '@/lib/api/sponsors'
 import {
   Carousel,
   CarouselContent,
@@ -20,6 +11,15 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/components/ui/carousel'
+import {
+  getEventSponsors,
+  getPublicEventSponsors,
+  type Sponsor,
+} from '@/lib/api/sponsors'
+import { useQuery } from '@tanstack/react-query'
+import Autoplay from 'embla-carousel-autoplay'
+import { AlertCircle, Loader2 } from 'lucide-react'
+import { useRef } from 'react'
 
 interface SponsorsCarouselProps {
   eventId?: string
@@ -127,7 +127,7 @@ export function SponsorsCarousel({
                     className='flex h-full w-full items-center justify-center'
                   >
                     <img
-                      src={sponsor.logo_url}
+                      src={sponsor.thumbnail_url || sponsor.logo_url}
                       alt={sponsor.name}
                       className={`object-contain ${getLogoSizeClass(sponsor.logo_size)} max-w-full`}
                       loading='lazy'
@@ -135,7 +135,7 @@ export function SponsorsCarousel({
                   </a>
                 ) : (
                   <img
-                    src={sponsor.logo_url}
+                    src={sponsor.thumbnail_url || sponsor.logo_url}
                     alt={sponsor.name}
                     className={`object-contain ${getLogoSizeClass(sponsor.logo_size)} max-w-full`}
                     loading='lazy'

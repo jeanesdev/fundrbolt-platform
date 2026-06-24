@@ -7,7 +7,12 @@ from datetime import datetime, timedelta
 from io import BytesIO
 
 import pytz
-from azure.storage.blob import BlobSasPermissions, BlobServiceClient, generate_blob_sas
+from azure.storage.blob import (
+    BlobSasPermissions,
+    BlobServiceClient,
+    ContentSettings,
+    generate_blob_sas,
+)
 from fastapi import HTTPException, status
 from PIL import Image
 from PIL.Image import Image as PILImage
@@ -351,7 +356,14 @@ class SponsorLogoService:
             )
 
             # Upload thumbnail
-            thumbnail_blob_client.upload_blob(thumbnail_data, overwrite=True)
+            thumbnail_blob_client.upload_blob(
+                thumbnail_data,
+                overwrite=True,
+                content_settings=ContentSettings(
+                    content_type="image/png",
+                    cache_control="public, max-age=31536000, immutable",
+                ),
+            )
 
             # Generate read URLs with SAS tokens
             from app.services.media_service import MediaService
