@@ -20,6 +20,7 @@ from app.models.event_registration import EventRegistration
 from app.models.registration_guest import RegistrationGuest
 from app.models.revenue_generator_entry import RevenueGeneratorEntry
 from app.models.revenue_generator_item import RevenueGeneratorItem
+from app.models.user import User
 from app.models.watch_list_entry import WatchListEntry
 from app.schemas.nudge import (
     GOAL_MILESTONE_THRESHOLDS,
@@ -190,21 +191,33 @@ class NudgeService:
 
     async def _compute_watchers_no_bid(self, event_id: uuid.UUID) -> list[NudgeItem]:
         """Summary nudge: auction items with watchers who haven't bid."""
-        watcher_sq = (
+        attendee_sq = (
             select(
-                WatchListEntry.item_id,
-                func.count(WatchListEntry.user_id).label("watcher_count"),
+                EventRegistration.user_id.label("user_id"),
+                func.max(RegistrationGuest.table_number).label("table_number"),
+                func.max(RegistrationGuest.bidder_number).label("bidder_number"),
             )
-            .where(WatchListEntry.event_id == event_id)
-            .group_by(WatchListEntry.item_id)
+            .join(RegistrationGuest, RegistrationGuest.registration_id == EventRegistration.id)
+            .where(
+                EventRegistration.event_id == event_id,
+                RegistrationGuest.user_id == EventRegistration.user_id,
+            )
+            .group_by(EventRegistration.user_id)
             .subquery()
         )
 
-        watchers_no_bid_sq = (
+        watchers_no_bid_rows = await self.db.execute(
             select(
                 WatchListEntry.item_id,
-                func.count(WatchListEntry.user_id).label("unwatched_bidder_count"),
+                AuctionItem.title,
+                User.first_name,
+                User.last_name,
+                attendee_sq.c.table_number,
+                attendee_sq.c.bidder_number,
             )
+            .join(AuctionItem, AuctionItem.id == WatchListEntry.item_id)
+            .join(User, User.id == WatchListEntry.user_id)
+            .outerjoin(attendee_sq, attendee_sq.c.user_id == WatchListEntry.user_id)
             .outerjoin(
                 AuctionBid,
                 and_(
@@ -220,35 +233,58 @@ class NudgeService:
                 WatchListEntry.event_id == event_id,
                 AuctionBid.id.is_(None),
             )
-            .group_by(WatchListEntry.item_id)
-            .subquery()
+            .order_by(AuctionItem.title.asc(), User.first_name.asc(), User.last_name.asc())
         )
 
-        count_result = await self.db.execute(select(func.count()).select_from(watchers_no_bid_sq))
-        item_count = count_result.scalar() or 0
+        detail_by_item: dict[uuid.UUID, dict[str, Any]] = {}
+        for row in watchers_no_bid_rows.fetchall():
+            item_bucket = detail_by_item.setdefault(
+                row.item_id,
+                {
+                    "item_id": str(row.item_id),
+                    "item_name": row.title,
+                    "item_url": f"/events/{event_id}/auction-items/{row.item_id}",
+                    "watchers": [],
+                },
+            )
+            full_name = f"{row.first_name} {row.last_name}".strip()
+            detail_parts: list[str] = []
+            if row.table_number is not None:
+                detail_parts.append(f"Table {row.table_number}")
+            if row.bidder_number is not None:
+                detail_parts.append(f"Bidder {row.bidder_number}")
 
+            watcher_label = (
+                f"{full_name} ({', '.join(detail_parts)})"
+                if full_name and detail_parts
+                else full_name
+            )
+            if watcher_label and watcher_label not in item_bucket["watchers"]:
+                item_bucket["watchers"].append(watcher_label)
+
+        detail_items = sorted(
+            (
+                {
+                    **item,
+                    "watcher_count": len(item["watchers"]),
+                }
+                for item in detail_by_item.values()
+            ),
+            key=lambda i: (-i["watcher_count"], i["item_name"]),
+        )
+
+        item_count = len(detail_items)
         if item_count == 0:
             return []
 
-        top_items_result = await self.db.execute(
-            select(
-                AuctionItem.id,
-                AuctionItem.title,
-                watcher_sq.c.watcher_count,
-            )
-            .join(watcher_sq, AuctionItem.id == watcher_sq.c.item_id)
-            .join(watchers_no_bid_sq, AuctionItem.id == watchers_no_bid_sq.c.item_id)
-            .where(AuctionItem.event_id == event_id)
-            .order_by(watcher_sq.c.watcher_count.desc())
-            .limit(3)
-        )
         top_items = [
             {
-                "item_id": str(row.id),
-                "item_name": row.title,
-                "watcher_count": row.watcher_count,
+                "item_id": item["item_id"],
+                "item_name": item["item_name"],
+                "item_url": item["item_url"],
+                "watcher_count": item["watcher_count"],
             }
-            for row in top_items_result.fetchall()
+            for item in detail_items[:3]
         ]
 
         return [
@@ -264,7 +300,11 @@ class NudgeService:
                 action_url=f"/events/{event_id}/auction-dashboard",
                 action_label="View Auction",
                 affected_count=item_count,
-                metadata={"item_count": item_count, "top_items": top_items},
+                metadata={
+                    "item_count": item_count,
+                    "top_items": top_items,
+                    "detail_items": detail_items,
+                },
                 is_dismissible=True,
                 notifies_on_appear=True,
             )
@@ -292,6 +332,14 @@ class NudgeService:
             return []
 
         item_names = [row.title for row in rows[:5]]
+        item_details = [
+            {
+                "item_id": str(row.id),
+                "item_name": row.title,
+                "item_url": f"/events/{event_id}/auction-items/{row.id}",
+            }
+            for row in rows
+        ]
 
         base_rank = NUDGE_BASE_RANKS[NudgeType.ITEMS_NO_BIDS]
         rank = base_rank
@@ -326,7 +374,10 @@ class NudgeService:
                 action_url=f"/events/{event_id}/auction-items?filter=no_bids",
                 action_label="View Items",
                 affected_count=count,
-                metadata={"item_names": item_names},
+                metadata={
+                    "item_names": item_names,
+                    "item_details": item_details,
+                },
                 is_dismissible=True,
                 notifies_on_appear=rank <= 2,
             )
@@ -475,19 +526,38 @@ class NudgeService:
 
     async def _compute_outbid_still_watching(self, event_id: uuid.UUID) -> list[NudgeItem]:
         """Per-item nudge: users who are outbid but still watching."""
+        attendee_sq = (
+            select(
+                EventRegistration.user_id.label("user_id"),
+                func.max(RegistrationGuest.table_number).label("table_number"),
+                func.max(RegistrationGuest.bidder_number).label("bidder_number"),
+            )
+            .join(RegistrationGuest, RegistrationGuest.registration_id == EventRegistration.id)
+            .where(
+                EventRegistration.event_id == event_id,
+                RegistrationGuest.user_id == EventRegistration.user_id,
+            )
+            .group_by(EventRegistration.user_id)
+            .subquery()
+        )
+
         outbid_sq = (
             select(AuctionBid.auction_item_id, AuctionBid.user_id)
             .where(
                 AuctionBid.event_id == event_id,
                 AuctionBid.bid_status == BidStatus.OUTBID,
             )
+            .distinct()
             .subquery()
         )
         result = await self.db.execute(
             select(
                 WatchListEntry.item_id,
                 AuctionItem.title,
-                func.count(WatchListEntry.user_id).label("outbid_watcher_count"),
+                User.first_name,
+                User.last_name,
+                attendee_sq.c.table_number,
+                attendee_sq.c.bidder_number,
             )
             .join(AuctionItem, AuctionItem.id == WatchListEntry.item_id)
             .join(
@@ -497,36 +567,77 @@ class NudgeService:
                     WatchListEntry.user_id == outbid_sq.c.user_id,
                 ),
             )
+            .join(User, User.id == WatchListEntry.user_id)
+            .outerjoin(attendee_sq, attendee_sq.c.user_id == WatchListEntry.user_id)
             .where(WatchListEntry.event_id == event_id)
-            .group_by(WatchListEntry.item_id, AuctionItem.title)
-            .having(func.count(WatchListEntry.user_id) >= 2)
+            .order_by(AuctionItem.title.asc(), User.first_name.asc(), User.last_name.asc())
         )
-        rows = result.fetchall()
-        if not rows:
+
+        details_by_item: dict[uuid.UUID, dict[str, Any]] = {}
+        for row in result.fetchall():
+            item_bucket = details_by_item.setdefault(
+                row.item_id,
+                {
+                    "item_id": str(row.item_id),
+                    "item_name": row.title,
+                    "item_url": f"/events/{event_id}/auction-items/{row.item_id}",
+                    "watchers": [],
+                },
+            )
+            full_name = f"{row.first_name} {row.last_name}".strip()
+            detail_parts: list[str] = []
+            if row.table_number is not None:
+                detail_parts.append(f"Table {row.table_number}")
+            if row.bidder_number is not None:
+                detail_parts.append(f"Bidder {row.bidder_number}")
+
+            watcher_label = (
+                f"{full_name} ({', '.join(detail_parts)})"
+                if full_name and detail_parts
+                else full_name
+            )
+            if watcher_label and watcher_label not in item_bucket["watchers"]:
+                item_bucket["watchers"].append(watcher_label)
+
+        if not details_by_item:
             return []
 
         nudges: list[NudgeItem] = []
-        for row in rows:
+        for detail in sorted(details_by_item.values(), key=lambda d: d["item_name"]):
+            outbid_watcher_count = len(detail["watchers"])
+            if outbid_watcher_count < 2:
+                continue
+
             nudges.append(
                 NudgeItem(
-                    nudge_key=f"outbid_watching:{row.item_id}",
+                    nudge_key=f"outbid_watching:{detail['item_id']}",
                     nudge_type=NudgeType.OUTBID_STILL_WATCHING,
                     rank=NUDGE_BASE_RANKS[NudgeType.OUTBID_STILL_WATCHING],
                     title="Outbid Watchers",
                     description=(
-                        f"{row.outbid_watcher_count} outbid bidder"
-                        f"{'s are' if row.outbid_watcher_count != 1 else ' is'} "
-                        f"still watching '{row.title}' — nudge them back in!"
+                        f"{outbid_watcher_count} outbid bidder"
+                        f"{'s are' if outbid_watcher_count != 1 else ' is'} "
+                        f"still watching '{detail['item_name']}' — nudge them back in!"
                     ),
                     action_url=(
                         f"/events/{event_id}/notifications"
-                        f"?audience=outbid_watchers&item_id={row.item_id}"
+                        f"?audience=outbid_watchers&item_id={detail['item_id']}"
                     ),
                     action_label="Notify Them",
-                    affected_count=row.outbid_watcher_count,
+                    affected_count=outbid_watcher_count,
                     metadata={
-                        "item_name": row.title,
-                        "outbid_watcher_count": row.outbid_watcher_count,
+                        "item_id": detail["item_id"],
+                        "item_name": detail["item_name"],
+                        "outbid_watcher_count": outbid_watcher_count,
+                        "detail_items": [
+                            {
+                                "item_id": detail["item_id"],
+                                "item_name": detail["item_name"],
+                                "item_url": detail["item_url"],
+                                "watchers": detail["watchers"],
+                                "watcher_count": outbid_watcher_count,
+                            }
+                        ],
                     },
                     is_dismissible=True,
                     notifies_on_appear=False,
@@ -774,41 +885,128 @@ class NudgeService:
         return nudges
 
     async def _compute_pareto_donors(self, event_id: uuid.UUID) -> list[NudgeItem]:
-        """Top donors who account for 75%+ of total revenue."""
+        """Top donors who account for at least 75% of donor-attributable revenue."""
         try:
-            total = await self._sum_total_revenue(event_id)
-            if total <= 0:
-                return []
+            from app.models.donation import Donation, DonationStatus
 
-            result = await self.db.execute(
+            bids_result = await self.db.execute(
                 select(
                     AuctionBid.user_id,
-                    func.sum(AuctionBid.bid_amount).label("total"),
+                    func.coalesce(func.sum(AuctionBid.bid_amount), 0).label("amount"),
                 )
                 .where(
                     AuctionBid.event_id == event_id,
-                    AuctionBid.bid_status.in_(
-                        [BidStatus.ACTIVE, BidStatus.WINNING, BidStatus.OUTBID]
-                    ),
+                    AuctionBid.bid_status.in_([BidStatus.ACTIVE, BidStatus.WINNING]),
                 )
                 .group_by(AuctionBid.user_id)
-                .order_by(func.sum(AuctionBid.bid_amount).desc())
             )
-            rows = result.fetchall()
-            if not rows:
+            paddle_result = await self.db.execute(
+                select(
+                    PaddleRaiseContribution.user_id,
+                    func.coalesce(func.sum(PaddleRaiseContribution.amount), 0).label("amount"),
+                )
+                .where(PaddleRaiseContribution.event_id == event_id)
+                .group_by(PaddleRaiseContribution.user_id)
+            )
+            donation_result = await self.db.execute(
+                select(
+                    Donation.donor_user_id.label("user_id"),
+                    func.coalesce(func.sum(Donation.amount), 0).label("amount"),
+                )
+                .where(
+                    Donation.event_id == event_id,
+                    Donation.status == DonationStatus.ACTIVE,
+                )
+                .group_by(Donation.donor_user_id)
+            )
+
+            donor_totals: dict[uuid.UUID, Decimal] = {}
+            for row in bids_result.fetchall():
+                donor_totals[row.user_id] = donor_totals.get(row.user_id, Decimal(0)) + Decimal(
+                    str(row.amount)
+                )
+            for row in paddle_result.fetchall():
+                donor_totals[row.user_id] = donor_totals.get(row.user_id, Decimal(0)) + Decimal(
+                    str(row.amount)
+                )
+            for row in donation_result.fetchall():
+                donor_totals[row.user_id] = donor_totals.get(row.user_id, Decimal(0)) + Decimal(
+                    str(row.amount)
+                )
+
+            donor_totals = {user_id: total for user_id, total in donor_totals.items() if total > 0}
+            if not donor_totals:
                 return []
 
-            total_donors = len(rows)
+            total = sum(donor_totals.values(), Decimal(0))
+            if total <= 0:
+                return []
+
+            sorted_totals = sorted(donor_totals.items(), key=lambda row: row[1], reverse=True)
+
+            donor_ids = [row[0] for row in sorted_totals]
+            attendee_sq = (
+                select(
+                    EventRegistration.user_id.label("user_id"),
+                    func.max(RegistrationGuest.table_number).label("table_number"),
+                    func.max(RegistrationGuest.bidder_number).label("bidder_number"),
+                )
+                .join(RegistrationGuest, RegistrationGuest.registration_id == EventRegistration.id)
+                .where(
+                    EventRegistration.event_id == event_id,
+                    RegistrationGuest.user_id == EventRegistration.user_id,
+                )
+                .group_by(EventRegistration.user_id)
+                .subquery()
+            )
+            result = await self.db.execute(
+                select(
+                    User.id,
+                    User.first_name,
+                    User.last_name,
+                    attendee_sq.c.table_number,
+                    attendee_sq.c.bidder_number,
+                )
+                .outerjoin(attendee_sq, attendee_sq.c.user_id == User.id)
+                .where(User.id.in_(donor_ids))
+            )
+            user_info_by_id: dict[uuid.UUID, dict[str, Any]] = {
+                row.id: {
+                    "donor_name": f"{row.first_name} {row.last_name}".strip() or "Unknown Donor",
+                    "table_number": row.table_number,
+                    "donor_number": row.bidder_number,
+                }
+                for row in result.fetchall()
+            }
+
+            total_donors = len(sorted_totals)
             running_total = Decimal(0)
             top_donors = 0
-            for row in rows:
-                running_total += Decimal(str(row.total))
+            for _user_id, donor_total in sorted_totals:
+                running_total += donor_total
                 top_donors += 1
                 if running_total >= total * Decimal("0.75"):
                     break
 
-            if total_donors == 0 or top_donors / total_donors >= 0.30:
-                return []
+            top_donor_details: list[dict[str, Any]] = []
+            for user_id, donor_total in sorted_totals[:top_donors]:
+                donor_info = user_info_by_id.get(
+                    user_id,
+                    {
+                        "donor_name": "Unknown Donor",
+                        "table_number": None,
+                        "donor_number": None,
+                    },
+                )
+                top_donor_details.append(
+                    {
+                        "donor_name": donor_info["donor_name"],
+                        "table_number": donor_info["table_number"],
+                        "donor_number": donor_info["donor_number"],
+                        "total_amount": float(donor_total),
+                        "total_amount_cents": int(donor_total * 100),
+                    }
+                )
 
             revenue_pct = round(float(running_total / total * 100), 1)
             return [
@@ -828,6 +1026,9 @@ class NudgeService:
                         "top_donor_count": top_donors,
                         "revenue_pct": revenue_pct,
                         "total_donors": total_donors,
+                        "revenue_total": float(total),
+                        "revenue_total_cents": int(total * 100),
+                        "top_donor_details": top_donor_details,
                     },
                     is_dismissible=True,
                     notifies_on_appear=False,

@@ -1,19 +1,23 @@
-import { useState } from 'react'
-import { RefreshCw, Trash2, Zap } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { RefreshCw, Trash2, Zap } from 'lucide-react'
+import { useState } from 'react'
 import { NudgeCard } from './NudgeCard'
 import { useNudges } from './useNudges'
 
 interface NudgesPanelProps {
   eventId: string
+  disableNotifyLinks?: boolean
 }
 
 const INITIAL_VISIBLE = 5
 
-export function NudgesPanel({ eventId }: NudgesPanelProps) {
+export function NudgesPanel({
+  eventId,
+  disableNotifyLinks = false,
+}: NudgesPanelProps) {
   const {
     nudges,
     activeCount,
@@ -106,6 +110,7 @@ export function NudgesPanel({ eventId }: NudgesPanelProps) {
               nudge={nudge}
               onDismiss={() => dismiss(nudge.nudge_key, 'dismissed')}
               onAction={() => dismiss(nudge.nudge_key, 'actioned')}
+              disableNotifyLinks={disableNotifyLinks}
             />
           ))}
         {!expanded && hiddenCount > 0 && (
