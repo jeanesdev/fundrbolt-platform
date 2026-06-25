@@ -695,7 +695,7 @@ export function AuctioneerDashboardPage({
         </DialogContent>
       </Dialog>
 
-      <NudgesCompact eventId={currentEvent.id} />
+      <NudgesCompact eventId={currentEvent.id} disableNotifyLinks />
 
       <Tabs
         value={activeTab}
@@ -1086,8 +1086,8 @@ function CompactStatusChip({
   return (
     <div
       className={`bg-muted/70 flex min-h-9 items-center gap-2 rounded-md border px-2.5 py-1 text-xs${onClick
-          ? 'hover:bg-muted hover:border-foreground/20 cursor-pointer transition-colors'
-          : ''
+        ? ' hover:bg-muted hover:border-foreground/20 cursor-pointer transition-colors'
+        : ''
         }`}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
