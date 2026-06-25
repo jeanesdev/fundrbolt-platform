@@ -273,8 +273,6 @@ export function NudgeCard({
     new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
     }).format(amount)
 
   return (
@@ -427,8 +425,11 @@ export function NudgeCard({
               {paretoDonorsExpanded && canExpandParetoDonors && (
                 <div className='mt-2 rounded-md border border-slate-200 bg-white/70 p-2'>
                   <div className='space-y-1.5'>
-                    {paretoDonorDetails.map((donor, index) => (
-                      <p key={`${nudge.nudge_key}:${index}`} className='text-xs text-slate-800'>
+                    {paretoDonorDetails.map((donor) => (
+                      <p
+                        key={`${nudge.nudge_key}:${donor.donor_name}:${donor.donor_number ?? ''}:${donor.total_amount}`}
+                        className='text-xs text-slate-800'
+                      >
                         <span className='font-medium'>
                           {donor.donor_name}
                           {(donor.table_number || donor.donor_number) && (

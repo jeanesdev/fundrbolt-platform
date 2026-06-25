@@ -237,6 +237,7 @@ class NudgeService:
         )
 
         detail_by_item: dict[uuid.UUID, dict[str, Any]] = {}
+        seen_watchers_by_item: dict[uuid.UUID, set[str]] = {}
         for row in watchers_no_bid_rows.fetchall():
             item_bucket = detail_by_item.setdefault(
                 row.item_id,
@@ -247,6 +248,7 @@ class NudgeService:
                     "watchers": [],
                 },
             )
+            seen = seen_watchers_by_item.setdefault(row.item_id, set())
             full_name = f"{row.first_name} {row.last_name}".strip()
             detail_parts: list[str] = []
             if row.table_number is not None:
@@ -259,7 +261,8 @@ class NudgeService:
                 if full_name and detail_parts
                 else full_name
             )
-            if watcher_label and watcher_label not in item_bucket["watchers"]:
+            if watcher_label and watcher_label not in seen:
+                seen.add(watcher_label)
                 item_bucket["watchers"].append(watcher_label)
 
         detail_items = sorted(
@@ -277,6 +280,7 @@ class NudgeService:
         if item_count == 0:
             return []
 
+        _DETAIL_CAP = 10
         top_items = [
             {
                 "item_id": item["item_id"],
@@ -286,6 +290,7 @@ class NudgeService:
             }
             for item in detail_items[:3]
         ]
+        capped_detail_items = detail_items[:_DETAIL_CAP]
 
         return [
             NudgeItem(
@@ -303,7 +308,9 @@ class NudgeService:
                 metadata={
                     "item_count": item_count,
                     "top_items": top_items,
-                    "detail_items": detail_items,
+                    "detail_items": capped_detail_items,
+                    "detail_items_has_more": item_count > _DETAIL_CAP,
+                    "detail_items_total": item_count,
                 },
                 is_dismissible=True,
                 notifies_on_appear=True,
@@ -331,6 +338,7 @@ class NudgeService:
         if count == 0:
             return []
 
+        _ITEM_DETAIL_CAP = 20
         item_names = [row.title for row in rows[:5]]
         item_details = [
             {
@@ -338,7 +346,7 @@ class NudgeService:
                 "item_name": row.title,
                 "item_url": f"/events/{event_id}/auction-items/{row.id}",
             }
-            for row in rows
+            for row in rows[:_ITEM_DETAIL_CAP]
         ]
 
         base_rank = NUDGE_BASE_RANKS[NudgeType.ITEMS_NO_BIDS]
@@ -377,6 +385,8 @@ class NudgeService:
                 metadata={
                     "item_names": item_names,
                     "item_details": item_details,
+                    "item_details_has_more": count > _ITEM_DETAIL_CAP,
+                    "item_details_total": count,
                 },
                 is_dismissible=True,
                 notifies_on_appear=rank <= 2,
@@ -574,6 +584,7 @@ class NudgeService:
         )
 
         details_by_item: dict[uuid.UUID, dict[str, Any]] = {}
+        seen_outbid_watchers_by_item: dict[uuid.UUID, set[str]] = {}
         for row in result.fetchall():
             item_bucket = details_by_item.setdefault(
                 row.item_id,
@@ -596,7 +607,9 @@ class NudgeService:
                 if full_name and detail_parts
                 else full_name
             )
-            if watcher_label and watcher_label not in item_bucket["watchers"]:
+            seen_outbid = seen_outbid_watchers_by_item.setdefault(row.item_id, set())
+            if watcher_label and watcher_label not in seen_outbid:
+                seen_outbid.add(watcher_label)
                 item_bucket["watchers"].append(watcher_label)
 
         if not details_by_item:
@@ -988,8 +1001,9 @@ class NudgeService:
                 if running_total >= total * Decimal("0.75"):
                     break
 
+            _TOP_DONOR_CAP = 20
             top_donor_details: list[dict[str, Any]] = []
-            for user_id, donor_total in sorted_totals[:top_donors]:
+            for user_id, donor_total in sorted_totals[: min(top_donors, _TOP_DONOR_CAP)]:
                 donor_info = user_info_by_id.get(
                     user_id,
                     {
@@ -1029,6 +1043,7 @@ class NudgeService:
                         "revenue_total": float(total),
                         "revenue_total_cents": int(total * 100),
                         "top_donor_details": top_donor_details,
+                        "top_donor_details_has_more": top_donors > _TOP_DONOR_CAP,
                     },
                     is_dismissible=True,
                     notifies_on_appear=False,
