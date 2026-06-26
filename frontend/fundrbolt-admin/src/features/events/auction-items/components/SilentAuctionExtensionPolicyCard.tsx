@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useState } from 'react'
-import auctionItemService from '@/services/auctionItemService'
-import { toast } from 'sonner'
+import { LearnMore } from '@/components/learn-more'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import auctionItemService from '@/services/auctionItemService'
+import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 interface SilentAuctionExtensionPolicyCardProps {
   eventId: string
@@ -19,6 +20,7 @@ export function SilentAuctionExtensionPolicyCard({
   const [enabled, setEnabled] = useState(true)
   const [extensionDuration, setExtensionDuration] = useState(3)
   const [maxTotalExtension, setMaxTotalExtension] = useState(30)
+  const [isHelpOpen, setIsHelpOpen] = useState(false)
 
   const loadPolicy = useCallback(async () => {
     setIsLoading(true)
@@ -32,7 +34,7 @@ export function SilentAuctionExtensionPolicyCard({
       toast.error(
         error instanceof Error
           ? error.message
-          : 'Failed to load anti-sniping settings'
+          : 'Failed to load auto-extending settings'
       )
     } finally {
       setIsLoading(false)
@@ -68,12 +70,12 @@ export function SilentAuctionExtensionPolicyCard({
       setEnabled(policy.auto_extension_enabled)
       setExtensionDuration(policy.extension_duration_minutes)
       setMaxTotalExtension(policy.max_total_extension_minutes)
-      toast.success('Anti-sniping settings saved.')
+      toast.success('Auto-extending settings saved.')
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : 'Failed to save anti-sniping settings'
+          : 'Failed to save auto-extending settings'
       )
     } finally {
       setIsSaving(false)
@@ -82,8 +84,23 @@ export function SilentAuctionExtensionPolicyCard({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Silent Auction Anti-Sniping</CardTitle>
+      <CardHeader className='flex flex-row items-start justify-between gap-3'>
+        <CardTitle>Silent Auction Auto-Extending</CardTitle>
+        <LearnMore
+          open={isHelpOpen}
+          onOpenChange={setIsHelpOpen}
+          triggerProps={{
+            onMouseEnter: () => setIsHelpOpen(true),
+            onMouseLeave: () => setIsHelpOpen(false),
+            onFocus: () => setIsHelpOpen(true),
+            onBlur: () => setIsHelpOpen(false),
+          }}
+          contentProps={{ align: 'end', side: 'bottom', className: 'w-72' }}
+        >
+          When enabled, silent auction items automatically extend if a bid is
+          accepted in the final 3 minutes. Each qualifying bid adds the
+          configured extension duration, up to the max total extension.
+        </LearnMore>
       </CardHeader>
       <CardContent className='space-y-4'>
         <div className='flex items-center justify-between rounded-md border p-3'>
@@ -136,7 +153,7 @@ export function SilentAuctionExtensionPolicyCard({
           onClick={() => void handleSave()}
           disabled={isLoading || isSaving}
         >
-          {isSaving ? 'Saving...' : 'Save Anti-Sniping Settings'}
+          {isSaving ? 'Saving...' : 'Save Auto-Extending Settings'}
         </Button>
       </CardContent>
     </Card>
