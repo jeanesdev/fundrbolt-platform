@@ -94,6 +94,37 @@ class TestBidNumberAssignment:
 
         assert item.bid_number == 100
 
+    async def test_create_auction_item_persists_category(
+        self,
+        db_session: AsyncSession,
+        test_event: Event,
+        test_user,
+        auction_item_service: AuctionItemService,
+    ):
+        """Test that the category field is stored on create."""
+        item_data = AuctionItemCreate(
+            title="Impact Donation",
+            description="Provide meals for the event",
+            auction_type=AuctionType.SILENT,
+            category="Impact",
+            starting_bid=Decimal("25.00"),
+            donor_value=Decimal("25.00"),
+            bid_increment=Decimal("5.00"),
+            cost=Decimal("0.00"),
+            buy_now_price=Decimal("25.00"),
+            buy_now_enabled=True,
+            donated_by="Test Donor",
+            item_webpage=None,
+        )
+
+        item = await auction_item_service.create_auction_item(
+            event_id=test_event.id,
+            item_data=item_data,
+            created_by=test_user.id,
+        )
+
+        assert item.category == "Impact"
+
     async def test_sequential_bid_numbers(
         self,
         db_session: AsyncSession,
@@ -365,6 +396,43 @@ class TestBuyNowPriceValidation:
             await auction_item_service.update_auction_item(
                 item_id=item.id,
                 update_data=update_data,
+            )
+
+    async def test_update_impact_item_requires_buy_now_configuration(
+        self,
+        db_session: AsyncSession,
+        test_event: Event,
+        test_user,
+        auction_item_service: AuctionItemService,
+    ):
+        """Test that Impact items must remain buy-now only."""
+        item_data = AuctionItemCreate(
+            title="Impact Donation",
+            description="Provide meals for the event",
+            auction_type=AuctionType.SILENT,
+            category="Impact",
+            starting_bid=Decimal("25.00"),
+            donor_value=Decimal("25.00"),
+            bid_increment=Decimal("5.00"),
+            cost=Decimal("0.00"),
+            buy_now_price=Decimal("25.00"),
+            buy_now_enabled=True,
+            donated_by="Test Donor",
+            item_webpage=None,
+        )
+
+        item = await auction_item_service.create_auction_item(
+            event_id=test_event.id,
+            item_data=item_data,
+            created_by=test_user.id,
+        )
+
+        with pytest.raises(ValueError, match="Impact donations must enable buy now"):
+            await auction_item_service.update_auction_item(
+                item_id=item.id,
+                update_data=AuctionItemUpdate(  # type: ignore[call-arg]
+                    buy_now_enabled=False,
+                ),
             )
 
 
