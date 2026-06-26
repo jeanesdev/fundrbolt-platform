@@ -4,3 +4,6 @@ security:
   ignore-cvss-unknown-severity: false
   continue-on-vulnerability-error: false
   ignore-vulnerabilities:
+    "99546":
+      reason: "FastAPI currently resolves Starlette <1.0.x in this project; no compatible fixed release is available yet."
+      expires: "2026-09-30"

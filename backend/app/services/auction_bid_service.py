@@ -346,6 +346,13 @@ class AuctionBidService:
         if item.event_id != event_id:
             raise ValueError("Auction item does not belong to the event")
 
+        if (
+            item.category
+            and item.category.strip().lower() == "impact"
+            and bid_type != BidType.BUY_NOW
+        ):
+            raise ValueError("Impact donations are buy-now only")
+
         bidder_number = await self._get_bidder_number(event_id, user_id)
 
         if item.auction_type == AuctionType.LIVE.value and max_bid is not None:

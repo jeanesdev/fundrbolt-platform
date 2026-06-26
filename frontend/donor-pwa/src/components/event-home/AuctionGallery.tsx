@@ -135,6 +135,8 @@ async function fetchAuctionItems(
         current_bid_amount?: number | string | null
         bid_count?: number
         buy_now_purchased_count?: number
+        buy_now_enabled?: boolean
+        buy_now_price?: number | string | null
         bidding_open?: boolean
         watcher_count?: number
         promotion_badge?: string | null
@@ -153,6 +155,8 @@ async function fetchAuctionItems(
         current_bid: toNumber(item.current_bid_amount),
         bid_count: item.bid_count ?? 0,
         buy_now_purchased_count: item.buy_now_purchased_count ?? 0,
+        buy_now_enabled: item.buy_now_enabled,
+        buy_now_price: toNumber(item.buy_now_price),
         bidding_open: item.bidding_open,
         watcher_count: item.watcher_count,
         promotion_badge: item.promotion_badge ?? null,
@@ -549,17 +553,14 @@ export function AuctionGallery({
       )
     })
     .sort((a, b) => {
+      const aBid = (a.current_bid ?? a.starting_bid) ?? 0
+      const bBid = (b.current_bid ?? b.starting_bid) ?? 0
+
       switch (sortBy) {
         case 'highest_bid':
-          return (
-            (b.current_bid ?? b.starting_bid) -
-            (a.current_bid ?? a.starting_bid)
-          )
+          return bBid - aBid
         case 'lowest_bid':
-          return (
-            (a.current_bid ?? a.starting_bid) -
-            (b.current_bid ?? b.starting_bid)
-          )
+          return aBid - bBid
         case 'most_bids':
           return b.bid_count - a.bid_count
         case 'title':

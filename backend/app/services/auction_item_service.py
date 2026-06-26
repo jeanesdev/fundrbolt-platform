@@ -199,6 +199,7 @@ class AuctionItemService:
             title=item_data.title,
             description=item_data.description,
             auction_type=item_data.auction_type,
+            category=item_data.category,
             starting_bid=effective_starting_bid,
             bid_increment=bid_increment,
             donor_value=item_data.donor_value,
@@ -452,6 +453,14 @@ class AuctionItemService:
 
         if item.buy_now_enabled and item.buy_now_price is None:
             raise ValueError("buy_now_price is required when buy_now_enabled is True")
+
+        if item.category and item.category.strip().lower() == "impact":
+            if not item.buy_now_enabled:
+                raise ValueError("Impact donations must enable buy now")
+            if item.buy_now_price is None:
+                raise ValueError("Impact donations must include a buy now price")
+            if not item.description or not item.description.strip():
+                raise ValueError("Impact donations must include an impact statement")
 
         # Update timestamp
         item.updated_at = datetime.now(UTC)

@@ -87,6 +87,7 @@ export function AuctionItemCard({
 }: AuctionItemCardProps) {
   const [promotionDialogOpen, setPromotionDialogOpen] = useState(false)
   const [imageError, setImageError] = useState(false)
+  const isImpactItem = item.category?.trim().toLowerCase() === 'impact'
 
   // Cast item to include promotion fields (they might not be in base type yet)
   const itemWithPromotion = item as AuctionItem & {
@@ -182,6 +183,7 @@ export function AuctionItemCard({
             <Badge variant='outline'>
               {item.auction_type === AuctionType.LIVE ? 'Live' : 'Silent'}
             </Badge>
+            {isImpactItem && <Badge variant='secondary'>Impact</Badge>}
             {/* Buy-Now Status Badge */}
             {item.buy_now_enabled && item.buy_now_price && (
               <Badge variant='secondary' className='flex items-center gap-1'>
@@ -213,6 +215,12 @@ export function AuctionItemCard({
                 <span className='font-semibold'>
                   {formatCurrency(item.buy_now_price)}
                 </span>
+              </div>
+            )}
+            {isImpactItem && (
+              <div className='col-span-2'>
+                <span className='text-muted-foreground'>Impact:</span>{' '}
+                <span className='font-semibold'>Buy now only</span>
               </div>
             )}
             {item.quantity_available > 1 && (

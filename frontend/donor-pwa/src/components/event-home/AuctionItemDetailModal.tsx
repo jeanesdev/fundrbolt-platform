@@ -183,6 +183,7 @@ export function AuctionItemDetailModal({
     retry: 1,
   })
   const isLiveAuctionItem = item?.auction_type === 'live'
+  const isImpactDonation = item?.category?.trim().toLowerCase() === 'impact'
 
   // Track view duration
   useItemViewTracking({
@@ -878,7 +879,8 @@ export function AuctionItemDetailModal({
                   )}
 
                   {/* Bidding Controls — only show when auction is open */}
-                  {!isLiveAuctionItem &&
+                  {!isImpactDonation &&
+                    !isLiveAuctionItem &&
                     isBiddingOpen &&
                     eventStatus === 'active' &&
                     !isEventInFuture ? (

@@ -24,17 +24,19 @@ import {
 import { Input } from '@/components/ui/input'
 import { BidCardSizeDialog } from '@/components/reports/BidCardSizeDialog'
 import { SilentAuctionExtensionPolicyCard } from '@/features/events/auction-items/components/SilentAuctionExtensionPolicyCard'
+import { AuctionItemCard } from '@/features/events/components/AuctionItemCard'
 import { AuctionItemList } from '@/features/events/components/AuctionItemList'
 import { RevenueGeneratorItemCard } from '@/features/events/components/RevenueGeneratorItemCard'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
 import { RGItemForm } from '@/features/revenue-generators/RGItemForm'
 
-type TypeFilter = 'all' | 'live' | 'silent' | 'revenue_generators'
+type TypeFilter = 'all' | 'live' | 'silent' | 'impact' | 'revenue_generators'
 
 const TYPE_FILTER_OPTIONS: { value: TypeFilter; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'live', label: 'Live' },
   { value: 'silent', label: 'Silent' },
+  { value: 'impact', label: 'Impact Donations' },
   { value: 'revenue_generators', label: 'Revenue Generators' },
 ]
 
@@ -134,6 +136,10 @@ export function AuctionItemsIndexPage() {
       list = list.filter((i) => i.auction_type === AuctionType.LIVE)
     } else if (typeFilter === 'silent') {
       list = list.filter((i) => i.auction_type === AuctionType.SILENT)
+    } else if (typeFilter === 'impact') {
+      list = list.filter(
+        (i) => i.category?.trim().toLowerCase() === 'impact'
+      )
     }
     const q = search.trim().toLowerCase()
     if (!q) return list
@@ -156,7 +162,10 @@ export function AuctionItemsIndexPage() {
   }, [rgItems, search])
 
   const showAuction =
-    typeFilter === 'all' || typeFilter === 'live' || typeFilter === 'silent'
+    typeFilter === 'all' ||
+    typeFilter === 'live' ||
+    typeFilter === 'silent' ||
+    typeFilter === 'impact'
   const showRG = typeFilter === 'all' || typeFilter === 'revenue_generators'
 
   const handleAdd = () => {
@@ -368,7 +377,7 @@ export function AuctionItemsIndexPage() {
         </CardHeader>
         <CardContent className='space-y-8'>
           {/* Auction Items (Live / Silent) */}
-          {showAuction && (
+          {showAuction && typeFilter !== 'impact' && (
             <AuctionItemList
               items={filteredAuctionItems}
               isLoading={isLoading}
@@ -378,6 +387,43 @@ export function AuctionItemsIndexPage() {
               onDelete={handleDelete}
               onView={handleView}
             />
+          )}
+
+          {showAuction && typeFilter === 'impact' && (
+            <div className='space-y-4'>
+              <div className='flex items-center justify-between border-b pb-2'>
+                <h3 className='text-xl font-semibold'>
+                  Impact Donations ({filteredAuctionItems.length})
+                </h3>
+                <Button onClick={handleAdd}>
+                  <Plus className='mr-2 h-4 w-4' />
+                  Add Impact Donation
+                </Button>
+              </div>
+              {filteredAuctionItems.length === 0 ? (
+                <div className='py-8 text-center'>
+                  <p className='text-muted-foreground mb-4 text-sm'>
+                    No impact donations yet. Add one to get started.
+                  </p>
+                  <Button variant='outline' onClick={handleAdd}>
+                    <Plus className='mr-2 h-4 w-4' />
+                    Add First Impact Donation
+                  </Button>
+                </div>
+              ) : (
+                <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                  {filteredAuctionItems.map((item) => (
+                    <AuctionItemCard
+                      key={item.id}
+                      item={item}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onView={handleView}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {/* Revenue Generator Items */}

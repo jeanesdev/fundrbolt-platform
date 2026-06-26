@@ -18,6 +18,7 @@ export interface AuctionItemBase {
   title: string
   description: string
   auction_type: AuctionType
+  category?: string | null
   starting_bid: number | null
   bid_increment: number | null
   donor_value?: number | null

@@ -58,6 +58,7 @@ export function AuctionItemForm({
     title: string
     description: string
     auction_type: AuctionType
+    category: string
     starting_bid: string
     bid_increment: string
     donor_value: string
@@ -79,6 +80,7 @@ export function AuctionItemForm({
     title: item?.title || '',
     description: item?.description || '',
     auction_type: item?.auction_type || AuctionType.SILENT,
+    category: item?.category || '',
     starting_bid: item?.starting_bid?.toString() || '',
     bid_increment:
       item?.bid_increment?.toString() ||
@@ -285,6 +287,7 @@ export function AuctionItemForm({
           title: formData.title || undefined,
           description: formData.description || undefined,
           auction_type: formData.auction_type,
+          category: formData.category || null,
           starting_bid: formData.starting_bid
             ? parseFloat(formData.starting_bid)
             : undefined,
@@ -317,6 +320,7 @@ export function AuctionItemForm({
           title: formData.title,
           description: formData.description,
           auction_type: formData.auction_type,
+          category: formData.category || null,
           starting_bid: formData.starting_bid
             ? parseFloat(formData.starting_bid)
             : undefined,
@@ -400,6 +404,22 @@ export function AuctionItemForm({
               <SelectItem value={AuctionType.SILENT}>Silent Auction</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        <div className='space-y-2'>
+          <Label htmlFor='category'>Category</Label>
+          <Input
+            id='category'
+            value={formData.category}
+            onChange={(e) =>
+              setFormData({ ...formData, category: e.target.value })
+            }
+            disabled={isSubmitting}
+            placeholder='Impact'
+          />
+          <p className='text-muted-foreground text-xs'>
+            Use Impact for buy-now-only donation items.
+          </p>
         </div>
 
         <div className='space-y-2'>
