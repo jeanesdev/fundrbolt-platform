@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.auction_item import AuctionItem, AuctionType, ItemStatus
 from app.models.event import Event
+from app.models.silent_auction_extension_policy import SilentAuctionItemExtensionState
 from app.schemas.auction_item import AuctionItemCreate, AuctionItemUpdate
 from app.services.audit_service import AuditService
 
@@ -361,6 +362,30 @@ class AuctionItemService:
         items = list(result.scalars().all())
 
         return items, total
+
+    async def get_effective_close_times(
+        self,
+        event_id: UUID,
+        item_ids: list[UUID],
+    ) -> tuple[dict[UUID, SilentAuctionItemExtensionState], datetime | None]:
+        """Return per-item extension timing state with event-close fallback context."""
+        event_close_datetime = await self.db.scalar(
+            select(Event.auction_close_datetime).where(Event.id == event_id)
+        )
+
+        if not item_ids:
+            return {}, event_close_datetime
+
+        extension_state_result = await self.db.execute(
+            select(SilentAuctionItemExtensionState).where(
+                SilentAuctionItemExtensionState.event_id == event_id,
+                SilentAuctionItemExtensionState.auction_item_id.in_(item_ids),
+            )
+        )
+        state_map = {
+            state.auction_item_id: state for state in extension_state_result.scalars().all()
+        }
+        return state_map, event_close_datetime
 
     async def update_auction_item(
         self,

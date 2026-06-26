@@ -139,6 +139,8 @@ class AuctionItemResponse(AuctionItemBase):
     min_next_bid_amount: Decimal | None = None
     bid_count: int = 0
     bidding_open: bool = False
+    original_close_at: datetime | None = None
+    effective_close_at: datetime | None = None
 
     # Engagement and promotion fields
     watcher_count: int = 0

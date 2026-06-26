@@ -1,0 +1,145 @@
+openapi: 3.0.3
+info:
+  title: Silent Auction Anti-Sniping Extension API
+  version: 1.0.0
+paths:
+  /api/v1/admin/events/{event_id}/silent-auction/extension-policy:
+    get:
+      summary: Get event-level silent auction extension policy
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Event extension policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SilentAuctionExtensionPolicy'
+        '403':
+          description: Forbidden
+        '404':
+          description: Event not found
+    put:
+      summary: Update event-level silent auction extension policy
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SilentAuctionExtensionPolicyUpdate'
+      responses:
+        '200':
+          description: Updated policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SilentAuctionExtensionPolicy'
+        '400':
+          description: Validation error
+        '403':
+          description: Forbidden
+        '404':
+          description: Event not found
+
+  /api/v1/auction/bids:
+    post:
+      summary: Place bid and evaluate anti-sniping extension
+      description: >
+        Existing bid endpoint behavior is extended to evaluate trigger-window eligibility
+        using server acceptance time and update effective close time when policy allows.
+      responses:
+        '201':
+          description: Bid accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BidAcceptedResponse'
+        '400':
+          description: Validation error
+        '409':
+          description: Item closed or bid conflict
+
+components:
+  schemas:
+    SilentAuctionExtensionPolicy:
+      type: object
+      required:
+        - event_id
+        - auto_extension_enabled
+        - trigger_window_minutes
+        - extension_duration_minutes
+        - max_total_extension_minutes
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        auto_extension_enabled:
+          type: boolean
+        trigger_window_minutes:
+          type: integer
+          minimum: 1
+          default: 3
+        extension_duration_minutes:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 3
+        max_total_extension_minutes:
+          type: integer
+          minimum: 0
+          maximum: 60
+          default: 30
+        updated_at:
+          type: string
+          format: date-time
+
+    SilentAuctionExtensionPolicyUpdate:
+      type: object
+      required:
+        - auto_extension_enabled
+        - extension_duration_minutes
+        - max_total_extension_minutes
+      properties:
+        auto_extension_enabled:
+          type: boolean
+        extension_duration_minutes:
+          type: integer
+          minimum: 1
+          maximum: 10
+        max_total_extension_minutes:
+          type: integer
+          minimum: 0
+          maximum: 60
+
+    BidAcceptedResponse:
+      type: object
+      properties:
+        bid_id:
+          type: string
+          format: uuid
+        item_id:
+          type: string
+          format: uuid
+        accepted_at:
+          type: string
+          format: date-time
+        item_effective_close_at:
+          type: string
+          format: date-time
+        extension_applied_minutes:
+          type: integer
+          minimum: 0
+        max_extension_reached:
+          type: boolean

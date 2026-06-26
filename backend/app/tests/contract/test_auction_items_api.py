@@ -7,6 +7,16 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.schemas.auction_bid import BidResponse
+
+
+def test_bid_response_includes_extension_metadata_fields() -> None:
+    """Ensure bid contract includes anti-sniping extension metadata fields."""
+    fields = BidResponse.model_fields
+    assert "extension_applied_minutes" in fields
+    assert "item_effective_close_at" in fields
+    assert "max_extension_reached" in fields
+
 
 @pytest.mark.asyncio
 class TestAuctionItemCreation:

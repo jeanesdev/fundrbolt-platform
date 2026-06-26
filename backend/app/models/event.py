@@ -34,6 +34,7 @@ if TYPE_CHECKING:
     from app.models.npo import NPO
     from app.models.payment_transaction import PaymentTransaction
     from app.models.revenue_generator_item import RevenueGeneratorItem
+    from app.models.silent_auction_extension_policy import SilentAuctionExtensionPolicy
     from app.models.sponsor import Sponsor
     from app.models.ticket_management import CustomTicketOption as CustomTicketOption
     from app.models.ticket_management import PromoCode, TicketPurchase
@@ -411,6 +412,12 @@ class Event(Base, UUIDMixin, TimestampMixin):
     )
     event_survey_config: Mapped["EventSurveyConfig | None"] = relationship(
         "EventSurveyConfig",
+        back_populates="event",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
+    silent_auction_extension_policy: Mapped["SilentAuctionExtensionPolicy | None"] = relationship(
+        "SilentAuctionExtensionPolicy",
         back_populates="event",
         cascade="all, delete-orphan",
         uselist=False,

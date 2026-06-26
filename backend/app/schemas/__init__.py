@@ -105,6 +105,12 @@ from app.schemas.registration_guest import (
     RegistrationGuestResponse,
     RegistrationGuestUpdateRequest,
 )
+from app.schemas.silent_auction_extension_policy import (
+    SilentAuctionExtensionEvaluation,
+    SilentAuctionExtensionPolicyResponse,
+    SilentAuctionExtensionPolicyUpdate,
+    SilentAuctionItemTimingResponse,
+)
 
 __all__ = [
     # Auth
@@ -191,6 +197,10 @@ __all__ = [
     "RegistrationGuestListResponse",
     "RegistrationGuestResponse",
     "RegistrationGuestUpdateRequest",
+    "SilentAuctionExtensionEvaluation",
+    "SilentAuctionExtensionPolicyResponse",
+    "SilentAuctionExtensionPolicyUpdate",
+    "SilentAuctionItemTimingResponse",
     "AuctionBidDashboardHighestBid",
     "AuctionBidDashboardRecentBid",
     "AuctionBidDashboardResponse",

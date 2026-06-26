@@ -53,6 +53,8 @@ export interface AuctionItem extends AuctionItemBase {
   primary_image_url?: string | null
   current_bid_amount?: number | null
   bid_count?: number
+  original_close_at?: string | null
+  effective_close_at?: string | null
 }
 
 export interface AuctionItemDetail extends AuctionItem {
@@ -99,6 +101,24 @@ export interface PaginationInfo {
 export interface AuctionItemListResponse {
   items: AuctionItem[]
   pagination: PaginationInfo
+}
+
+export interface SilentAuctionExtensionPolicy {
+  id: string
+  event_id: string
+  auto_extension_enabled: boolean
+  trigger_window_minutes: number
+  extension_duration_minutes: number
+  max_total_extension_minutes: number
+  updated_by_user_id?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface SilentAuctionExtensionPolicyUpdate {
+  auto_extension_enabled: boolean
+  extension_duration_minutes: number
+  max_total_extension_minutes: number
 }
 
 // Media Management Types

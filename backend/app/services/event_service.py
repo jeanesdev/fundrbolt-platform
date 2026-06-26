@@ -99,6 +99,17 @@ class EventService:
         )
 
         db.add(event)
+        await db.flush()
+
+        # Initialize event-level anti-sniping policy defaults at event creation.
+        from app.services.silent_auction_extension_service import SilentAuctionExtensionService
+
+        extension_service = SilentAuctionExtensionService(db)
+        await extension_service.get_or_create_policy(
+            event_id=event.id,
+            updated_by_user_id=current_user.id,
+        )
+
         await db.commit()
         await db.refresh(event, ["media", "links", "food_options"])
 

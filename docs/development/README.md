@@ -115,6 +115,10 @@ backend/app/tests/
     └── test_sponsors_api_mocked_example.py  # Mocked version (works in CI)
 ```
 
+## Current Feature Specs
+
+- Silent auction anti-sniping extension: [../../.specify/specs/051-auto-auction-extension/plan.md](../../.specify/specs/051-auto-auction-extension/plan.md)
+
 ---
 
 **Start here:**

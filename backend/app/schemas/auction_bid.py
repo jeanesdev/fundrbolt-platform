@@ -36,6 +36,9 @@ class BidResponse(BaseModel):
     bid_status: BidStatus
     transaction_status: TransactionStatus
     placed_at: datetime
+    extension_applied_minutes: int = 0
+    item_effective_close_at: datetime | None = None
+    max_extension_reached: bool = False
 
     model_config = {"from_attributes": True}
 
