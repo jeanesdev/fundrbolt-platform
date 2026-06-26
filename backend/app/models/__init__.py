@@ -114,6 +114,10 @@ from app.models.run_of_show import (
     ScheduledRunOfShowNotification,
 )
 from app.models.session import Session
+from app.models.silent_auction_extension_policy import (
+    SilentAuctionExtensionPolicy,
+    SilentAuctionItemExtensionState,
+)
 from app.models.social_auth_attempt import SocialAuthAttempt
 from app.models.social_auth_challenge import (
     AdminStepUpChallenge,
@@ -269,6 +273,8 @@ __all__ = [
     "ValidationSeverity",
     "Role",
     "Session",
+    "SilentAuctionExtensionPolicy",
+    "SilentAuctionItemExtensionState",
     "SocialAuthAttempt",
     "SocialIdentityLink",
     "SocialPendingLinkConfirmation",

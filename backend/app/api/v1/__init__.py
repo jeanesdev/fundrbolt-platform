@@ -27,6 +27,7 @@ from app.api.v1 import (
     admin_revenue_generators,
     admin_run_of_show,
     admin_seating,
+    admin_silent_auction_extension,
     admin_testimonials,
     admin_ticket_sales_import,
     admin_user_import,
@@ -128,6 +129,7 @@ api_router.include_router(
 )
 api_router.include_router(admin_auction_bid_import.router)
 api_router.include_router(admin_auction_item_import.router)
+api_router.include_router(admin_silent_auction_extension.router)
 api_router.include_router(admin_registration_import.router)
 api_router.include_router(admin_ticket_sales_import.router)
 api_router.include_router(admin_user_import.router)

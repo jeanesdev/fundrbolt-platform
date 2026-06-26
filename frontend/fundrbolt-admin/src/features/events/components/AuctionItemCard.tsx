@@ -54,6 +54,12 @@ const formatCurrency = (amount: number | null): string => {
   }).format(amount)
 }
 
+const formatDateTime = (value: string | null | undefined): string => {
+  if (!value) return 'Not set'
+  const dt = new Date(value)
+  return Number.isNaN(dt.getTime()) ? 'Not set' : dt.toLocaleString()
+}
+
 // Status badge variants
 const getStatusVariant = (
   status: ItemStatus
@@ -213,6 +219,14 @@ export function AuctionItemCard({
               <div>
                 <span className='text-muted-foreground'>Qty:</span>{' '}
                 <span className='font-semibold'>{item.quantity_available}</span>
+              </div>
+            )}
+            {item.auction_type === AuctionType.SILENT && (
+              <div className='col-span-2'>
+                <span className='text-muted-foreground'>Effective close:</span>{' '}
+                <span className='font-semibold'>
+                  {formatDateTime(item.effective_close_at)}
+                </span>
               </div>
             )}
           </div>

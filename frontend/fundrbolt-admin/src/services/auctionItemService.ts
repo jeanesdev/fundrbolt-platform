@@ -6,6 +6,8 @@ import type {
   AuctionItemUpdate,
   AuctionType,
   ItemStatus,
+  SilentAuctionExtensionPolicy,
+  SilentAuctionExtensionPolicyUpdate,
 } from '@/types/auction-item'
 import type { ImportReport } from '@/types/auctionItemImport'
 import apiClient from '@/lib/axios'
@@ -114,6 +116,26 @@ class AuctionItemService {
       {
         headers: { 'Content-Type': 'multipart/form-data' },
       }
+    )
+    return response.data
+  }
+
+  async getSilentAuctionExtensionPolicy(
+    eventId: string
+  ): Promise<SilentAuctionExtensionPolicy> {
+    const response = await apiClient.get<SilentAuctionExtensionPolicy>(
+      `/admin/events/${eventId}/silent-auction/extension-policy`
+    )
+    return response.data
+  }
+
+  async updateSilentAuctionExtensionPolicy(
+    eventId: string,
+    data: SilentAuctionExtensionPolicyUpdate
+  ): Promise<SilentAuctionExtensionPolicy> {
+    const response = await apiClient.put<SilentAuctionExtensionPolicy>(
+      `/admin/events/${eventId}/silent-auction/extension-policy`,
+      data
     )
     return response.data
   }

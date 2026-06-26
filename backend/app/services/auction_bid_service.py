@@ -29,6 +29,7 @@ from app.models.notification import NotificationPriorityEnum, NotificationTypeEn
 from app.models.registration_guest import RegistrationGuest
 from app.models.user import User
 from app.services.notification_service import NotificationService
+from app.services.silent_auction_extension_service import SilentAuctionExtensionService
 from app.websocket.notification_ws import sio
 
 logger = logging.getLogger(__name__)
@@ -388,6 +389,12 @@ class AuctionBidService:
             self.db.add(new_bid)
             await self.db.flush()
 
+            # Buy-now bids do not participate in anti-sniping extension updates.
+            bid_response_meta: Any = new_bid
+            bid_response_meta.extension_applied_minutes = 0
+            bid_response_meta.item_effective_close_at = None
+            bid_response_meta.max_extension_reached = False
+
             if current_high and current_high.user_id != user_id:
                 await self._outbid_previous(
                     current_high,
@@ -443,6 +450,21 @@ class AuctionBidService:
             )
 
         await self._apply_proxy_bidding(item, starting_high_bid=new_bid)
+
+        extension_service = SilentAuctionExtensionService(self.db)
+        extension_result = await extension_service.evaluate_and_apply_extension(
+            event_id=event_id,
+            auction_item_id=auction_item_id,
+            accepted_at=new_bid.placed_at,
+        )
+        bid_response_meta_after_eval: Any = new_bid
+        bid_response_meta_after_eval.extension_applied_minutes = (
+            extension_result.extension_applied_minutes
+        )
+        bid_response_meta_after_eval.item_effective_close_at = (
+            extension_result.item_effective_close_at
+        )
+        bid_response_meta_after_eval.max_extension_reached = extension_result.max_extension_reached
 
         await self.db.commit()
         await self._publish_bid_update(new_bid)

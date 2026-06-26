@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { BidCardSizeDialog } from '@/components/reports/BidCardSizeDialog'
+import { SilentAuctionExtensionPolicyCard } from '@/features/events/auction-items/components/SilentAuctionExtensionPolicyCard'
 import { AuctionItemList } from '@/features/events/components/AuctionItemList'
 import { RevenueGeneratorItemCard } from '@/features/events/components/RevenueGeneratorItemCard'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
@@ -310,6 +311,10 @@ export function AuctionItemsIndexPage() {
           )}
         </div>
       </div>
+
+      {(typeFilter === 'all' || typeFilter === 'silent') && (
+        <SilentAuctionExtensionPolicyCard eventId={eventId} />
+      )}
 
       <Card>
         <CardHeader>

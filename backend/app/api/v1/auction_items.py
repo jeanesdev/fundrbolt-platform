@@ -221,6 +221,10 @@ async def list_auction_items(
     item_ids = [item.id for item in items]
     bid_aggregates: dict[UUID, tuple[Decimal | None, int]] = {}
     buy_now_purchased_counts: dict[UUID, int] = {}
+    extension_state_map, event_close_datetime = await service.get_effective_close_times(
+        event_id=event_id,
+        item_ids=item_ids,
+    )
     if item_ids:
         bid_aggregate_stmt = (
             select(
@@ -268,6 +272,17 @@ async def list_auction_items(
         item_dict["current_bid_amount"] = current_bid_amount
         item_dict["bid_count"] = bid_count
         item_dict["buy_now_purchased_count"] = buy_now_purchased_counts.get(item.id, 0)
+        extension_state = extension_state_map.get(item.id)
+        if extension_state:
+            item_dict["original_close_at"] = extension_state.original_close_at
+            item_dict["effective_close_at"] = extension_state.effective_close_at
+        elif item.auction_type == AuctionType.SILENT.value and event_close_datetime:
+            item_dict["original_close_at"] = event_close_datetime
+            item_dict["effective_close_at"] = event_close_datetime
+        else:
+            item_dict["original_close_at"] = None
+            item_dict["effective_close_at"] = None
+
         if current_bid_amount is not None:
             item_dict["min_next_bid_amount"] = current_bid_amount + item.bid_increment
         else:

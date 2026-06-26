@@ -9,10 +9,10 @@
 
 **Purpose**: Prepare schema, API, and UI work surfaces for this feature.
 
-- [ ] T001 Verify current branch and feature docs alignment in /home/jjeanes/dev/fundrbolt-platform/.specify/specs/051-auto-auction-extension/plan.md and /home/jjeanes/dev/fundrbolt-platform/.specify/specs/051-auto-auction-extension/spec.md
-- [ ] T002 Add feature contract/reference note to /home/jjeanes/dev/fundrbolt-platform/docs/development/README.md
-- [ ] T003 [P] Create backend test module skeletons in /home/jjeanes/dev/fundrbolt-platform/backend/app/tests/contract/test_silent_auction_extension_policy_api.py and /home/jjeanes/dev/fundrbolt-platform/backend/app/tests/integration/test_silent_auction_auto_extension.py
-- [ ] T004 [P] Create frontend test module skeleton in /home/jjeanes/dev/fundrbolt-platform/frontend/fundrbolt-admin/src/features/events/auction-items/components/__tests__/SilentAuctionExtensionPolicyCard.test.tsx
+- [X] T001 Verify current branch and feature docs alignment in /home/jjeanes/dev/fundrbolt-platform/.specify/specs/051-auto-auction-extension/plan.md and /home/jjeanes/dev/fundrbolt-platform/.specify/specs/051-auto-auction-extension/spec.md
+- [X] T002 Add feature contract/reference note to /home/jjeanes/dev/fundrbolt-platform/docs/development/README.md
+- [X] T003 [P] Create backend test module skeletons in /home/jjeanes/dev/fundrbolt-platform/backend/app/tests/contract/test_silent_auction_extension_policy_api.py and /home/jjeanes/dev/fundrbolt-platform/backend/app/tests/integration/test_silent_auction_auto_extension.py
+- [X] T004 [P] Create frontend test module skeleton in /home/jjeanes/dev/fundrbolt-platform/frontend/fundrbolt-admin/src/features/events/auction-items/components/__tests__/SilentAuctionExtensionPolicyCard.test.tsx
 
 ---
 
@@ -22,14 +22,14 @@
 
 **⚠️ CRITICAL**: No user story work starts until this phase is complete.
 
-- [ ] T005 Create event-level policy model in /home/jjeanes/dev/fundrbolt-platform/backend/app/models/silent_auction_extension_policy.py
-- [ ] T006 [P] Register new model exports in /home/jjeanes/dev/fundrbolt-platform/backend/app/models/__init__.py
-- [ ] T007 [P] Add Event relationship for extension policy in /home/jjeanes/dev/fundrbolt-platform/backend/app/models/event.py
-- [ ] T008 Create Alembic migration for policy table and defaults in /home/jjeanes/dev/fundrbolt-platform/backend/alembic/versions/
-- [ ] T009 Create policy schemas and validation bounds in /home/jjeanes/dev/fundrbolt-platform/backend/app/schemas/silent_auction_extension_policy.py
-- [ ] T010 [P] Register schema imports where needed in /home/jjeanes/dev/fundrbolt-platform/backend/app/schemas/__init__.py
-- [ ] T011 Create extension domain service in /home/jjeanes/dev/fundrbolt-platform/backend/app/services/silent_auction_extension_service.py
-- [ ] T012 [P] Wire service exports/imports in /home/jjeanes/dev/fundrbolt-platform/backend/app/services/__init__.py
+- [X] T005 Create event-level policy model in /home/jjeanes/dev/fundrbolt-platform/backend/app/models/silent_auction_extension_policy.py
+- [X] T006 [P] Register new model exports in /home/jjeanes/dev/fundrbolt-platform/backend/app/models/__init__.py
+- [X] T007 [P] Add Event relationship for extension policy in /home/jjeanes/dev/fundrbolt-platform/backend/app/models/event.py
+- [X] T008 Create Alembic migration for policy table and defaults in /home/jjeanes/dev/fundrbolt-platform/backend/alembic/versions/
+- [X] T009 Create policy schemas and validation bounds in /home/jjeanes/dev/fundrbolt-platform/backend/app/schemas/silent_auction_extension_policy.py
+- [X] T010 [P] Register schema imports where needed in /home/jjeanes/dev/fundrbolt-platform/backend/app/schemas/__init__.py
+- [X] T011 Create extension domain service in /home/jjeanes/dev/fundrbolt-platform/backend/app/services/silent_auction_extension_service.py
+- [X] T012 [P] Wire service exports/imports in /home/jjeanes/dev/fundrbolt-platform/backend/app/services/__init__.py
 
 **Checkpoint**: Foundational data + service layer is ready.
 
@@ -44,13 +44,13 @@
 ### Tests for User Story 1
 
 - [ ] T013 [P] [US1] Add contract coverage for bid response extension fields in /home/jjeanes/dev/fundrbolt-platform/backend/app/tests/contract/test_auction_bids_api.py
-- [ ] T014 [P] [US1] Add integration tests for boundary and max-cap extension behavior in /home/jjeanes/dev/fundrbolt-platform/backend/app/tests/integration/test_silent_auction_auto_extension.py
+- [X] T014 [P] [US1] Add integration tests for boundary and max-cap extension behavior in /home/jjeanes/dev/fundrbolt-platform/backend/app/tests/integration/test_silent_auction_auto_extension.py
 
 ### Implementation for User Story 1
 
-- [ ] T015 [US1] Add extension metadata fields to bid response schemas in /home/jjeanes/dev/fundrbolt-platform/backend/app/schemas/auction_bid.py
-- [ ] T016 [US1] Integrate extension evaluation into bid acceptance flow in /home/jjeanes/dev/fundrbolt-platform/backend/app/services/auction_bid_service.py
-- [ ] T017 [US1] Ensure extension eligibility uses server acceptance time and non-retroactive semantics in /home/jjeanes/dev/fundrbolt-platform/backend/app/services/silent_auction_extension_service.py
+- [X] T015 [US1] Add extension metadata fields to bid response schemas in /home/jjeanes/dev/fundrbolt-platform/backend/app/schemas/auction_bid.py
+- [X] T016 [US1] Integrate extension evaluation into bid acceptance flow in /home/jjeanes/dev/fundrbolt-platform/backend/app/services/auction_bid_service.py
+- [X] T017 [US1] Ensure extension eligibility uses server acceptance time and non-retroactive semantics in /home/jjeanes/dev/fundrbolt-platform/backend/app/services/silent_auction_extension_service.py
 - [ ] T018 [US1] Update bid API endpoint mapping to return extension metadata in /home/jjeanes/dev/fundrbolt-platform/backend/app/api/v1/auction_bids.py
 - [ ] T019 [US1] Add structured logs for extension decisions and cap hits in /home/jjeanes/dev/fundrbolt-platform/backend/app/services/silent_auction_extension_service.py
 
@@ -66,19 +66,19 @@
 
 ### Tests for User Story 2
 
-- [ ] T020 [P] [US2] Add contract tests for policy GET/PUT endpoints in /home/jjeanes/dev/fundrbolt-platform/backend/app/tests/contract/test_silent_auction_extension_policy_api.py
+- [X] T020 [P] [US2] Add contract tests for policy GET/PUT endpoints in /home/jjeanes/dev/fundrbolt-platform/backend/app/tests/contract/test_silent_auction_extension_policy_api.py
 - [ ] T021 [P] [US2] Add API integration tests for authorization and validation bounds in /home/jjeanes/dev/fundrbolt-platform/backend/app/tests/integration/test_silent_auction_extension_policy_api.py
-- [ ] T022 [P] [US2] Add component interaction tests for policy controls in /home/jjeanes/dev/fundrbolt-platform/frontend/fundrbolt-admin/src/features/events/auction-items/components/__tests__/SilentAuctionExtensionPolicyCard.test.tsx
+- [X] T022 [P] [US2] Add component interaction tests for policy controls in /home/jjeanes/dev/fundrbolt-platform/frontend/fundrbolt-admin/src/features/events/auction-items/components/__tests__/SilentAuctionExtensionPolicyCard.test.tsx
 
 ### Implementation for User Story 2
 
-- [ ] T023 [US2] Create admin policy endpoints in /home/jjeanes/dev/fundrbolt-platform/backend/app/api/v1/admin_silent_auction_extension.py
-- [ ] T024 [US2] Register admin policy router in /home/jjeanes/dev/fundrbolt-platform/backend/app/api/v1/__init__.py
-- [ ] T025 [US2] Implement policy read/update logic and bounds handling in /home/jjeanes/dev/fundrbolt-platform/backend/app/services/silent_auction_extension_service.py
-- [ ] T026 [US2] Add admin client methods for policy GET/PUT in /home/jjeanes/dev/fundrbolt-platform/frontend/fundrbolt-admin/src/services/auctionItemService.ts
-- [ ] T027 [US2] Add event-level policy editor UI in /home/jjeanes/dev/fundrbolt-platform/frontend/fundrbolt-admin/src/features/events/auction-items/components/SilentAuctionExtensionPolicyCard.tsx
-- [ ] T028 [US2] Mount policy editor in silent auction page in /home/jjeanes/dev/fundrbolt-platform/frontend/fundrbolt-admin/src/features/events/auction-items/AuctionItemsIndexPage.tsx
-- [ ] T039 [US2] Initialize default event-level policy during event creation workflow in /home/jjeanes/dev/fundrbolt-platform/backend/app/services/event_service.py
+- [X] T023 [US2] Create admin policy endpoints in /home/jjeanes/dev/fundrbolt-platform/backend/app/api/v1/admin_silent_auction_extension.py
+- [X] T024 [US2] Register admin policy router in /home/jjeanes/dev/fundrbolt-platform/backend/app/api/v1/__init__.py
+- [X] T025 [US2] Implement policy read/update logic and bounds handling in /home/jjeanes/dev/fundrbolt-platform/backend/app/services/silent_auction_extension_service.py
+- [X] T026 [US2] Add admin client methods for policy GET/PUT in /home/jjeanes/dev/fundrbolt-platform/frontend/fundrbolt-admin/src/services/auctionItemService.ts
+- [X] T027 [US2] Add event-level policy editor UI in /home/jjeanes/dev/fundrbolt-platform/frontend/fundrbolt-admin/src/features/events/auction-items/components/SilentAuctionExtensionPolicyCard.tsx
+- [X] T028 [US2] Mount policy editor in silent auction page in /home/jjeanes/dev/fundrbolt-platform/frontend/fundrbolt-admin/src/features/events/auction-items/AuctionItemsIndexPage.tsx
+- [X] T039 [US2] Initialize default event-level policy during event creation workflow in /home/jjeanes/dev/fundrbolt-platform/backend/app/services/event_service.py
 
 **Checkpoint**: US2 is independently functional and testable.
 
@@ -92,15 +92,15 @@
 
 ### Tests for User Story 3
 
-- [ ] T029 [P] [US3] Add integration test for lazy policy initialization on legacy events in /home/jjeanes/dev/fundrbolt-platform/backend/app/tests/integration/test_silent_auction_auto_extension.py
-- [ ] T030 [P] [US3] Add integration test for immediate policy-change applicability (prospective only) in /home/jjeanes/dev/fundrbolt-platform/backend/app/tests/integration/test_silent_auction_auto_extension.py
+- [X] T029 [P] [US3] Add integration test for lazy policy initialization on legacy events in /home/jjeanes/dev/fundrbolt-platform/backend/app/tests/integration/test_silent_auction_auto_extension.py
+- [X] T030 [P] [US3] Add integration test for immediate policy-change applicability (prospective only) in /home/jjeanes/dev/fundrbolt-platform/backend/app/tests/integration/test_silent_auction_auto_extension.py
 
 ### Implementation for User Story 3
 
-- [ ] T031 [US3] Implement legacy-event auto-create defaults in /home/jjeanes/dev/fundrbolt-platform/backend/app/services/silent_auction_extension_service.py
-- [ ] T032 [US3] Expose effective close-time fields through auction item/read models in /home/jjeanes/dev/fundrbolt-platform/backend/app/schemas/auction_item.py
-- [ ] T033 [US3] Populate effective close-time values in item queries/services in /home/jjeanes/dev/fundrbolt-platform/backend/app/services/auction_item_service.py
-- [ ] T034 [US3] Surface effective close-time information in admin silent auction item list in /home/jjeanes/dev/fundrbolt-platform/frontend/fundrbolt-admin/src/features/events/components/AuctionItemList.tsx
+- [X] T031 [US3] Implement legacy-event auto-create defaults in /home/jjeanes/dev/fundrbolt-platform/backend/app/services/silent_auction_extension_service.py
+- [X] T032 [US3] Expose effective close-time fields through auction item/read models in /home/jjeanes/dev/fundrbolt-platform/backend/app/schemas/auction_item.py
+- [X] T033 [US3] Populate effective close-time values in item queries/services in /home/jjeanes/dev/fundrbolt-platform/backend/app/services/auction_item_service.py
+- [X] T034 [US3] Surface effective close-time information in admin silent auction item list in /home/jjeanes/dev/fundrbolt-platform/frontend/fundrbolt-admin/src/features/events/components/AuctionItemList.tsx
 
 **Checkpoint**: US3 is independently functional and testable.
 
@@ -112,7 +112,7 @@
 
 - [ ] T035 [P] Update feature docs and contract links in /home/jjeanes/dev/fundrbolt-platform/.specify/specs/051-auto-auction-extension/quickstart.md and /home/jjeanes/dev/fundrbolt-platform/.specify/specs/051-auto-auction-extension/contracts/anti_sniping_extension.openapi.yaml
 - [ ] T036 Run backend CI checks for touched backend files via /home/jjeanes/dev/fundrbolt-platform/backend (`poetry run ruff check .`, `poetry run ruff format --check .`, `poetry run mypy app --strict --ignore-missing-imports --exclude 'app/tests'`, `poetry run pytest -v --tb=short`)
-- [ ] T037 Run frontend quality checks in /home/jjeanes/dev/fundrbolt-platform/frontend/fundrbolt-admin (`pnpm lint`, `pnpm format:check`, `pnpm build`)
+- [X] T037 Run frontend quality checks in /home/jjeanes/dev/fundrbolt-platform/frontend/fundrbolt-admin (`pnpm lint`, `pnpm format:check`, `pnpm build`)
 - [ ] T038 Run quickstart scenario validation from /home/jjeanes/dev/fundrbolt-platform/.specify/specs/051-auto-auction-extension/quickstart.md and capture any deltas
 
 ---
