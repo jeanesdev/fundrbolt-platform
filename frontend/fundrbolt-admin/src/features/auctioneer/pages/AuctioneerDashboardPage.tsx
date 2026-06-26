@@ -695,7 +695,7 @@ export function AuctioneerDashboardPage({
         </DialogContent>
       </Dialog>
 
-      <NudgesCompact eventId={currentEvent.id} />
+      <NudgesCompact eventId={currentEvent.id} disableNotifyLinks />
 
       <Tabs
         value={activeTab}

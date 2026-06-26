@@ -1,16 +1,20 @@
-import { useState } from 'react'
-import { ChevronDown, ChevronUp, Zap } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { ChevronDown, ChevronUp, Zap } from 'lucide-react'
+import { useState } from 'react'
 import { NudgesPanel } from './NudgesPanel'
 import { useNudges } from './useNudges'
 
 interface NudgesCompactProps {
   eventId: string
+  disableNotifyLinks?: boolean
 }
 
-export function NudgesCompact({ eventId }: NudgesCompactProps) {
+export function NudgesCompact({
+  eventId,
+  disableNotifyLinks = false,
+}: NudgesCompactProps) {
   const { nudges, activeCount, isLoading } = useNudges(eventId)
   const [expanded, setExpanded] = useState(false)
 
@@ -76,7 +80,12 @@ export function NudgesCompact({ eventId }: NudgesCompactProps) {
           </Button>
         </CardContent>
       </Card>
-      {expanded && <NudgesPanel eventId={eventId} />}
+      {expanded && (
+        <NudgesPanel
+          eventId={eventId}
+          disableNotifyLinks={disableNotifyLinks}
+        />
+      )}
     </div>
   )
 }
