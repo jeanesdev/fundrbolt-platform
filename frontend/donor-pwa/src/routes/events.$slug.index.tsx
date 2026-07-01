@@ -79,6 +79,7 @@ export const Route = createFileRoute('/events/$slug/')({
 function RouteComponent() {
   const navigate = useNavigate()
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const accessToken = useAuthStore((state) => state.accessToken)
   const restoreUserFromRefreshToken = useAuthStore(
     (state) => state.restoreUserFromRefreshToken
   )
@@ -103,10 +104,13 @@ function RouteComponent() {
     enabled: !!slug,
   })
 
+  // Restore the access token on page load if the user appears authenticated
+  // (cached user in localStorage) but the in-memory access token is missing.
+  // This handles the page-reload case where isAuthenticated=true but accessToken=''.
   const { isLoading: isRestoringAuth } = useQuery({
     queryKey: ['auth', 'restore-user', 'events-slug'],
     queryFn: async () => restoreUserFromRefreshToken(),
-    enabled: !isAuthenticated && hasRefreshToken,
+    enabled: (!isAuthenticated || !accessToken) && hasRefreshToken,
     retry: false,
     refetchOnMount: false,
     refetchOnWindowFocus: false,

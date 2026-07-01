@@ -18,7 +18,7 @@
     {
       "label": "kill-frontend",
       "type": "shell",
-      "command": "pkill -9 -f 'fundrbolt-admin' 2>/dev/null || true; lsof -ti:5173 | xargs kill -9 2>/dev/null || true",
+      "command": "lsof -ti:5173 | xargs -r kill -9 2>/dev/null || true; sleep 1",
       "presentation": {
         "echo": true,
         "reveal": "silent",
@@ -66,7 +66,8 @@
       "dependsOn": [
         "kill-all-servers",
         "poetry-install-backend",
-        "start-donor-pwa"
+        "start-donor-pwa",
+        "pnpm-dev-frontend"
       ],
       "dependsOrder": "sequence",
       "presentation": {
@@ -114,6 +115,25 @@
       "problemMatcher": []
     },
     {
+      "label": "start-admin-with-backend",
+      "dependsOn": [
+        "kill-backend",
+        "kill-frontend",
+        "start-backend-dev",
+        "pnpm-dev-frontend"
+      ],
+      "dependsOrder": "sequence",
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "poetry-install-backend",
       "type": "shell",
       "command": "poetry",
@@ -132,6 +152,34 @@
         "clear": false
       },
       "problemMatcher": []
+    },
+    {
+      "label": "start-backend-dev",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "cd ${workspaceFolder}/backend && poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000"
+      ],
+      "isBackground": true,
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^.*$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*Uvicorn running on.*$",
+          "endsPattern": "^.*Application startup complete.*$"
+        }
+      }
     },
     {
       "label": "pnpm-dev-frontend",

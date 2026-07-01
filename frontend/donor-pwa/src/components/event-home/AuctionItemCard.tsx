@@ -549,10 +549,10 @@ export function AuctionItemCard({
                       ? 'Buy Now'
                       : 'View Item'
                     : eventStatus === 'active' && isBiddingOpen
-                    ? 'Place Bid'
-                    : eventStatus === 'closed' || !isBiddingOpen
-                      ? 'Bidding Closed'
-                      : 'Not Active'}
+                      ? 'Place Bid'
+                      : eventStatus === 'closed' || !isBiddingOpen
+                        ? 'Bidding Closed'
+                        : 'Not Active'}
             </button>
           ))}
       </div>

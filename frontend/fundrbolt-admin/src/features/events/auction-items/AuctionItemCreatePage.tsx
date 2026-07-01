@@ -2,12 +2,6 @@
  * AuctionItemCreatePage
  * Page for creating a new auction item
  */
-import { useState } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import type { AuctionItemCreate, AuctionItemUpdate } from '@/types/auction-item'
-import { ArrowLeft } from 'lucide-react'
-import { toast } from 'sonner'
-import { useAuctionItemStore } from '@/stores/auctionItemStore'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -18,6 +12,16 @@ import {
 } from '@/components/ui/card'
 import { AuctionItemForm } from '@/features/events/components/AuctionItemForm'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
+import { useAuctionItemStore } from '@/stores/auctionItemStore'
+import type {
+  AuctionItem,
+  AuctionItemCreate,
+  AuctionItemUpdate,
+} from '@/types/auction-item'
+import { useNavigate, useParams } from '@tanstack/react-router'
+import { ArrowLeft } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
 export function AuctionItemCreatePage() {
   const navigate = useNavigate()
@@ -31,7 +35,9 @@ export function AuctionItemCreatePage() {
   const { createAuctionItem } = useAuctionItemStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = async (data: AuctionItemCreate | AuctionItemUpdate) => {
+  const handleSubmit = async (
+    data: AuctionItemCreate | AuctionItemUpdate
+  ): Promise<AuctionItem> => {
     setIsSubmitting(true)
     try {
       const createdItem = await createAuctionItem(
@@ -43,19 +49,24 @@ export function AuctionItemCreatePage() {
         throw new Error('Item created but no ID returned from server')
       }
 
-      toast.success('Auction item created successfully!')
-      navigate({
-        to: '/events/$eventId',
-        params: { eventId: routeEventId },
-        search: { tab: 'auction-items' },
-      })
+      return createdItem
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : 'Failed to create auction item'
       toast.error(errorMessage)
+      throw err
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleCreateSuccess = () => {
+    toast.success('Auction item created successfully!')
+    navigate({
+      to: '/events/$eventId',
+      params: { eventId: routeEventId },
+      search: { tab: 'auction-items' },
+    })
   }
 
   const handleCancel = () => {
@@ -98,6 +109,7 @@ export function AuctionItemCreatePage() {
             eventId={eventId}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
+            onCreateSuccess={handleCreateSuccess}
             isSubmitting={isSubmitting}
           />
         </CardContent>

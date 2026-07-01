@@ -1,14 +1,56 @@
 import auctionItemService from '@/services/auctionItemService'
 import type {
-  AuctionItem,
-  AuctionItemCreate,
-  AuctionItemDetail,
-  AuctionItemListResponse,
-  AuctionItemUpdate,
-  AuctionType,
-  ItemStatus,
+    AuctionItem,
+    AuctionItemCreate,
+    AuctionItemDetail,
+    AuctionItemListResponse,
+    AuctionItemUpdate,
+    AuctionType,
+    ItemStatus,
 } from '@/types/auction-item'
 import { create } from 'zustand'
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (
+    error instanceof Error &&
+    'response' in error &&
+    typeof error.response === 'object' &&
+    error.response !== null &&
+    'data' in error.response
+  ) {
+    const responseData = error.response.data
+
+    if (
+      typeof responseData === 'object' &&
+      responseData !== null &&
+      'detail' in responseData
+    ) {
+      const detail = (responseData as { detail?: unknown }).detail
+
+      if (typeof detail === 'string' && detail.trim() !== '') {
+        return detail
+      }
+
+      if (Array.isArray(detail) && detail.length > 0) {
+        const first = detail[0]
+        if (
+          typeof first === 'object' &&
+          first !== null &&
+          'msg' in first &&
+          typeof (first as { msg?: unknown }).msg === 'string'
+        ) {
+          return (first as { msg: string }).msg
+        }
+      }
+    }
+  }
+
+  if (error instanceof Error && error.message.trim() !== '') {
+    return error.message
+  }
+
+  return fallback
+}
 
 interface AuctionItemState {
   // State
@@ -95,8 +137,7 @@ export const useAuctionItemStore = create<AuctionItemState>((set, get) => ({
         isLoading: false,
       })
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to fetch auction items'
+      const message = getErrorMessage(error, 'Failed to fetch auction items')
       set({ error: message, isLoading: false })
       throw error
     }
@@ -109,8 +150,7 @@ export const useAuctionItemStore = create<AuctionItemState>((set, get) => ({
       const item = await auctionItemService.getAuctionItem(eventId, itemId)
       set({ selectedItem: item, isLoading: false })
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to fetch auction item'
+      const message = getErrorMessage(error, 'Failed to fetch auction item')
       set({ error: message, isLoading: false })
       throw error
     }
@@ -134,10 +174,9 @@ export const useAuctionItemStore = create<AuctionItemState>((set, get) => ({
 
       return newItem
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to create auction item'
+      const message = getErrorMessage(error, 'Failed to create auction item')
       set({ error: message, isLoading: false })
-      throw error
+      throw new Error(message)
     }
   },
 
@@ -167,10 +206,9 @@ export const useAuctionItemStore = create<AuctionItemState>((set, get) => ({
         isLoading: false,
       }))
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to update auction item'
+      const message = getErrorMessage(error, 'Failed to update auction item')
       set({ error: message, isLoading: false })
-      throw error
+      throw new Error(message)
     }
   },
 
@@ -188,10 +226,9 @@ export const useAuctionItemStore = create<AuctionItemState>((set, get) => ({
         isLoading: false,
       }))
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to delete auction item'
+      const message = getErrorMessage(error, 'Failed to delete auction item')
       set({ error: message, isLoading: false })
-      throw error
+      throw new Error(message)
     }
   },
 

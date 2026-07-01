@@ -26,6 +26,7 @@ async def _create_auction_item(
     bid_increment: Decimal = Decimal("10.00"),
     buy_now_enabled: bool = False,
     buy_now_price: Decimal | None = None,
+    quantity_available: int = 1,
 ) -> AuctionItem:
     item = AuctionItem(
         event_id=event_id,
@@ -41,7 +42,7 @@ async def _create_auction_item(
         cost=Decimal("0.00"),
         buy_now_enabled=buy_now_enabled,
         buy_now_price=buy_now_price,
-        quantity_available=1,
+        quantity_available=quantity_available,
         donated_by="Test Donor",
         item_webpage=None,
         status=ItemStatus.PUBLISHED.value,
@@ -188,6 +189,62 @@ class TestAuctionBidService:
 
         assert bid.bid_status == BidStatus.WINNING.value
         assert bid.bid_type == BidType.BUY_NOW.value
+
+    async def test_buy_now_with_zero_quantity_is_unlimited(
+        self,
+        db_session: AsyncSession,
+        test_event,
+        test_donor_user,
+        test_registration,
+        test_user_2,
+    ) -> None:
+        service = AuctionBidService(db_session)
+        item = await _create_auction_item(
+            db_session,
+            event_id=test_event.id,
+            created_by=test_donor_user.id,
+            buy_now_enabled=True,
+            buy_now_price=Decimal("200.00"),
+            quantity_available=0,
+        )
+
+        await _create_bidder_number(
+            db_session,
+            registration_id=test_registration.id,
+            user_id=test_donor_user.id,
+            bidder_number=111,
+        )
+
+        registration_two = await _create_registration_for_user(
+            db_session,
+            event_id=test_event.id,
+            user_id=test_user_2.id,
+        )
+        await _create_bidder_number(
+            db_session,
+            registration_id=registration_two.id,
+            user_id=test_user_2.id,
+            bidder_number=222,
+        )
+
+        first = await service.place_bid(
+            user_id=test_donor_user.id,
+            event_id=test_event.id,
+            auction_item_id=item.id,
+            bid_amount=Decimal("200.00"),
+            bid_type=BidType.BUY_NOW,
+        )
+
+        second = await service.place_bid(
+            user_id=test_user_2.id,
+            event_id=test_event.id,
+            auction_item_id=item.id,
+            bid_amount=Decimal("200.00"),
+            bid_type=BidType.BUY_NOW,
+        )
+
+        assert first.bid_status == BidStatus.WINNING.value
+        assert second.bid_status == BidStatus.WINNING.value
 
     async def test_buy_now_ignores_confirmation_notification_failures(
         self,

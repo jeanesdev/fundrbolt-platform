@@ -1,21 +1,3 @@
-import { useEffect, useRef, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Outlet, useMatches } from '@tanstack/react-router'
-import { notificationService } from '@/services/notification-service'
-import { useAuthStore } from '@/stores/auth-store'
-import type { EventContextOption } from '@/stores/event-context-store'
-import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
-import { getMyInventory } from '@/lib/api/ticket-purchases'
-import apiClient from '@/lib/axios'
-import { getCookie } from '@/lib/cookies'
-import { cn } from '@/lib/utils'
-import { LayoutProvider } from '@/context/layout-provider'
-import { SearchProvider } from '@/context/search-provider'
-import { useAuth } from '@/hooks/use-auth'
-import { useEventContext } from '@/hooks/use-event-context'
-import { useNotificationSocket } from '@/hooks/use-notification-socket'
-import { usePushNotifications } from '@/hooks/use-push-notifications'
-import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { Header } from '@/components/layout/header'
 import { SidebarFreeLayout } from '@/components/layout/sidebar-free-layout'
@@ -24,6 +6,24 @@ import { triggerNotificationToast } from '@/components/notifications/Notificatio
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { SkipToMain } from '@/components/skip-to-main'
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+import { LayoutProvider } from '@/context/layout-provider'
+import { SearchProvider } from '@/context/search-provider'
+import { useAuth } from '@/hooks/use-auth'
+import { useEventContext } from '@/hooks/use-event-context'
+import { useNotificationSocket } from '@/hooks/use-notification-socket'
+import { usePushNotifications } from '@/hooks/use-push-notifications'
+import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
+import { getMyInventory } from '@/lib/api/ticket-purchases'
+import apiClient from '@/lib/axios'
+import { getCookie } from '@/lib/cookies'
+import { cn } from '@/lib/utils'
+import { notificationService } from '@/services/notification-service'
+import { useAuthStore } from '@/stores/auth-store'
+import type { EventContextOption } from '@/stores/event-context-store'
+import { useQuery } from '@tanstack/react-query'
+import { Outlet, useMatches } from '@tanstack/react-router'
+import { useEffect, useRef, useState } from 'react'
 
 type AuthenticatedLayoutProps = {
   children?: React.ReactNode
@@ -60,11 +60,14 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
       match.routeId === '/_authenticated/tickets/history'
   )
 
-  // Keep Socket.IO connected across all authenticated pages for real-time toasts
-  useNotificationSocket(selectedEventId ?? undefined)
+  // Keep Socket.IO connected across all authenticated pages for real-time toasts.
+  // Disabled during restore to prevent the accessToken '' → 'token' transition from
+  // triggering cleanup (setStatus('disconnected')) while auth state is still settling.
+  useNotificationSocket(selectedEventId ?? undefined, { enabled: !isRestoring })
 
-  // Auto-restore push subscription if permission was previously granted (e.g. after PWA reinstall)
-  usePushNotifications()
+  // Auto-restore push subscription if permission was previously granted (e.g. after PWA reinstall).
+  // Gated on !isRestoring so the token is guaranteed to be present before firing the subscribe request.
+  usePushNotifications({ enabled: !isRestoring })
 
   // Show toast popups for unread notifications on app open / login.
   // After showing them, mark all as read so they don't re-appear next time.
@@ -84,7 +87,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           setTimeout(() => triggerNotificationToast(n), i * 600)
         })
         // Mark them as read so reopening the app won't show the same ones
-        notificationService.markAllRead(eventId).catch(() => {})
+        notificationService.markAllRead(eventId).catch(() => { })
       })
       .catch(() => {
         // Non-critical — socket will deliver future notifications anyway
@@ -95,7 +98,8 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   useEffect(() => {
     const restore = async () => {
       const currentUser = useAuthStore.getState().user
-      if (!currentUser) {
+      const currentAccessToken = useAuthStore.getState().accessToken
+      if (!currentUser || !currentAccessToken) {
         try {
           await restoreUserFromRefreshToken()
         } catch {

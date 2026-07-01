@@ -284,7 +284,7 @@ jobs:
           echo "color=$color"   >> $GITHUB_OUTPUT
 
       - name: Post to Teams
-        if: env.MSTEAMS_WEBHOOK_URL != ''
+        if: ${{ secrets.MSTEAMS_WEBHOOK_URL != '' }}
         env:
           MSTEAMS_WEBHOOK_URL: ${{ secrets.MSTEAMS_WEBHOOK_URL }}
         run: |

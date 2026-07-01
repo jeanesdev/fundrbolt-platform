@@ -2,16 +2,6 @@
  * AuctionItemCard
  * Display card for a single auction item with actions
  */
-import { useState } from 'react'
-import { AuctionType, ItemStatus, type AuctionItem } from '@/types/auction-item'
-import {
-  DollarSign,
-  Eye,
-  MoreVertical,
-  Pencil,
-  Sparkles,
-  Trash2,
-} from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -36,6 +26,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { PromotionEditor } from '@/features/events/auction-items/components/PromotionEditor'
+import { AuctionType, ItemStatus, type AuctionItem } from '@/types/auction-item'
+import {
+  DollarSign,
+  Eye,
+  MoreVertical,
+  Pencil,
+  Sparkles,
+  Trash2,
+} from 'lucide-react'
+import { useState } from 'react'
 
 interface AuctionItemCardProps {
   item: AuctionItem
