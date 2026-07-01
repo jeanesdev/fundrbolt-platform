@@ -330,7 +330,7 @@ export function AuctionItemForm({
         title: formData.title || undefined,
         description: formData.description || undefined,
         auction_type: isImpactDonation ? AuctionType.SILENT : formData.auction_type,
-        category: isImpactDonation ? 'Impact' : (formData.category || null),
+        category: isImpactDonation ? 'Impact' : (formData.category.trim() || null),
         starting_bid: isImpactDonation
           ? 0
           : (formData.starting_bid
@@ -375,7 +375,7 @@ export function AuctionItemForm({
         title: formData.title,
         description: formData.description,
         auction_type: isImpactDonation ? AuctionType.SILENT : formData.auction_type,
-        category: isImpactDonation ? 'Impact' : (formData.category || null),
+        category: isImpactDonation ? 'Impact' : (formData.category.trim() || null),
         starting_bid: isImpactDonation
           ? 0
           : (formData.starting_bid

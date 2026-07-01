@@ -125,6 +125,110 @@ class TestBidNumberAssignment:
 
         assert item.category == "Impact"
 
+    async def test_create_impact_item_requires_buy_now_enabled(
+        self,
+        db_session: AsyncSession,
+        test_event: Event,
+        test_user,
+        auction_item_service: AuctionItemService,
+    ):
+        """Test that creating an Impact item without buy_now_enabled raises."""
+        item_data = AuctionItemCreate(
+            title="Impact Donation",
+            description="Provide meals for the event",
+            auction_type=AuctionType.SILENT,
+            category="Impact",
+            starting_bid=Decimal("25.00"),
+            bid_increment=Decimal("5.00"),
+            buy_now_price=None,
+            buy_now_enabled=False,
+        )
+
+        with pytest.raises(ValueError, match="Impact donations must enable buy now"):
+            await auction_item_service.create_auction_item(
+                event_id=test_event.id,
+                item_data=item_data,
+                created_by=test_user.id,
+            )
+
+    async def test_create_impact_item_requires_buy_now_price(
+        self,
+        db_session: AsyncSession,
+        test_event: Event,
+        test_user,
+        auction_item_service: AuctionItemService,
+    ):
+        """Test that creating an Impact item without buy_now_price raises."""
+        item_data = AuctionItemCreate(
+            title="Impact Donation",
+            description="Provide meals for the event",
+            auction_type=AuctionType.SILENT,
+            category="Impact",
+            starting_bid=Decimal("25.00"),
+            bid_increment=Decimal("5.00"),
+            buy_now_price=None,
+            buy_now_enabled=True,
+        )
+
+        with pytest.raises(ValueError, match="Impact donations must include a buy now price"):
+            await auction_item_service.create_auction_item(
+                event_id=test_event.id,
+                item_data=item_data,
+                created_by=test_user.id,
+            )
+
+    async def test_create_impact_item_requires_positive_price(
+        self,
+        db_session: AsyncSession,
+        test_event: Event,
+        test_user,
+        auction_item_service: AuctionItemService,
+    ):
+        """Test that creating an Impact item with price=0 raises."""
+        item_data = AuctionItemCreate(
+            title="Impact Donation",
+            description="Provide meals for the event",
+            auction_type=AuctionType.SILENT,
+            category="Impact",
+            starting_bid=Decimal("0.00"),
+            bid_increment=Decimal("1.00"),
+            buy_now_price=Decimal("0.00"),
+            buy_now_enabled=True,
+        )
+
+        with pytest.raises(ValueError, match="Impact donations buy now price must be positive"):
+            await auction_item_service.create_auction_item(
+                event_id=test_event.id,
+                item_data=item_data,
+                created_by=test_user.id,
+            )
+
+    async def test_create_impact_item_requires_impact_statement(
+        self,
+        db_session: AsyncSession,
+        test_event: Event,
+        test_user,
+        auction_item_service: AuctionItemService,
+    ):
+        """Test that creating an Impact item with empty/HTML-only description raises."""
+        item_data = AuctionItemCreate(
+            title="Impact Donation",
+            description="<p> </p>",
+            auction_type=AuctionType.SILENT,
+            category="Impact",
+            starting_bid=Decimal("0.00"),
+            bid_increment=Decimal("1.00"),
+            buy_now_price=Decimal("25.00"),
+            buy_now_enabled=True,
+        )
+
+        with pytest.raises(ValueError, match="Impact donations must include an impact statement"):
+            await auction_item_service.create_auction_item(
+                event_id=test_event.id,
+                item_data=item_data,
+                created_by=test_user.id,
+            )
+
     async def test_sequential_bid_numbers(
         self,
         db_session: AsyncSession,
@@ -435,9 +539,72 @@ class TestBuyNowPriceValidation:
                 ),
             )
 
+    async def test_update_impact_item_rejects_zero_price(
+        self,
+        db_session: AsyncSession,
+        test_event: Event,
+        test_user,
+        auction_item_service: AuctionItemService,
+    ):
+        """Test that updating an Impact item to price=0 raises."""
+        item_data = AuctionItemCreate(
+            title="Impact Donation",
+            description="Provide meals for the event",
+            auction_type=AuctionType.SILENT,
+            category="Impact",
+            starting_bid=Decimal("0.00"),
+            bid_increment=Decimal("1.00"),
+            buy_now_price=Decimal("25.00"),
+            buy_now_enabled=True,
+        )
 
-@pytest.mark.asyncio
-class TestSoftVsHardDelete:
+        item = await auction_item_service.create_auction_item(
+            event_id=test_event.id,
+            item_data=item_data,
+            created_by=test_user.id,
+        )
+
+        with pytest.raises(ValueError, match="Impact donations buy now price must be positive"):
+            await auction_item_service.update_auction_item(
+                item_id=item.id,
+                update_data=AuctionItemUpdate(  # type: ignore[call-arg]
+                    buy_now_price=Decimal("0.00"),
+                ),
+            )
+
+    async def test_update_impact_item_rejects_empty_html_description(
+        self,
+        db_session: AsyncSession,
+        test_event: Event,
+        test_user,
+        auction_item_service: AuctionItemService,
+    ):
+        """Test that updating an Impact item with HTML-only description raises."""
+        item_data = AuctionItemCreate(
+            title="Impact Donation",
+            description="Provide meals for the event",
+            auction_type=AuctionType.SILENT,
+            category="Impact",
+            starting_bid=Decimal("0.00"),
+            bid_increment=Decimal("1.00"),
+            buy_now_price=Decimal("25.00"),
+            buy_now_enabled=True,
+        )
+
+        item = await auction_item_service.create_auction_item(
+            event_id=test_event.id,
+            item_data=item_data,
+            created_by=test_user.id,
+        )
+
+        with pytest.raises(ValueError, match="Impact donations must include an impact statement"):
+            await auction_item_service.update_auction_item(
+                item_id=item.id,
+                update_data=AuctionItemUpdate(  # type: ignore[call-arg]
+                    description="<p>   </p><br/>",
+                ),
+            )
+
     """Test T029: Soft delete for published items, hard delete for drafts."""
 
     async def test_draft_item_hard_deleted(

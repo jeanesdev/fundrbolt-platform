@@ -1,6 +1,7 @@
 """Service for auction item operations."""
 
 import logging
+import re
 import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -185,6 +186,20 @@ class AuctionItemService:
 
             if not item_data.buy_now_enabled:
                 raise ValueError("buy_now_enabled must be True when buy_now_price is set")
+
+        # Impact donation invariants
+        if item_data.category and item_data.category.strip().lower() == "impact":
+            if item_data.auction_type != AuctionType.SILENT:
+                raise ValueError("Impact donations must be silent auction type")
+            if not item_data.buy_now_enabled:
+                raise ValueError("Impact donations must enable buy now")
+            if item_data.buy_now_price is None:
+                raise ValueError("Impact donations must include a buy now price")
+            if item_data.buy_now_price <= Decimal("0"):
+                raise ValueError("Impact donations buy now price must be positive")
+            description_text = re.sub(r"<[^>]+>", "", item_data.description or "").strip()
+            if not description_text:
+                raise ValueError("Impact donations must include an impact statement")
 
         # Get next bid number (atomic)
         bid_number = await self._get_next_bid_number(event_id)
@@ -455,11 +470,16 @@ class AuctionItemService:
             raise ValueError("buy_now_price is required when buy_now_enabled is True")
 
         if item.category and item.category.strip().lower() == "impact":
+            if item.auction_type != AuctionType.SILENT:
+                raise ValueError("Impact donations must be silent auction type")
             if not item.buy_now_enabled:
                 raise ValueError("Impact donations must enable buy now")
             if item.buy_now_price is None:
                 raise ValueError("Impact donations must include a buy now price")
-            if not item.description or not item.description.strip():
+            if item.buy_now_price <= Decimal("0"):
+                raise ValueError("Impact donations buy now price must be positive")
+            description_text = re.sub(r"<[^>]+>", "", item.description or "").strip()
+            if not description_text:
                 raise ValueError("Impact donations must include an impact statement")
 
         # Update timestamp
