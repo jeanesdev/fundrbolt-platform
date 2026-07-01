@@ -2,16 +2,6 @@
  * AuctionItemForm
  * Form for creating or editing an auction item
  */
-import { useEffect, useState } from 'react'
-import auctionItemMediaService from '@/services/auctionItemMediaService'
-import {
-  AuctionType,
-  SlidePresentationLayout,
-  type AuctionItem,
-  type AuctionItemCreate,
-  type AuctionItemMedia,
-  type AuctionItemUpdate,
-} from '@/types/auction-item'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -24,22 +14,41 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import auctionItemMediaService from '@/services/auctionItemMediaService'
+import {
+  AuctionType,
+  SlidePresentationLayout,
+  type AuctionItem,
+  type AuctionItemCreate,
+  type AuctionItemMedia,
+  type AuctionItemUpdate,
+} from '@/types/auction-item'
+import { useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { MediaGallery } from './MediaGallery'
 import { MediaUploadZone } from './MediaUploadZone'
 
 interface AuctionItemFormProps {
   item?: AuctionItem
   eventId: string
-  onSubmit: (data: AuctionItemCreate | AuctionItemUpdate) => Promise<void>
+  onSubmit: (
+    data: AuctionItemCreate | AuctionItemUpdate
+  ) => Promise<AuctionItem | void>
   onCancel: () => void
+  onCreateSuccess?: () => void
+  onUpdateSuccess?: () => void
   isSubmitting?: boolean
 }
+
+type AuctionTypeSelection = AuctionType | 'impact'
 
 export function AuctionItemForm({
   item,
   eventId,
   onSubmit,
   onCancel,
+  onCreateSuccess,
+  onUpdateSuccess,
   isSubmitting = false,
 }: AuctionItemFormProps) {
   const isEdit = !!item
@@ -57,7 +66,8 @@ export function AuctionItemForm({
   interface FormData {
     title: string
     description: string
-    auction_type: AuctionType
+    auction_type: AuctionTypeSelection
+    category: string
     starting_bid: string
     bid_increment: string
     donor_value: string
@@ -78,7 +88,11 @@ export function AuctionItemForm({
   const [formData, setFormData] = useState<FormData>({
     title: item?.title || '',
     description: item?.description || '',
-    auction_type: item?.auction_type || AuctionType.SILENT,
+    auction_type:
+      item?.category?.trim().toLowerCase() === 'impact'
+        ? 'impact'
+        : (item?.auction_type ?? AuctionType.SILENT),
+    category: item?.category || '',
     starting_bid: item?.starting_bid?.toString() || '',
     bid_increment:
       item?.bid_increment?.toString() ||
@@ -87,7 +101,10 @@ export function AuctionItemForm({
     cost: item?.cost?.toString() || '',
     buy_now_price: item?.buy_now_price?.toString() || '',
     buy_now_enabled: item?.buy_now_enabled || false,
-    quantity_available: item?.quantity_available?.toString() || '1',
+    quantity_available:
+      item?.quantity_available === 0
+        ? ''
+        : (item?.quantity_available?.toString() ?? ''),
     donated_by: item?.donated_by || '',
     sponsor_id: item?.sponsor_id || '',
     item_webpage: item?.item_webpage || '',
@@ -113,8 +130,23 @@ export function AuctionItemForm({
 
   // Media management
   const [media, setMedia] = useState<AuctionItemMedia[]>([])
+  const [pendingMediaUploads, setPendingMediaUploads] = useState<
+    Array<{ id: string; file: File; mediaType: 'image' | 'video' }>
+  >([])
+  const pendingMediaUploadsRef = useRef<
+    Array<{ id: string; file: File; mediaType: 'image' | 'video' }>
+  >([])
+  const [isProcessingPostSave, setIsProcessingPostSave] = useState(false)
   const [isLoadingMedia, setIsLoadingMedia] = useState(false)
   const [loadedMediaForId, setLoadedMediaForId] = useState<string | null>(null)
+  const isImpactDonation = formData.auction_type === 'impact'
+  const isFormBusy = isSubmitting || isProcessingPostSave
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
 
   // Load media when editing an existing item
   useEffect(() => {
@@ -143,17 +175,14 @@ export function AuctionItemForm({
     file: File,
     mediaType: 'image' | 'video'
   ) => {
-    if (!item?.id) {
-      throw new Error('Please save the item first before uploading media')
-    }
-
-    const newMedia = await auctionItemMediaService.uploadMedia(
-      eventId,
-      item.id,
+    const nextUpload = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       file,
-      mediaType
-    )
-    setMedia((prev) => [...prev, newMedia])
+      mediaType,
+    }
+    const nextQueue = [...pendingMediaUploadsRef.current, nextUpload]
+    pendingMediaUploadsRef.current = nextQueue
+    setPendingMediaUploads(nextQueue)
   }
 
   const handleMediaReorder = async (mediaIds: string[]) => {
@@ -172,6 +201,14 @@ export function AuctionItemForm({
 
     await auctionItemMediaService.deleteMedia(eventId, item.id, mediaId)
     setMedia((prev) => prev.filter((m) => m.id !== mediaId))
+  }
+
+  const handlePendingMediaRemove = (pendingId: string) => {
+    const nextQueue = pendingMediaUploadsRef.current.filter(
+      (upload) => upload.id !== pendingId
+    )
+    pendingMediaUploadsRef.current = nextQueue
+    setPendingMediaUploads(nextQueue)
   }
 
   const isValidUrl = (url: string): boolean => {
@@ -280,72 +317,170 @@ export function AuctionItemForm({
       }
     }
 
+    if (isImpactDonation && formData.buy_now_price.trim() === '') {
+      setNumericErrors((prev) => ({
+        ...prev,
+        buy_now_price: 'Buy now price is required for Impact Donations',
+      }))
+      return
+    }
+
     const data = isEdit
       ? ({
-          title: formData.title || undefined,
-          description: formData.description || undefined,
-          auction_type: formData.auction_type,
-          starting_bid: formData.starting_bid
+        title: formData.title || undefined,
+        description: formData.description || undefined,
+        auction_type: isImpactDonation ? AuctionType.SILENT : formData.auction_type,
+        category: isImpactDonation ? 'Impact' : (formData.category.trim() || null),
+        starting_bid: isImpactDonation
+          ? 0
+          : (formData.starting_bid
             ? parseFloat(formData.starting_bid)
-            : undefined,
-          bid_increment: formData.bid_increment
+            : undefined),
+        bid_increment: isImpactDonation
+          ? 1
+          : (formData.bid_increment
             ? parseFloat(formData.bid_increment)
-            : undefined,
-          donor_value: formData.donor_value
+            : undefined),
+        donor_value: isImpactDonation
+          ? null
+          : (formData.donor_value
             ? parseFloat(formData.donor_value)
-            : null,
-          cost: formData.cost ? parseFloat(formData.cost) : null,
-          buy_now_price: formData.buy_now_price
-            ? parseFloat(formData.buy_now_price)
-            : null,
-          buy_now_enabled: formData.buy_now_enabled,
-          quantity_available: formData.quantity_available
-            ? parseInt(formData.quantity_available, 10)
-            : undefined,
-          donated_by: formData.donated_by || null,
-          sponsor_id: formData.sponsor_id || null,
-          item_webpage: formData.item_webpage || null,
-          display_priority: formData.display_priority
-            ? parseInt(formData.display_priority, 10)
-            : null,
-          slide_presentation_html: formData.slide_presentation_html || null,
-          slide_presentation_layout: formData.slide_presentation_layout,
-          display_starting_bid: formData.display_starting_bid,
-          display_fair_market_value: formData.display_fair_market_value,
-        } as AuctionItemUpdate)
+            : null),
+        cost: formData.cost ? parseFloat(formData.cost) : null,
+        buy_now_price: formData.buy_now_price
+          ? parseFloat(formData.buy_now_price)
+          : null,
+        buy_now_enabled: isImpactDonation ? true : formData.buy_now_enabled,
+        quantity_available: isImpactDonation
+          ? 1
+          : formData.quantity_available.trim() === ''
+            ? 0
+            : parseInt(formData.quantity_available, 10),
+        donated_by: formData.donated_by || null,
+        sponsor_id: formData.sponsor_id || null,
+        item_webpage: formData.item_webpage || null,
+        display_priority: formData.display_priority
+          ? parseInt(formData.display_priority, 10)
+          : null,
+        slide_presentation_html: formData.slide_presentation_html || null,
+        slide_presentation_layout: formData.slide_presentation_layout,
+        display_starting_bid: isImpactDonation
+          ? false
+          : formData.display_starting_bid,
+        display_fair_market_value: isImpactDonation
+          ? false
+          : formData.display_fair_market_value,
+      } as AuctionItemUpdate)
       : ({
-          title: formData.title,
-          description: formData.description,
-          auction_type: formData.auction_type,
-          starting_bid: formData.starting_bid
+        title: formData.title,
+        description: formData.description,
+        auction_type: isImpactDonation ? AuctionType.SILENT : formData.auction_type,
+        category: isImpactDonation ? 'Impact' : (formData.category.trim() || null),
+        starting_bid: isImpactDonation
+          ? 0
+          : (formData.starting_bid
             ? parseFloat(formData.starting_bid)
-            : undefined,
-          bid_increment: formData.bid_increment
+            : undefined),
+        bid_increment: isImpactDonation
+          ? 1
+          : (formData.bid_increment
             ? parseFloat(formData.bid_increment)
-            : undefined,
-          donor_value: formData.donor_value
+            : undefined),
+        donor_value: isImpactDonation
+          ? null
+          : (formData.donor_value
             ? parseFloat(formData.donor_value)
-            : null,
-          cost: formData.cost ? parseFloat(formData.cost) : null,
-          buy_now_price: formData.buy_now_price
-            ? parseFloat(formData.buy_now_price)
-            : null,
-          buy_now_enabled: formData.buy_now_enabled,
-          quantity_available: parseInt(formData.quantity_available, 10),
-          donated_by: formData.donated_by || undefined,
-          sponsor_id: formData.sponsor_id || undefined,
-          item_webpage: formData.item_webpage || undefined,
-          display_priority: formData.display_priority
-            ? parseInt(formData.display_priority, 10)
-            : undefined,
-          slide_presentation_html:
-            formData.slide_presentation_html || undefined,
-          slide_presentation_layout: formData.slide_presentation_layout,
-          display_starting_bid: formData.display_starting_bid,
-          display_fair_market_value: formData.display_fair_market_value,
-        } as AuctionItemCreate)
+            : null),
+        cost: formData.cost ? parseFloat(formData.cost) : null,
+        buy_now_price: formData.buy_now_price
+          ? parseFloat(formData.buy_now_price)
+          : null,
+        buy_now_enabled: isImpactDonation ? true : formData.buy_now_enabled,
+        quantity_available: isImpactDonation
+          ? 1
+          : formData.quantity_available.trim() === ''
+            ? 0
+            : parseInt(formData.quantity_available, 10),
+        donated_by: formData.donated_by || undefined,
+        sponsor_id: formData.sponsor_id || undefined,
+        item_webpage: formData.item_webpage || undefined,
+        display_priority: formData.display_priority
+          ? parseInt(formData.display_priority, 10)
+          : undefined,
+        slide_presentation_html:
+          formData.slide_presentation_html || undefined,
+        slide_presentation_layout: formData.slide_presentation_layout,
+        display_starting_bid: isImpactDonation
+          ? false
+          : formData.display_starting_bid,
+        display_fair_market_value: isImpactDonation
+          ? false
+          : formData.display_fair_market_value,
+      } as AuctionItemCreate)
 
-    await onSubmit(data)
+    setIsProcessingPostSave(true)
+    try {
+      const result = await onSubmit(data)
+
+      const uploadsToProcess = [...pendingMediaUploadsRef.current]
+
+      if (uploadsToProcess.length > 0) {
+        const uploadItemId = item?.id ?? result?.id
+
+        if (!uploadItemId) {
+          throw new Error(
+            'Item was created, but media could not be uploaded because the item ID was unavailable.'
+          )
+        }
+
+        let uploadErrors = 0
+        for (const pendingUpload of uploadsToProcess) {
+          try {
+            const uploadedMedia = await auctionItemMediaService.uploadMedia(
+              eventId,
+              uploadItemId,
+              pendingUpload.file,
+              pendingUpload.mediaType
+            )
+            setMedia((prev) => [...prev, uploadedMedia])
+          } catch (uploadErr) {
+            uploadErrors++
+            // Extract the real backend error detail if available
+            let msg = 'Unknown upload error'
+            if (
+              uploadErr &&
+              typeof uploadErr === 'object' &&
+              'response' in uploadErr &&
+              (uploadErr as { response?: { data?: { detail?: unknown } } }).response?.data
+                ?.detail
+            ) {
+              const detail = (uploadErr as { response: { data: { detail: unknown } } }).response
+                .data.detail
+              msg = typeof detail === 'string' ? detail : JSON.stringify(detail)
+            } else if (uploadErr instanceof Error) {
+              msg = uploadErr.message
+            }
+            toast.error(`Failed to upload "${pendingUpload.file.name}": ${msg}`)
+          }
+        }
+
+        pendingMediaUploadsRef.current = []
+        setPendingMediaUploads([])
+
+        if (uploadErrors > 0) {
+          // Don't navigate if uploads failed — keep user on page to retry
+          return
+        }
+      }
+
+      if (isEdit) {
+        onUpdateSuccess?.()
+      } else {
+        onCreateSuccess?.()
+      }
+    } finally {
+      setIsProcessingPostSave(false)
+    }
   }
 
   return (
@@ -363,7 +498,7 @@ export function AuctionItemForm({
               setFormData({ ...formData, title: e.target.value })
             }
             required
-            disabled={isSubmitting}
+            disabled={isFormBusy}
             placeholder='e.g., Weekend Getaway in Napa Valley'
             maxLength={200}
           />
@@ -377,7 +512,7 @@ export function AuctionItemForm({
             value={formData.description}
             onChange={(html) => setFormData({ ...formData, description: html })}
             placeholder='Provide a detailed description of the auction item...'
-            disabled={isSubmitting}
+            disabled={isFormBusy}
           />
         </div>
 
@@ -388,9 +523,34 @@ export function AuctionItemForm({
           <Select
             value={formData.auction_type}
             onValueChange={(value) =>
-              setFormData({ ...formData, auction_type: value as AuctionType })
+              setFormData((prev) => {
+                const nextType = value as AuctionTypeSelection
+
+                if (nextType === 'impact') {
+                  return {
+                    ...prev,
+                    auction_type: 'impact',
+                    category: 'Impact',
+                    buy_now_enabled: true,
+                    donor_value: '',
+                    starting_bid: '',
+                    bid_increment: '',
+                    display_starting_bid: false,
+                    display_fair_market_value: false,
+                  }
+                }
+
+                return {
+                  ...prev,
+                  auction_type: nextType,
+                  category:
+                    prev.category.trim().toLowerCase() === 'impact'
+                      ? ''
+                      : prev.category,
+                }
+              })
             }
-            disabled={isSubmitting}
+            disabled={isFormBusy}
           >
             <SelectTrigger id='auction_type'>
               <SelectValue />
@@ -398,152 +558,180 @@ export function AuctionItemForm({
             <SelectContent>
               <SelectItem value={AuctionType.LIVE}>Live Auction</SelectItem>
               <SelectItem value={AuctionType.SILENT}>Silent Auction</SelectItem>
+              <SelectItem value='impact'>Impact Donation</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className='space-y-2'>
-          <Label htmlFor='quantity_available'>
-            Quantity Available <span className='text-destructive'>*</span>
-          </Label>
+          <Label htmlFor='category'>Category</Label>
           <Input
-            id='quantity_available'
-            type='number'
-            min='1'
-            step='1'
-            value={formData.quantity_available}
+            id='category'
+            value={formData.category}
             onChange={(e) =>
-              setFormData({ ...formData, quantity_available: e.target.value })
+              setFormData({ ...formData, category: e.target.value })
             }
-            onBlur={(e) =>
-              handleNumericBlur('quantity_available', e.target.value, true)
-            }
-            required
-            disabled={isSubmitting}
+            disabled={isFormBusy || isImpactDonation}
+            placeholder='Impact'
           />
-          {numericErrors.quantity_available && (
-            <p className='text-destructive text-xs'>
-              {numericErrors.quantity_available}
-            </p>
-          )}
+          <p className='text-muted-foreground text-xs'>
+            Use Impact for buy-now-only donation items.
+          </p>
         </div>
+
+        {!isImpactDonation && (
+          <div className='space-y-2'>
+            <Label htmlFor='quantity_available'>Quantity Available</Label>
+            <Input
+              id='quantity_available'
+              type='number'
+              min='0'
+              step='1'
+              value={formData.quantity_available}
+              onChange={(e) =>
+                setFormData({ ...formData, quantity_available: e.target.value })
+              }
+              onBlur={(e) =>
+                handleNumericBlur('quantity_available', e.target.value, true)
+              }
+              disabled={isFormBusy}
+              placeholder='Leave blank or 0 for unlimited'
+            />
+            <p className='text-muted-foreground text-xs'>
+              Leave blank or enter 0 for unlimited quantity.
+            </p>
+            {numericErrors.quantity_available && (
+              <p className='text-destructive text-xs'>
+                {numericErrors.quantity_available}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Pricing */}
       <div className='space-y-4'>
         <h3 className='text-sm font-semibold'>Pricing Information</h3>
         <div className='grid gap-4 sm:grid-cols-2'>
-          <div className='space-y-2'>
-            <Label htmlFor='starting_bid'>
-              Starting Bid ($){' '}
-              {formData.auction_type === AuctionType.SILENT && (
-                <span className='text-destructive'>*</span>
+          {!isImpactDonation && (
+            <div className='space-y-2'>
+              <Label htmlFor='starting_bid'>
+                Starting Bid ($){' '}
+                {formData.auction_type === AuctionType.SILENT && (
+                  <span className='text-destructive'>*</span>
+                )}
+              </Label>
+              <Input
+                id='starting_bid'
+                type='number'
+                step='0.01'
+                min='0'
+                value={formData.starting_bid}
+                onChange={(e) => handleStartingBidChange(e.target.value)}
+                onBlur={(e) => handleNumericBlur('starting_bid', e.target.value)}
+                required={formData.auction_type === AuctionType.SILENT}
+                disabled={isFormBusy}
+                placeholder='0.00'
+              />
+              {numericErrors.starting_bid && (
+                <p className='text-destructive text-xs'>
+                  {numericErrors.starting_bid}
+                </p>
               )}
-            </Label>
-            <Input
-              id='starting_bid'
-              type='number'
-              step='0.01'
-              min='0'
-              value={formData.starting_bid}
-              onChange={(e) => handleStartingBidChange(e.target.value)}
-              onBlur={(e) => handleNumericBlur('starting_bid', e.target.value)}
-              required={formData.auction_type === AuctionType.SILENT}
-              disabled={isSubmitting}
-              placeholder='0.00'
-            />
-            {numericErrors.starting_bid && (
-              <p className='text-destructive text-xs'>
-                {numericErrors.starting_bid}
-              </p>
-            )}
-            {formData.auction_type === AuctionType.LIVE && (
+              {formData.auction_type === AuctionType.LIVE && (
+                <p className='text-muted-foreground text-xs'>
+                  Optional for live auctions
+                </p>
+              )}
+            </div>
+          )}
+
+          {!isImpactDonation && (
+            <div className='space-y-2'>
+              <Label htmlFor='bid_increment'>
+                Bid Increment ($){' '}
+                {formData.auction_type === AuctionType.SILENT && (
+                  <span className='text-destructive'>*</span>
+                )}
+              </Label>
+              <Input
+                id='bid_increment'
+                type='number'
+                step='0.01'
+                min='0.01'
+                value={formData.bid_increment}
+                onChange={(e) =>
+                  setFormData({ ...formData, bid_increment: e.target.value })
+                }
+                onBlur={(e) => handleNumericBlur('bid_increment', e.target.value)}
+                required={formData.auction_type === AuctionType.SILENT}
+                disabled={isFormBusy}
+                placeholder='50.00'
+              />
+              {numericErrors.bid_increment && (
+                <p className='text-destructive text-xs'>
+                  {numericErrors.bid_increment}
+                </p>
+              )}
               <p className='text-muted-foreground text-xs'>
-                Optional for live auctions
+                {formData.auction_type === AuctionType.LIVE
+                  ? 'Optional for live auctions'
+                  : 'Auto-calculated based on starting bid (can be adjusted)'}
               </p>
-            )}
-          </div>
+            </div>
+          )}
 
-          <div className='space-y-2'>
-            <Label htmlFor='bid_increment'>
-              Bid Increment ($){' '}
-              {formData.auction_type === AuctionType.SILENT && (
-                <span className='text-destructive'>*</span>
+          {!isImpactDonation && (
+            <div className='space-y-2'>
+              <Label htmlFor='donor_value'>Fair Market Value ($)</Label>
+              <Input
+                id='donor_value'
+                type='number'
+                step='0.01'
+                min='0'
+                value={formData.donor_value}
+                onChange={(e) =>
+                  setFormData({ ...formData, donor_value: e.target.value })
+                }
+                onBlur={(e) => handleNumericBlur('donor_value', e.target.value)}
+                disabled={isFormBusy}
+                placeholder='0.00'
+              />
+              {numericErrors.donor_value && (
+                <p className='text-destructive text-xs'>
+                  {numericErrors.donor_value}
+                </p>
               )}
-            </Label>
-            <Input
-              id='bid_increment'
-              type='number'
-              step='0.01'
-              min='0.01'
-              value={formData.bid_increment}
-              onChange={(e) =>
-                setFormData({ ...formData, bid_increment: e.target.value })
-              }
-              onBlur={(e) => handleNumericBlur('bid_increment', e.target.value)}
-              required={formData.auction_type === AuctionType.SILENT}
-              disabled={isSubmitting}
-              placeholder='50.00'
-            />
-            {numericErrors.bid_increment && (
-              <p className='text-destructive text-xs'>
-                {numericErrors.bid_increment}
+              <p className='text-muted-foreground text-xs'>
+                The value declared by the donor
               </p>
-            )}
-            <p className='text-muted-foreground text-xs'>
-              {formData.auction_type === AuctionType.LIVE
-                ? 'Optional for live auctions'
-                : 'Auto-calculated based on starting bid (can be adjusted)'}
-            </p>
-          </div>
+            </div>
+          )}
 
-          <div className='space-y-2'>
-            <Label htmlFor='donor_value'>Fair Market Value ($)</Label>
-            <Input
-              id='donor_value'
-              type='number'
-              step='0.01'
-              min='0'
-              value={formData.donor_value}
-              onChange={(e) =>
-                setFormData({ ...formData, donor_value: e.target.value })
-              }
-              onBlur={(e) => handleNumericBlur('donor_value', e.target.value)}
-              disabled={isSubmitting}
-              placeholder='0.00'
-            />
-            {numericErrors.donor_value && (
-              <p className='text-destructive text-xs'>
-                {numericErrors.donor_value}
+          {!isImpactDonation && (
+            <div className='space-y-2'>
+              <Label htmlFor='cost'>Consignment Cost ($)</Label>
+              <Input
+                id='cost'
+                type='number'
+                step='0.01'
+                min='0'
+                value={formData.cost}
+                onChange={(e) =>
+                  setFormData({ ...formData, cost: e.target.value })
+                }
+                onBlur={(e) => handleNumericBlur('cost', e.target.value)}
+                disabled={isFormBusy}
+                placeholder='0.00'
+              />
+              {numericErrors.cost && (
+                <p className='text-destructive text-xs'>{numericErrors.cost}</p>
+              )}
+              <p className='text-muted-foreground text-xs'>
+                Internal cost tracking (not shown to bidders)
               </p>
-            )}
-            <p className='text-muted-foreground text-xs'>
-              The value declared by the donor
-            </p>
-          </div>
-
-          <div className='space-y-2'>
-            <Label htmlFor='cost'>Consignment Cost ($)</Label>
-            <Input
-              id='cost'
-              type='number'
-              step='0.01'
-              min='0'
-              value={formData.cost}
-              onChange={(e) =>
-                setFormData({ ...formData, cost: e.target.value })
-              }
-              onBlur={(e) => handleNumericBlur('cost', e.target.value)}
-              disabled={isSubmitting}
-              placeholder='0.00'
-            />
-            {numericErrors.cost && (
-              <p className='text-destructive text-xs'>{numericErrors.cost}</p>
-            )}
-            <p className='text-muted-foreground text-xs'>
-              Internal cost tracking (not shown to bidders)
-            </p>
-          </div>
+            </div>
+          )}
 
           <div className='space-y-2'>
             <div className='flex items-center justify-between gap-2'>
@@ -579,7 +767,7 @@ export function AuctionItemForm({
                 setFormData({ ...formData, buy_now_price: e.target.value })
               }
               onBlur={(e) => handleNumericBlur('buy_now_price', e.target.value)}
-              disabled={isSubmitting}
+              disabled={isFormBusy}
               placeholder='0.00'
             />
             {numericErrors.buy_now_price && (
@@ -592,11 +780,11 @@ export function AuctionItemForm({
           <div className='flex items-center space-x-2 sm:col-span-2'>
             <Switch
               id='buy_now_enabled'
-              checked={formData.buy_now_enabled}
+              checked={isImpactDonation ? true : formData.buy_now_enabled}
               onCheckedChange={(checked) =>
                 setFormData({ ...formData, buy_now_enabled: checked })
               }
-              disabled={isSubmitting}
+              disabled={isFormBusy || isImpactDonation}
             />
             <Label htmlFor='buy_now_enabled' className='cursor-pointer'>
               Enable "Buy Now" option
@@ -611,7 +799,7 @@ export function AuctionItemForm({
                 onCheckedChange={(checked) =>
                   setFormData({ ...formData, display_starting_bid: checked })
                 }
-                disabled={isSubmitting}
+                disabled={isFormBusy}
               />
               <Label htmlFor='display_starting_bid' className='cursor-pointer'>
                 Display Starting Bid (show on donor app)
@@ -619,93 +807,99 @@ export function AuctionItemForm({
             </div>
           )}
 
-          <div className='flex items-center space-x-2 sm:col-span-2'>
-            <Switch
-              id='display_fair_market_value'
-              checked={formData.display_fair_market_value}
-              onCheckedChange={(checked) =>
-                setFormData({
-                  ...formData,
-                  display_fair_market_value: checked,
-                })
-              }
-              disabled={isSubmitting}
-            />
-            <Label
-              htmlFor='display_fair_market_value'
-              className='cursor-pointer'
-            >
-              Display Fair Market Value (show on donor app)
-            </Label>
-          </div>
+          {!isImpactDonation && (
+            <div className='flex items-center space-x-2 sm:col-span-2'>
+              <Switch
+                id='display_fair_market_value'
+                checked={formData.display_fair_market_value}
+                onCheckedChange={(checked) =>
+                  setFormData({
+                    ...formData,
+                    display_fair_market_value: checked,
+                  })
+                }
+                disabled={isFormBusy}
+              />
+              <Label
+                htmlFor='display_fair_market_value'
+                className='cursor-pointer'
+              >
+                Display Fair Market Value (show on donor app)
+              </Label>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Additional Info */}
-      <div className='space-y-4'>
-        <h3 className='text-sm font-semibold'>Additional Information</h3>
-        <div className='grid gap-4 sm:grid-cols-2'>
-          <div className='space-y-2'>
-            <Label htmlFor='donated_by'>Donated By</Label>
-            <Input
-              id='donated_by'
-              value={formData.donated_by}
-              onChange={(e) =>
-                setFormData({ ...formData, donated_by: e.target.value })
-              }
-              disabled={isSubmitting}
-              placeholder='Donor name or organization'
-              maxLength={200}
-            />
-          </div>
+      {!isImpactDonation && (
+        <>
+          {/* Additional Info */}
+          <div className='space-y-4'>
+            <h3 className='text-sm font-semibold'>Additional Information</h3>
+            <div className='grid gap-4 sm:grid-cols-2'>
+              <div className='space-y-2'>
+                <Label htmlFor='donated_by'>Donated By</Label>
+                <Input
+                  id='donated_by'
+                  value={formData.donated_by}
+                  onChange={(e) =>
+                    setFormData({ ...formData, donated_by: e.target.value })
+                  }
+                  disabled={isFormBusy}
+                  placeholder='Donor name or organization'
+                  maxLength={200}
+                />
+              </div>
 
-          <div className='space-y-2'>
-            <Label htmlFor='item_webpage'>Item Webpage URL</Label>
-            <Input
-              id='item_webpage'
-              type='url'
-              value={formData.item_webpage}
-              onChange={(e) =>
-                setFormData({ ...formData, item_webpage: e.target.value })
-              }
-              onBlur={handleUrlBlur}
-              disabled={isSubmitting}
-              placeholder='https://example.com/item'
-              className={urlError ? 'border-red-500' : ''}
-            />
-            {urlError && <p className='text-sm text-red-500'>{urlError}</p>}
-            <p className='text-muted-foreground text-xs'>
-              Link to more information about this item
-            </p>
-          </div>
+              <div className='space-y-2'>
+                <Label htmlFor='item_webpage'>Item Webpage URL</Label>
+                <Input
+                  id='item_webpage'
+                  type='url'
+                  value={formData.item_webpage}
+                  onChange={(e) =>
+                    setFormData({ ...formData, item_webpage: e.target.value })
+                  }
+                  onBlur={handleUrlBlur}
+                  disabled={isFormBusy}
+                  placeholder='https://example.com/item'
+                  className={urlError ? 'border-red-500' : ''}
+                />
+                {urlError && <p className='text-sm text-red-500'>{urlError}</p>}
+                <p className='text-muted-foreground text-xs'>
+                  Link to more information about this item
+                </p>
+              </div>
 
-          <div className='space-y-2'>
-            <Label htmlFor='display_priority'>Display Priority</Label>
-            <Input
-              id='display_priority'
-              type='number'
-              step='1'
-              value={formData.display_priority}
-              onChange={(e) =>
-                setFormData({ ...formData, display_priority: e.target.value })
-              }
-              onBlur={(e) =>
-                handleNumericBlur('display_priority', e.target.value, true)
-              }
-              disabled={isSubmitting}
-              placeholder='0'
-            />
-            {numericErrors.display_priority && (
-              <p className='text-destructive text-xs'>
-                {numericErrors.display_priority}
-              </p>
-            )}
-            <p className='text-muted-foreground text-xs'>
-              Higher numbers appear first (default: 0)
-            </p>
+              <div className='space-y-2'>
+                <Label htmlFor='display_priority'>Display Priority</Label>
+                <Input
+                  id='display_priority'
+                  type='number'
+                  step='1'
+                  value={formData.display_priority}
+                  onChange={(e) =>
+                    setFormData({ ...formData, display_priority: e.target.value })
+                  }
+                  onBlur={(e) =>
+                    handleNumericBlur('display_priority', e.target.value, true)
+                  }
+                  disabled={isFormBusy}
+                  placeholder='0'
+                />
+                {numericErrors.display_priority && (
+                  <p className='text-destructive text-xs'>
+                    {numericErrors.display_priority}
+                  </p>
+                )}
+                <p className='text-muted-foreground text-xs'>
+                  Higher numbers appear first (default: 0)
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
       {/* Media Management */}
       {isEdit && item?.id && (
@@ -721,8 +915,44 @@ export function AuctionItemForm({
               {/* Upload Zone */}
               <MediaUploadZone
                 onUpload={handleMediaUpload}
-                disabled={isSubmitting}
+                autoUploadOnSelect
+                disabled={isFormBusy}
               />
+
+              {pendingMediaUploads.length > 0 && (
+                <div className='space-y-2'>
+                  <p className='text-muted-foreground text-xs'>
+                    These files will upload when you click {isEdit ? 'Update Item' : 'Create Item'}.
+                  </p>
+                  <div className='space-y-2'>
+                    {pendingMediaUploads.map((pendingUpload) => (
+                      <div
+                        key={pendingUpload.id}
+                        className='bg-muted/40 flex items-center justify-between rounded-md px-3 py-2'
+                      >
+                        <div className='min-w-0'>
+                          <p className='truncate text-sm font-medium'>
+                            {pendingUpload.file.name}
+                          </p>
+                          <p className='text-muted-foreground text-xs'>
+                            {pendingUpload.mediaType === 'image' ? 'Image' : 'Video'} •{' '}
+                            {formatFileSize(pendingUpload.file.size)}
+                          </p>
+                        </div>
+                        <Button
+                          type='button'
+                          variant='ghost'
+                          size='sm'
+                          onClick={() => handlePendingMediaRemove(pendingUpload.id)}
+                          disabled={isFormBusy}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Media Gallery */}
               {media.length > 0 && (
@@ -734,7 +964,7 @@ export function AuctionItemForm({
                     media={media}
                     onReorder={handleMediaReorder}
                     onDelete={handleMediaDelete}
-                    readOnly={isSubmitting}
+                    readOnly={isFormBusy}
                   />
                 </div>
               )}
@@ -744,10 +974,48 @@ export function AuctionItemForm({
       )}
 
       {!isEdit && (
-        <div className='border-muted-foreground/25 rounded-lg border border-dashed p-6'>
-          <p className='text-muted-foreground text-center text-sm'>
-            Save the item first to upload images and videos
-          </p>
+        <div className='space-y-4'>
+          <h3 className='text-sm font-semibold'>Media (Images & Videos)</h3>
+          <MediaUploadZone
+            onUpload={handleMediaUpload}
+            autoUploadOnSelect
+            disabled={isFormBusy}
+          />
+
+          {pendingMediaUploads.length > 0 && (
+            <div className='space-y-2'>
+              <p className='text-muted-foreground text-xs'>
+                These files will upload automatically after you create the item.
+              </p>
+              <div className='space-y-2'>
+                {pendingMediaUploads.map((pendingUpload) => (
+                  <div
+                    key={pendingUpload.id}
+                    className='bg-muted/40 flex items-center justify-between rounded-md px-3 py-2'
+                  >
+                    <div className='min-w-0'>
+                      <p className='truncate text-sm font-medium'>
+                        {pendingUpload.file.name}
+                      </p>
+                      <p className='text-muted-foreground text-xs'>
+                        {pendingUpload.mediaType === 'image' ? 'Image' : 'Video'} •{' '}
+                        {formatFileSize(pendingUpload.file.size)}
+                      </p>
+                    </div>
+                    <Button
+                      type='button'
+                      variant='ghost'
+                      size='sm'
+                      onClick={() => handlePendingMediaRemove(pendingUpload.id)}
+                      disabled={isFormBusy}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -757,12 +1025,12 @@ export function AuctionItemForm({
           type='button'
           variant='outline'
           onClick={onCancel}
-          disabled={isSubmitting}
+          disabled={isFormBusy}
         >
           Cancel
         </Button>
-        <Button type='submit' disabled={isSubmitting}>
-          {isSubmitting
+        <Button type='submit' disabled={isFormBusy}>
+          {isFormBusy
             ? isEdit
               ? 'Updating...'
               : 'Creating...'

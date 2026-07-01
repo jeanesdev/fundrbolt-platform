@@ -1,11 +1,11 @@
-import { create } from 'zustand'
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import apiClient from '@/lib/axios'
 import {
   clearRefreshToken,
   getRefreshToken,
   saveRefreshToken,
 } from '@/lib/storage/tokens'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import { create } from 'zustand'
 
 interface AuthUser {
   id: string
@@ -326,10 +326,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
   // Restore user from refresh token by calling refresh endpoint
   restoreUserFromRefreshToken: async (): Promise<boolean> => {
-    const { refreshToken, user } = get()
+    const { refreshToken, user, accessToken } = get()
 
-    // If we already have a user, no need to restore
-    if (user) return true
+    // If we already have both a user and a valid access token, no need to restore
+    if (user && accessToken) return true
 
     // If no refresh token, can't restore
     if (!refreshToken) return false
@@ -342,7 +342,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         refresh_token: refreshToken,
       })
 
-      const { access_token, user: userData } = response.data
+      const { access_token, refresh_token: new_refresh_token, user: userData } = response.data
 
       // Clear spoof state if user is not super_admin
       if (userData.role !== 'super_admin') {
@@ -351,6 +351,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
       // Update store with new access token and user
       cacheUser(userData)
+      // Save the new refresh token if the backend issued one (token rotation)
+      if (new_refresh_token) {
+        get().setRefreshToken(new_refresh_token)
+      }
       set({
         accessToken: access_token,
         user: userData,

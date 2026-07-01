@@ -59,8 +59,8 @@ class AuctionItemMediaService:
     MAX_VIDEO_SIZE = 100 * 1024 * 1024  # 100MB
 
     # Image dimension limits
-    MAX_IMAGE_WIDTH = 4000
-    MAX_IMAGE_HEIGHT = 4000
+    MAX_IMAGE_WIDTH = 8000
+    MAX_IMAGE_HEIGHT = 8000
     MIN_IMAGE_WIDTH = 200
     MIN_IMAGE_HEIGHT = 200
 

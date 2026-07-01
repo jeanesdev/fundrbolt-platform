@@ -4,14 +4,14 @@
  * Connects to the backend Socket.IO server and listens for new notifications.
  * Manages room joining, reconnection, and store/query cache syncing.
  */
-import { useEffect, useRef, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { triggerNotificationToast } from '@/components/notifications/NotificationToastOverlay'
 import type { NotificationData } from '@/services/notification-service'
-import { io, type Socket } from 'socket.io-client'
 import { useAuthStore } from '@/stores/auth-store'
 import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import { useNotificationStore } from '@/stores/notification-store'
-import { triggerNotificationToast } from '@/components/notifications/NotificationToastOverlay'
+import { useQueryClient } from '@tanstack/react-query'
+import { useEffect, useRef, useState } from 'react'
+import { io, type Socket } from 'socket.io-client'
 
 /** Derive Socket.IO URL.
  *  In development the Vite proxy forwards /ws to the backend on the same
@@ -82,6 +82,14 @@ export function useNotificationSocket(
     if (!eventId || !enabled) return
     if (!accessToken) return
 
+    // Guard against stale event-handler callbacks firing state updates
+    // after the effect has already been cleaned up (either due to unmount
+    // or dep change).  Without this, socket.disconnect() in the cleanup
+    // fires 'disconnect' synchronously, and the handler's setStatus call
+    // conflicts with React's commit-phase bookkeeping, causing
+    // "Maximum update depth exceeded".
+    let isCurrent = true
+
     const socketUrl = getSocketUrl()
 
     const socket = io(socketUrl, {
@@ -97,10 +105,11 @@ export function useNotificationSocket(
 
     socketRef.current = socket
 
-    // Expose for debugging
-    ;(window as unknown as Record<string, unknown>).__debugSocket = socket
+      // Expose for debugging
+      ; (window as unknown as Record<string, unknown>).__debugSocket = socket
 
     socket.on('connect', () => {
+      if (!isCurrent) return
       setStatus('connected')
       setConnectionStatus('connected')
       // Join the event notification room with last_seen_at for catch-up
@@ -113,11 +122,13 @@ export function useNotificationSocket(
     })
 
     socket.on('disconnect', () => {
+      if (!isCurrent) return
       setStatus('disconnected')
       setConnectionStatus('disconnected')
     })
 
     socket.on('reconnect_attempt', () => {
+      if (!isCurrent) return
       setStatus('reconnecting')
       setConnectionStatus('reconnecting')
     })
@@ -156,14 +167,14 @@ export function useNotificationSocket(
 
     // Handle count update from server
     socket.on('notification:count', (data: { unread_count: number }) => {
+      if (!isCurrent) return
       setUnreadCount(data.unread_count)
     })
 
     return () => {
+      isCurrent = false
       socket.disconnect()
       socketRef.current = null
-      setStatus('disconnected')
-      setConnectionStatus('disconnected')
     }
   }, [
     eventId,

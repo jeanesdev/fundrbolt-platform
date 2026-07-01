@@ -1,6 +1,7 @@
-import { useNavigate, useRouter } from '@tanstack/react-router'
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth-store'
+import { useNavigate, useRouter } from '@tanstack/react-router'
 
 type GeneralErrorProps = React.HTMLAttributes<HTMLDivElement> & {
   minimal?: boolean
@@ -12,6 +13,14 @@ export function GeneralError({
 }: GeneralErrorProps) {
   const navigate = useNavigate()
   const { history } = useRouter()
+  const logout = useAuthStore((s) => s.logout)
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+
+  const handleSignOut = async () => {
+    await logout()
+    void navigate({ to: '/sign-in' })
+  }
+
   return (
     <div className={cn('h-svh w-full', className)}>
       <div className='m-auto flex h-full w-full flex-col items-center justify-center gap-2'>
@@ -28,6 +37,11 @@ export function GeneralError({
               Go Back
             </Button>
             <Button onClick={() => navigate({ to: '/' })}>Back to Home</Button>
+            {isAuthenticated && (
+              <Button variant='ghost' onClick={() => void handleSignOut()}>
+                Sign Out
+              </Button>
+            )}
           </div>
         )}
       </div>

@@ -16,6 +16,8 @@ export interface AuctionItemGalleryItem {
   starting_bid: number | null
   bid_increment?: number | null
   donor_value?: number | null
+  buy_now_enabled?: boolean
+  buy_now_price?: number | null
   display_starting_bid?: boolean
   display_fair_market_value?: boolean
   current_bid: number | null

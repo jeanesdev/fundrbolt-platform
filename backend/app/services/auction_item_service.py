@@ -1,6 +1,7 @@
 """Service for auction item operations."""
 
 import logging
+import re
 import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -186,6 +187,20 @@ class AuctionItemService:
             if not item_data.buy_now_enabled:
                 raise ValueError("buy_now_enabled must be True when buy_now_price is set")
 
+        # Impact donation invariants
+        if item_data.category and item_data.category.strip().lower() == "impact":
+            if item_data.auction_type != AuctionType.SILENT:
+                raise ValueError("Impact donations must be silent auction type")
+            if not item_data.buy_now_enabled:
+                raise ValueError("Impact donations must enable buy now")
+            if item_data.buy_now_price is None:
+                raise ValueError("Impact donations must include a buy now price")
+            if item_data.buy_now_price <= Decimal("0"):
+                raise ValueError("Impact donations buy now price must be positive")
+            description_text = re.sub(r"<[^>]+>", "", item_data.description or "").strip()
+            if not description_text:
+                raise ValueError("Impact donations must include an impact statement")
+
         # Get next bid number (atomic)
         bid_number = await self._get_next_bid_number(event_id)
 
@@ -199,6 +214,7 @@ class AuctionItemService:
             title=item_data.title,
             description=item_data.description,
             auction_type=item_data.auction_type,
+            category=item_data.category,
             starting_bid=effective_starting_bid,
             bid_increment=bid_increment,
             donor_value=item_data.donor_value,
@@ -452,6 +468,19 @@ class AuctionItemService:
 
         if item.buy_now_enabled and item.buy_now_price is None:
             raise ValueError("buy_now_price is required when buy_now_enabled is True")
+
+        if item.category and item.category.strip().lower() == "impact":
+            if item.auction_type != AuctionType.SILENT:
+                raise ValueError("Impact donations must be silent auction type")
+            if not item.buy_now_enabled:
+                raise ValueError("Impact donations must enable buy now")
+            if item.buy_now_price is None:
+                raise ValueError("Impact donations must include a buy now price")
+            if item.buy_now_price <= Decimal("0"):
+                raise ValueError("Impact donations buy now price must be positive")
+            description_text = re.sub(r"<[^>]+>", "", item.description or "").strip()
+            if not description_text:
+                raise ValueError("Impact donations must include an impact statement")
 
         # Update timestamp
         item.updated_at = datetime.now(UTC)

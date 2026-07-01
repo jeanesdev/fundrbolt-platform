@@ -2,18 +2,19 @@
  * MediaUploadZone
  * Drag-and-drop file upload zone for auction item media (images and videos)
  */
-import { useCallback, useState } from 'react'
-import { FileImage, FileVideo, Upload, X } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
+import { cn } from '@/lib/utils'
+import { FileImage, FileVideo, Upload, X } from 'lucide-react'
+import { useCallback, useState } from 'react'
 
 interface MediaUploadZoneProps {
   onUpload: (file: File, mediaType: 'image' | 'video') => Promise<void>
   disabled?: boolean
   maxImageSize?: number // in bytes
   maxVideoSize?: number // in bytes
+  autoUploadOnSelect?: boolean
 }
 
 // File type constants
@@ -33,6 +34,7 @@ export function MediaUploadZone({
   disabled = false,
   maxImageSize = DEFAULT_MAX_IMAGE_SIZE,
   maxVideoSize = DEFAULT_MAX_VIDEO_SIZE,
+  autoUploadOnSelect = false,
 }: MediaUploadZoneProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -113,8 +115,15 @@ export function MediaUploadZone({
       }
 
       setSelectedFile(file)
+
+      if (autoUploadOnSelect) {
+        const mediaType: 'image' | 'video' = ALLOWED_IMAGE_TYPES.includes(file.type)
+          ? 'image'
+          : 'video'
+        void handleUpload(file, mediaType)
+      }
     },
-    [maxImageSize, maxVideoSize]
+    [autoUploadOnSelect, maxImageSize, maxVideoSize]
   )
 
   // Handle drag events
@@ -159,12 +168,22 @@ export function MediaUploadZone({
   }
 
   // Upload the selected file
-  const handleUpload = async () => {
-    if (!selectedFile) return
+  const handleUpload = async (
+    fileToUpload?: File,
+    knownMediaType?: 'image' | 'video'
+  ) => {
+    const uploadFile = fileToUpload ?? selectedFile
+    if (!uploadFile) return
 
-    const validation = validateFile(selectedFile)
-    if (!validation.valid || !validation.mediaType) {
+    const validation = validateFile(uploadFile)
+    if (!validation.valid) {
       setError(validation.error || 'Invalid file')
+      return
+    }
+
+    const mediaType = knownMediaType ?? validation.mediaType
+    if (!mediaType) {
+      setError('Invalid file type')
       return
     }
 
@@ -176,7 +195,7 @@ export function MediaUploadZone({
       // Simulate progress (the actual upload to Azure is direct and doesn't provide progress)
       setUploadProgress(30)
 
-      await onUpload(selectedFile, validation.mediaType)
+      await onUpload(uploadFile, mediaType)
 
       setUploadProgress(100)
 
@@ -229,8 +248,8 @@ export function MediaUploadZone({
           isDragging && !disabled && 'border-primary bg-primary/5',
           disabled && 'cursor-not-allowed opacity-50',
           !isDragging &&
-            !disabled &&
-            'border-muted-foreground/25 hover:border-muted-foreground/50'
+          !disabled &&
+          'border-muted-foreground/25 hover:border-muted-foreground/50'
         )}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
@@ -321,9 +340,11 @@ export function MediaUploadZone({
 
             {!isUploading && (
               <div className='flex gap-2'>
-                <Button onClick={handleUpload} size='sm' disabled={disabled}>
-                  Upload
-                </Button>
+                {!autoUploadOnSelect && (
+                  <Button onClick={() => void handleUpload()} size='sm' disabled={disabled}>
+                    Upload
+                  </Button>
+                )}
                 <Button
                   onClick={handleClear}
                   size='sm'

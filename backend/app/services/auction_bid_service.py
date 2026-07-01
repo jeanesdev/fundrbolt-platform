@@ -346,6 +346,13 @@ class AuctionBidService:
         if item.event_id != event_id:
             raise ValueError("Auction item does not belong to the event")
 
+        if (
+            item.category
+            and item.category.strip().lower() == "impact"
+            and bid_type != BidType.BUY_NOW
+        ):
+            raise ValueError("Impact donations are buy-now only")
+
         bidder_number = await self._get_bidder_number(event_id, user_id)
 
         if item.auction_type == AuctionType.LIVE.value and max_bid is not None:
@@ -364,12 +371,18 @@ class AuctionBidService:
             if bid_amount != item.buy_now_price:
                 raise ValueError("Buy now bids must equal the buy now price")
 
+            is_impact_item = bool(item.category and item.category.strip().lower() == "impact")
+
             winning_count_stmt = select(func.count()).where(
                 AuctionBid.auction_item_id == auction_item_id,
                 AuctionBid.bid_status == BidStatus.WINNING.value,
             )
             winning_count = (await self.db.execute(winning_count_stmt)).scalar_one()
-            if winning_count >= item.quantity_available:
+            if (
+                not is_impact_item
+                and item.quantity_available > 0
+                and winning_count >= item.quantity_available
+            ):
                 raise ValueError("No buy-now quantity remaining")
 
             new_bid = AuctionBid(

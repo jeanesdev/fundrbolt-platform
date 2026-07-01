@@ -208,6 +208,7 @@ export function AuctionItemCard({
   const btnRef = useRef<HTMLButtonElement>(null)
   const isOnline = useOnlineStatus()
   const isLiveAuctionItem = item.auction_type === 'live'
+  const isImpactDonation = item.category?.trim().toLowerCase() === 'impact'
   const showLiveStartingBid =
     isLiveAuctionItem &&
     item.display_starting_bid === true &&
@@ -233,6 +234,7 @@ export function AuctionItemCard({
     (item.bidding_open !== false || isEffectivelyLive)
   const purchasedCount = Math.max(0, item.buy_now_purchased_count ?? 0)
   const hasBuyNowPurchase = purchasedCount > 0
+  const showBuyNowOnly = isImpactDonation && item.buy_now_enabled === true
 
   const isHot = isHotItem ?? false
 
@@ -321,15 +323,22 @@ export function AuctionItemCard({
 
         {/* Auction type pill — top right */}
         <div className='absolute top-2 right-2 z-10'>
-          {item.auction_type === 'live' ? (
-            <span className='flex items-center gap-1 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white uppercase shadow'>
-              <Zap className='h-2.5 w-2.5' /> Live
-            </span>
-          ) : (
-            <span className='rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-semibold text-white uppercase backdrop-blur-sm'>
-              Silent
-            </span>
-          )}
+          <div className='flex flex-col items-end gap-1'>
+            {isImpactDonation && (
+              <span className='rounded-full bg-emerald-600/90 px-2 py-0.5 text-[10px] font-bold text-white uppercase shadow'>
+                Impact
+              </span>
+            )}
+            {item.auction_type === 'live' ? (
+              <span className='flex items-center gap-1 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white uppercase shadow'>
+                <Zap className='h-2.5 w-2.5' /> Live
+              </span>
+            ) : (
+              <span className='rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-semibold text-white uppercase backdrop-blur-sm'>
+                Silent
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Watch button — top left */}
@@ -441,7 +450,7 @@ export function AuctionItemCard({
         )}
 
         {/* Bid info (silent items only) */}
-        {!isLiveAuctionItem && (
+        {!isLiveAuctionItem && !showBuyNowOnly && (
           <div className='mt-auto'>
             {displayBid !== null && (
               <div className='mb-0.5 flex items-baseline justify-between'>
@@ -476,6 +485,25 @@ export function AuctionItemCard({
                 Your max: {formatCurrency(currentUserMaxBid)}
               </p>
             )}
+          </div>
+        )}
+
+        {showBuyNowOnly && item.buy_now_price !== null && item.buy_now_price !== undefined && (
+          <div className='mt-auto'>
+            <div className='mb-0.5 flex items-baseline justify-between'>
+              <span
+                className='text-lg leading-none font-black'
+                style={{ color: 'var(--event-card-text, #000000)' }}
+              >
+                {formatCurrency(item.buy_now_price)}
+              </span>
+            </div>
+            <p
+              className='mb-2 text-[10px]'
+              style={{ color: 'var(--event-card-text-muted, #9CA3AF)' }}
+            >
+              Impact donation
+            </p>
           </div>
         )}
 
@@ -516,11 +544,15 @@ export function AuctionItemCard({
                 ? 'Offline'
                 : isEventInFuture
                   ? 'Not Started'
-                  : eventStatus === 'active' && isBiddingOpen
-                    ? 'Place Bid'
-                    : eventStatus === 'closed' || !isBiddingOpen
-                      ? 'Bidding Closed'
-                      : 'Not Active'}
+                  : showBuyNowOnly
+                    ? item.buy_now_enabled && item.buy_now_price
+                      ? 'Buy Now'
+                      : 'View Item'
+                    : eventStatus === 'active' && isBiddingOpen
+                      ? 'Place Bid'
+                      : eventStatus === 'closed' || !isBiddingOpen
+                        ? 'Bidding Closed'
+                        : 'Not Active'}
             </button>
           ))}
       </div>

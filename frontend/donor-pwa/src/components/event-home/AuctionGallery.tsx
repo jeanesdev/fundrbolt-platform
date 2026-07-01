@@ -9,27 +9,7 @@
  * - Empty state with Gavel icon
  * - Loading spinner for scroll trigger
  */
-import { useCallback, useEffect, useRef, useState } from 'react'
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQueries,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
-import watchListService from '@/services/watchlistService'
-import type {
-  AuctionFilterType,
-  AuctionItemGalleryItem,
-  AuctionSortType,
-} from '@/types/auction-gallery'
-import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
-import { Eye, Gavel, Loader2, RefreshCw, Sparkles } from 'lucide-react'
-import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import apiClient from '@/lib/axios'
-import { cn } from '@/lib/utils'
+import { StaleDataIndicator } from '@/components/pwa/stale-data-indicator'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -38,8 +18,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { StaleDataIndicator } from '@/components/pwa/stale-data-indicator'
 import { PlayTab } from '@/features/play/PlayTab'
+import apiClient from '@/lib/axios'
+import { cn } from '@/lib/utils'
+import watchListService from '@/services/watchlistService'
+import { useAuthStore } from '@/stores/auth-store'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import type {
+  AuctionFilterType,
+  AuctionItemGalleryItem,
+  AuctionSortType,
+} from '@/types/auction-gallery'
+import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
+import { Eye, Gavel, Loader2, RefreshCw, Sparkles } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { AuctionItemCard } from './AuctionItemCard'
 
 function normalizeIdentifier(value: unknown): string | null {
@@ -135,6 +135,8 @@ async function fetchAuctionItems(
         current_bid_amount?: number | string | null
         bid_count?: number
         buy_now_purchased_count?: number
+        buy_now_enabled?: boolean
+        buy_now_price?: number | string | null
         bidding_open?: boolean
         watcher_count?: number
         promotion_badge?: string | null
@@ -153,6 +155,8 @@ async function fetchAuctionItems(
         current_bid: toNumber(item.current_bid_amount),
         bid_count: item.bid_count ?? 0,
         buy_now_purchased_count: item.buy_now_purchased_count ?? 0,
+        buy_now_enabled: item.buy_now_enabled,
+        buy_now_price: toNumber(item.buy_now_price),
         bidding_open: item.bidding_open,
         watcher_count: item.watcher_count,
         promotion_badge: item.promotion_badge ?? null,
@@ -222,11 +226,11 @@ const baseFilterOptions: {
   label: string
   icon?: React.ReactNode
 }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'silent', label: 'Silent' },
-  { value: 'live', label: 'Live' },
-  { value: 'my', label: 'My Items' },
-]
+    { value: 'all', label: 'All' },
+    { value: 'silent', label: 'Silent' },
+    { value: 'live', label: 'Live' },
+    { value: 'my', label: 'My Items' },
+  ]
 
 const sortOptions: { value: AuctionSortType; label: string }[] = [
   { value: 'highest_bid', label: 'Highest Bid' },
@@ -235,6 +239,59 @@ const sortOptions: { value: AuctionSortType; label: string }[] = [
   { value: 'item_number', label: 'Item Number' },
   { value: 'title', label: 'Title (A-Z)' },
 ]
+
+/** Stable deterministic hash of a string (returns a non-negative integer) */
+function simpleHash(str: string): number {
+  let h = 2166136261 // FNV-1a 32-bit offset basis
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i)
+    h = Math.imul(h, 16777619) // FNV prime
+  }
+  return h >>> 0 // force unsigned
+}
+
+/**
+ * Interleave impact-donation items into the regular auction list so each one
+ * appears at a deterministic-but-random-looking position in the range
+ * [IMPACT_MIN_POS, IMPACT_MAX_POS] (1-indexed).
+ *
+ * Positions are derived from each item's ID so they stay stable across
+ * re-renders and sort changes.
+ */
+function interleaveImpactItems(
+  list: AuctionItemGalleryItem[]
+): AuctionItemGalleryItem[] {
+  const IMPACT_MIN_POS = 4 // 1-indexed: no earlier than 4th slot
+  const IMPACT_MAX_POS = 18 // 1-indexed: no later than 18th slot
+
+  const isImpact = (item: AuctionItemGalleryItem) =>
+    item.category?.trim().toLowerCase() === 'impact'
+
+  const impactItems = list.filter(isImpact)
+  if (impactItems.length === 0) return list
+
+  const regularItems = list.filter((item) => !isImpact(item))
+
+  // Assign each impact item a stable target position in [IMPACT_MIN_POS, IMPACT_MAX_POS]
+  const assignments = impactItems
+    .map((item) => ({
+      item,
+      targetPos:
+        (simpleHash(item.id) % (IMPACT_MAX_POS - IMPACT_MIN_POS + 1)) +
+        IMPACT_MIN_POS,
+    }))
+    .sort((a, b) => a.targetPos - b.targetPos)
+
+  // Insert in ascending position order so earlier insertions don't shift later targets
+  const result: AuctionItemGalleryItem[] = [...regularItems]
+  for (let i = 0; i < assignments.length; i++) {
+    const { item, targetPos } = assignments[i]
+    // Convert 1-indexed targetPos to 0-indexed; clamp to list bounds
+    const insertIdx = Math.min(targetPos - 1, result.length)
+    result.splice(insertIdx, 0, item)
+  }
+  return result
+}
 
 /**
  * AuctionGallery component
@@ -257,15 +314,15 @@ export function AuctionGallery({
 }: AuctionGalleryProps) {
   const filterOptions = hasRgItems
     ? [
-        ...baseFilterOptions,
-        {
-          value: 'play' as AuctionFilterType,
-          label: 'Play',
-          icon: (
-            <Sparkles className='mr-1 inline-block h-3.5 w-3.5 align-[-0.1em]' />
-          ),
-        },
-      ]
+      ...baseFilterOptions,
+      {
+        value: 'play' as AuctionFilterType,
+        label: 'Play',
+        icon: (
+          <Sparkles className='mr-1 inline-block h-3.5 w-3.5 align-[-0.1em]' />
+        ),
+      },
+    ]
     : baseFilterOptions
   const authUserId = useAuthStore((state) => state.user?.id)
   const spoofedUserId = useDebugSpoofStore((state) => state.spoofedUser?.id)
@@ -315,14 +372,14 @@ export function AuctionGallery({
         (
           previous:
             | {
-                watch_list?: Array<{
-                  id: string
-                  user_id: string
-                  auction_item_id: string
-                  added_at: string
-                }>
-                total?: number
-              }
+              watch_list?: Array<{
+                id: string
+                user_id: string
+                auction_item_id: string
+                added_at: string
+              }>
+              total?: number
+            }
             | undefined
         ) => {
           const existing = previous?.watch_list ?? []
@@ -356,14 +413,14 @@ export function AuctionGallery({
         (
           previous:
             | {
-                watch_list?: Array<{
-                  id: string
-                  user_id: string
-                  auction_item_id: string
-                  added_at: string
-                }>
-                total?: number
-              }
+              watch_list?: Array<{
+                id: string
+                user_id: string
+                auction_item_id: string
+                added_at: string
+              }>
+              total?: number
+            }
             | undefined
         ) => {
           const existing = previous?.watch_list ?? []
@@ -549,17 +606,14 @@ export function AuctionGallery({
       )
     })
     .sort((a, b) => {
+      const aBid = (a.current_bid ?? a.starting_bid) ?? 0
+      const bBid = (b.current_bid ?? b.starting_bid) ?? 0
+
       switch (sortBy) {
         case 'highest_bid':
-          return (
-            (b.current_bid ?? b.starting_bid) -
-            (a.current_bid ?? a.starting_bid)
-          )
+          return bBid - aBid
         case 'lowest_bid':
-          return (
-            (a.current_bid ?? a.starting_bid) -
-            (b.current_bid ?? b.starting_bid)
-          )
+          return aBid - bBid
         case 'most_bids':
           return b.bid_count - a.bid_count
         case 'title':
@@ -784,10 +838,10 @@ export function AuctionGallery({
   // My Items: watched + bid on (max bid set)
   const myItemIds = isMyItemsMode
     ? new Set([
-        ...Array.from(watchedItemIds),
-        ...Object.keys(winningItemMap),
-        ...Object.keys(maxBidItemMap),
-      ])
+      ...Array.from(watchedItemIds),
+      ...Object.keys(winningItemMap),
+      ...Object.keys(maxBidItemMap),
+    ])
     : null
   const myItems = myItemIds
     ? items.filter((item) => myItemIds.has(item.id))
@@ -803,6 +857,11 @@ export function AuctionGallery({
       .slice(0, HOT_MAX_ITEMS)
       .map((item) => item.id)
   )
+
+  // Impact-donation items are interleaved randomly into positions 4–18 of the
+  // main grid so they appear naturally among regular silent-auction items.
+  const baseGridItems = watchedItems.length > 0 ? unwatchedItems : items
+  const displayGridItems = interleaveImpactItems(baseGridItems)
 
   // Handle bid click
   const handleBidClick = (item: AuctionItemGalleryItem) => {
@@ -900,13 +959,13 @@ export function AuctionGallery({
               style={
                 filter === option.value
                   ? {
-                      backgroundColor:
-                        'rgb(var(--event-primary, 59, 130, 246))',
-                      color: 'var(--event-text-on-primary, #FFFFFF)',
-                    }
+                    backgroundColor:
+                      'rgb(var(--event-primary, 59, 130, 246))',
+                    color: 'var(--event-text-on-primary, #FFFFFF)',
+                  }
                   : {
-                      color: 'var(--event-text-muted-on-background, #6B7280)',
-                    }
+                    color: 'var(--event-text-muted-on-background, #6B7280)',
+                  }
               }
             >
               {option.icon}
@@ -1244,7 +1303,7 @@ export function AuctionGallery({
           {/* Items grid (non-My-Items mode) */}
           {!isMyItemsMode && items.length > 0 && (
             <div className='grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4'>
-              {(watchedItems.length > 0 ? unwatchedItems : items).map(
+              {displayGridItems.map(
                 (item, index) => (
                   <AuctionItemCard
                     key={item.id}

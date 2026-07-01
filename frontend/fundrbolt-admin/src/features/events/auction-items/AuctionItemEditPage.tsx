@@ -2,12 +2,6 @@
  * AuctionItemEditPage
  * Page for editing an existing auction item
  */
-import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import type { AuctionItemUpdate } from '@/types/auction-item'
-import { ArrowLeft } from 'lucide-react'
-import { toast } from 'sonner'
-import { useAuctionItemStore } from '@/stores/auctionItemStore'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -19,6 +13,12 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { AuctionItemForm } from '@/features/events/components/AuctionItemForm'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
+import { useAuctionItemStore } from '@/stores/auctionItemStore'
+import type { AuctionItemUpdate } from '@/types/auction-item'
+import { useNavigate, useParams } from '@tanstack/react-router'
+import { ArrowLeft } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 export function AuctionItemEditPage() {
   const navigate = useNavigate()
@@ -69,19 +69,23 @@ export function AuctionItemEditPage() {
     setIsSubmitting(true)
     try {
       await updateAuctionItem(eventId, itemId, data)
-      toast.success('Auction item updated successfully!')
-      navigate({
-        to: '/events/$eventId',
-        params: { eventId: routeEventId },
-        search: { tab: 'auction-items' },
-      })
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : 'Failed to update auction item'
       toast.error(errorMessage)
+      throw err
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleUpdateSuccess = () => {
+    toast.success('Auction item updated successfully!')
+    navigate({
+      to: '/events/$eventId',
+      params: { eventId: routeEventId },
+      search: { tab: 'auction-items' },
+    })
   }
 
   const handleCancel = () => {
@@ -148,6 +152,7 @@ export function AuctionItemEditPage() {
             eventId={eventId}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
+            onUpdateSuccess={handleUpdateSuccess}
             isSubmitting={isSubmitting}
           />
         </CardContent>
